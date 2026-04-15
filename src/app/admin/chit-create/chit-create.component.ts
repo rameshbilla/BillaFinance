@@ -53,11 +53,11 @@ import { Subscription } from 'rxjs';
                   </div>
                </div>
 
-               <!-- Total Value Calculator Display -->
+               <!-- Total Payable Value Calculator Display -->
                <div class="p-5 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-100 dark:border-purple-800/30 flex justify-between items-center mt-6">
                   <div>
-                     <p class="text-sm text-purple-800 dark:text-purple-300 font-medium tracking-wide">Total Chit Value</p>
-                     <p class="text-xs text-purple-600/70 dark:text-purple-400 mt-1">Calculated automatically</p>
+                     <p class="text-sm text-purple-800 dark:text-purple-300 font-medium tracking-wide">Total Payable Value</p>
+                     <p class="text-xs text-purple-600/70 dark:text-purple-400 mt-1">Tenure × Monthly Amount</p>
                   </div>
                   <div class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
                      ₹{{ calculatedTotal | number:'1.0-0' }}

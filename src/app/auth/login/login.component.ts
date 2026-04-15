@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../shared/toast.service';
 import { CommonModule } from '@angular/common';
+import { take } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -21,7 +22,7 @@ export class LoginComponent {
   isLoading = signal(false);
 
   loginForm: FormGroup = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
+    email: ['', [Validators.required]],
     password: ['', [Validators.required, Validators.minLength(6)]],
   });
 
@@ -34,7 +35,7 @@ export class LoginComponent {
         await this.authService.login(email, password);
         
         // On successful login, check role and redirect
-        this.authService.userProfile$.subscribe(profile => {
+        this.authService.userProfile$.pipe(take(1)).subscribe(profile => {
           if (profile) {
             this.toastService.success(`Welcome back, ${profile.displayName}!`);
             if (profile.role === 'admin') {
