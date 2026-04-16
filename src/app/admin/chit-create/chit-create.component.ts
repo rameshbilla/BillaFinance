@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ChittiService, ChittiScheme } from '../services/chitti.service';
 import { ToastService } from '../../shared/toast.service';
 import { Subscription } from 'rxjs';
+import { numberToWords } from '../../shared/utils/number-to-words.util';
 
 @Component({
   selector: 'app-admin-chit-create',
@@ -39,6 +40,7 @@ import { Subscription } from 'rxjs';
                   <div>
                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Monthly Payable (₹)</label>
                      <input type="number" formControlName="monthlyAmount" class="block w-full rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-shadow" placeholder="5000">
+                     <p class="text-[10px] text-purple-600 dark:text-purple-400 mt-1 font-medium italic">{{ amountToWords(schemeForm.get('monthlyAmount')?.value) }}</p>
                   </div>
                </div>
 
@@ -59,8 +61,11 @@ import { Subscription } from 'rxjs';
                      <p class="text-sm text-purple-800 dark:text-purple-300 font-medium tracking-wide">Total Payable Value</p>
                      <p class="text-xs text-purple-600/70 dark:text-purple-400 mt-1">Tenure × Monthly Amount</p>
                   </div>
-                  <div class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
-                     ₹{{ calculatedTotal | number:'1.0-0' }}
+                  <div class="text-right">
+                     <div class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
+                        ₹{{ calculatedTotal | number:'1.0-0' }}
+                     </div>
+                     <p class="text-[10px] text-purple-600 dark:text-purple-400 mt-1 font-bold italic">{{ amountToWords(calculatedTotal) }}</p>
                   </div>
                </div>
 
@@ -99,6 +104,10 @@ export class AdminChitCreateComponent implements OnInit {
     const tenure = this.schemeForm.get('tenure')?.value || 0;
     const monthlyAmt = this.schemeForm.get('monthlyAmount')?.value || 0;
     return tenure * monthlyAmt;
+  }
+
+  amountToWords(amount: number): string {
+    return numberToWords(amount);
   }
 
   ngOnInit() {

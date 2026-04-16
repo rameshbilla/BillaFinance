@@ -8,6 +8,12 @@ export interface Settlement {
   amount: number;
 }
 
+export interface InterestCollection {
+  id?: string;
+  date: string;
+  amount: number;
+}
+
 export interface InterestScheme {
   id?: string;
   name: string;
@@ -21,6 +27,8 @@ export interface InterestScheme {
   borrowerIdValue?: string;
   borrowerIdDoc?: string;
   settlements: Settlement[];
+  interestCollections?: InterestCollection[];
+  startDate: string;
 }
 
 @Injectable({

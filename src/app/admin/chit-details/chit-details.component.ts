@@ -4,6 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { ChittiService, ChittiScheme } from '../services/chitti.service';
 import { CustomerService, Customer, CustomerPayment } from '../services/customer.service';
+import { numberToWords } from '../../shared/utils/number-to-words.util';
 import { ToastService } from '../../shared/toast.service';
 import { AuthService } from '../../services/auth.service';
 
@@ -232,7 +233,10 @@ import { AuthService } from '../../services/auth.service';
                   <!-- Mini form for adding payment -->
                   <div class="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl space-y-3 border border-gray-100 dark:border-gray-700">
                     <div class="grid grid-cols-2 gap-3">
-                       <input type="number" [(ngModel)]="newPaymentAmount" [ngModelOptions]="{standalone: true}" placeholder="Amount (₹)" class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-500">
+                     <div class="space-y-1">
+                        <input type="number" [(ngModel)]="newPaymentAmount" [ngModelOptions]="{standalone: true}" placeholder="Amount (₹)" class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-500">
+                        <p class="text-[10px] text-purple-600 dark:text-purple-400 font-medium italic">{{ amountToWords(newPaymentAmount || 0) }}</p>
+                     </div>
                        <input type="date" [(ngModel)]="newPaymentDate" [ngModelOptions]="{standalone: true}" class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-500">
                     </div>
                     <button type="button" (click)="addPayment()" class="w-full py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-bold rounded-lg text-xs hover:bg-purple-200 transition-colors">
@@ -327,6 +331,10 @@ export class AdminChitDetailsComponent implements OnInit {
   get currentPendingAmount(): number {
      const editingCust = this.customers.find(c => c.id === this.editingCustomerId);
      return editingCust ? this.getPendingAmount(editingCust) : 0;
+  }
+
+  amountToWords(amount: number): string {
+    return numberToWords(amount);
   }
 
   get filteredCustomers(): Customer[] {

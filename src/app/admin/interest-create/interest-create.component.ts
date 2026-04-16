@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { InterestService, InterestScheme } from '../services/interest.service';
 import { ToastService } from '../../shared/toast.service';
 import { Storage, ref, uploadBytesResumable, getDownloadURL } from '@angular/fire/storage';
+import { numberToWords } from '../../shared/utils/number-to-words.util';
 
 @Component({
   selector: 'app-admin-interest-create',
@@ -29,15 +30,22 @@ import { Storage, ref, uploadBytesResumable, getDownloadURL } from '@angular/fir
                <h2 class="text-xl font-extrabold text-blue-600 dark:text-blue-400 border-b border-gray-100 dark:border-gray-700 pb-3 mb-6">Financial Details</h2>
                
                <div class="space-y-6">
-                  <div>
-                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Scheme/Loan Title</label>
-                     <input type="text" formControlName="name" class="block w-full rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" [ngClass]="{'border-red-500': schemeForm.get('name')?.invalid && schemeForm.get('name')?.touched}" placeholder="e.g. Standard Personal Loan">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Scheme/Loan Title</label>
+                        <input type="text" formControlName="name" class="block w-full rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" [ngClass]="{'border-red-500': schemeForm.get('name')?.invalid && schemeForm.get('name')?.touched}" placeholder="e.g. Standard Personal Loan">
+                     </div>
+                     <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Loan Start Date</label>
+                        <input type="date" formControlName="startDate" class="block w-full rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" [ngClass]="{'border-red-500': schemeForm.get('startDate')?.invalid && schemeForm.get('startDate')?.touched}">
+                     </div>
                   </div>
 
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                      <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Total Principal Amount (₹)</label>
                         <input type="number" formControlName="amount" class="block w-full rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" [ngClass]="{'border-red-500': schemeForm.get('amount')?.invalid && schemeForm.get('amount')?.touched}" placeholder="100000">
+                         <p class="text-[10px] text-blue-600 dark:text-blue-400 mt-1 font-medium italic">{{ amountToWords(schemeForm.get('amount')?.value) }}</p>
                      </div>
                      <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Interest Rate (% per month)</label>
@@ -51,8 +59,11 @@ import { Storage, ref, uploadBytesResumable, getDownloadURL } from '@angular/fir
                         <p class="text-sm text-blue-800 dark:text-blue-300 font-medium tracking-wide">Monthly Interest Payable</p>
                         <p class="text-xs text-blue-600/70 dark:text-blue-400 mt-1">Amount × (Rate / 100)</p>
                      </div>
-                     <div class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-                        ₹{{ calculatedPayable | number:'1.0-0' }}
+                     <div class="text-right">
+                        <div class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+                           ₹{{ calculatedPayable | number:'1.0-0' }}
+                        </div>
+                        <p class="text-[10px] text-blue-600 dark:text-blue-400 mt-1 font-bold italic">{{ amountToWords(calculatedPayable) }}</p>
                      </div>
                   </div>
 
@@ -154,6 +165,7 @@ export class AdminInterestCreateComponent implements OnInit {
 
   schemeForm: FormGroup = this.fb.group({
     name: ['', Validators.required],
+    startDate: [new Date().toISOString().split('T')[0], Validators.required],
     borrowerName: ['', Validators.required],
     borrowerPhone: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
     borrowerEmail: ['', [Validators.email]],
@@ -178,6 +190,10 @@ export class AdminInterestCreateComponent implements OnInit {
     return amt * (rate / 100);
   }
 
+  amountToWords(amount: number): string {
+    return numberToWords(amount);
+  }
+
   ngOnInit() {
     this.currentSchemeId = this.route.snapshot.paramMap.get('id');
     if (this.currentSchemeId) {
@@ -192,6 +208,7 @@ export class AdminInterestCreateComponent implements OnInit {
         if (scheme) {
           this.schemeForm.patchValue({
             name: scheme.name,
+            startDate: scheme.startDate || '',
             borrowerName: scheme.borrowerName,
             borrowerPhone: scheme.borrowerPhone,
             borrowerEmail: scheme.borrowerEmail || '',
