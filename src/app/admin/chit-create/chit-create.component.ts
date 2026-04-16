@@ -22,7 +22,7 @@ import { Subscription } from 'rxjs';
       </nav>
 
       <main class="max-w-3xl mx-auto px-4 py-8">
-         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-8">
+         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-4 sm:p-8">
             <h2 class="text-2xl font-extrabold text-gray-900 dark:text-white mb-6">Scheme Details</h2>
             
             <form [formGroup]="schemeForm" (ngSubmit)="onSubmit()" class="space-y-6">

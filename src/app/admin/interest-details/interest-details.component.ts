@@ -24,21 +24,21 @@ import { ToastService } from '../../shared/toast.service';
         
         @if (scheme) {
           <!-- Action Banner -->
-          <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg p-6 mb-8 text-white flex flex-col md:flex-row justify-between md:items-center">
+          <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg p-6 mb-8 text-white flex flex-col md:flex-row justify-between md:items-center space-y-6 md:space-y-0">
             <div>
               <p class="text-blue-100 text-sm font-medium mb-1">Borrower</p>
-              <h2 class="text-3xl font-extrabold">{{ scheme.borrowerName }}</h2>
+              <h2 class="text-2xl sm:text-3xl font-extrabold">{{ scheme.borrowerName }}</h2>
               <p class="text-indigo-200 mt-1 flex items-center">
                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
                 {{ scheme.borrowerPhone }}
               </p>
             </div>
-            <div class="mt-6 md:mt-0 flex space-x-3">
-               <button (click)="printStatement()" class="px-6 py-3 bg-indigo-500/20 text-white border border-indigo-400/30 rounded-xl font-medium hover:bg-indigo-500/30 transition-all">
-                 <svg class="h-5 w-5 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+               <button (click)="printStatement()" class="px-6 py-3 bg-indigo-500/20 text-white border border-indigo-400/30 rounded-xl font-medium hover:bg-indigo-500/30 transition-all text-sm">
+                 <svg class="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                  Print Statement
                </button>
-               <button (click)="openSettlementModal()" class="px-6 py-3 bg-white text-blue-600 rounded-xl font-bold hover:shadow-xl hover:-translate-y-1 transition-all shadow-md">
+               <button (click)="openSettlementModal()" class="px-6 py-3 bg-white text-blue-600 rounded-xl font-bold hover:shadow-xl hover:-translate-y-1 transition-all shadow-md text-sm">
                  + Make Settlement
                </button>
             </div>
@@ -95,7 +95,7 @@ import { ToastService } from '../../shared/toast.service';
               </h3>
             </div>
 
-            <div class="overflow-x-auto">
+            <div class="hidden md:block overflow-x-auto">
               <table class="w-full text-left border-collapse">
                 <thead>
                   <tr class="bg-gray-50 dark:bg-gray-800/80 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-200 dark:border-gray-700">
@@ -122,6 +122,27 @@ import { ToastService } from '../../shared/toast.service';
                   }
                 </tbody>
               </table>
+            </div>
+
+            <!-- Mobile Card View -->
+            <div class="md:hidden divide-y divide-gray-100 dark:divide-gray-700">
+               @for (settlement of scheme.settlements; track settlement.id || $index) {
+                  <div class="px-6 py-5 flex justify-between items-center text-sm">
+                     <div>
+                        <p class="text-xs text-gray-500 mb-1">{{ settlement.date }}</p>
+                        <p class="font-bold text-green-600 dark:text-green-400">₹{{ settlement.amount | number:'1.0-0' }}</p>
+                     </div>
+                     <div class="flex space-x-4">
+                        <button (click)="openSettlementModal(settlement)" class="text-indigo-600 font-bold uppercase tracking-wider text-[10px]">Edit</button>
+                        <button (click)="deleteSettlement(settlement.id!)" class="text-red-600 font-bold uppercase tracking-wider text-[10px]">Delete</button>
+                     </div>
+                  </div>
+               }
+               @if (!scheme.settlements || scheme.settlements.length === 0) {
+                  <div class="px-6 py-10 text-center text-gray-500 dark:text-gray-400 text-sm">
+                     No settlements made yet.
+                  </div>
+               }
             </div>
           </div>
         }

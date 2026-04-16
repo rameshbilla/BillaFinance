@@ -2,6 +2,19 @@ import { Injectable, inject } from '@angular/core';
 import { Firestore, collection, addDoc, collectionData, doc, updateDoc, deleteDoc, query, where, docData } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 
+export interface CustomerPayment {
+  id: string;
+  date: string;
+  amount: number;
+}
+
+export interface UserProfile {
+  role: 'admin' | 'customer';
+  photoURL?: string;
+  phone?: string;
+  username?: string;
+}
+
 export interface Customer {
   id?: string;
   name: string;
@@ -11,7 +24,9 @@ export interface Customer {
   schemeId: string;
   schemeType: 'chitti';
   joinedDate: string;
+  username: string;
   status: 'Active' | 'Inactive';
+  payments?: CustomerPayment[];
 }
 
 @Injectable({
@@ -35,13 +50,16 @@ export class CustomerService {
   }
 
   getCustomersByUserIdentifier(identifier: string): Observable<Customer[]> {
-    // In Firestore, we can't easily do a logical OR with different fields in a simple query 
-    // unless using special features. For simplicity, we'll fetch all and filter or provide specific queries.
-    // However, usually index on phone/email is fine.
-    const q = query(
-      this.customerCollection, 
-      where('phone', '==', identifier)
-    );
+    // Try username match first (stable identifier), then phone
+    const byUsername = query(this.customerCollection, where('username', '==', identifier));
+    const byPhone = query(this.customerCollection, where('phone', '==', identifier));
+    
+    // Return username-based results; caller can fall back to phone if needed
+    return collectionData(byUsername, { idField: 'id' }) as Observable<Customer[]>;
+  }
+
+  getCustomersByPhone(phone: string): Observable<Customer[]> {
+    const q = query(this.customerCollection, where('phone', '==', phone));
     return collectionData(q, { idField: 'id' }) as Observable<Customer[]>;
   }
 

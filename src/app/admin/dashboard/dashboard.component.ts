@@ -36,7 +36,7 @@ import { AuthService } from '../../services/auth.service';
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         <!-- Tabs for Switching Dashboard Context -->
-        <div class="flex space-x-1 p-1 bg-gray-200/50 dark:bg-gray-800/50 rounded-xl max-w-sm mb-8 relative">
+        <div class="flex space-x-1 p-1 bg-gray-200/50 dark:bg-gray-800/50 rounded-xl w-full sm:max-w-sm mb-8 relative">
            <button (click)="activeTab = 'chitti'" 
                    [class.bg-white]="activeTab === 'chitti'" [class.dark:bg-gray-700]="activeTab === 'chitti'" [class.shadow-sm]="activeTab === 'chitti'"
                    class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all text-gray-700 dark:text-gray-200 hover:text-purple-600">
@@ -57,6 +57,28 @@ import { AuthService } from '../../services/auth.service';
                  <svg class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                  New Chitti
               </button>
+           </div>
+
+           <!-- Current Month Snapshot -->
+           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+              <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center">
+                 <div class="h-12 w-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 mr-4">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                 </div>
+                 <div>
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Collected ({{ currentMonthName }})</p>
+                    <p class="text-2xl font-black text-gray-900 dark:text-white">₹{{ totalCollectedThisMonth | number:'1.0-0' }}</p>
+                 </div>
+              </div>
+              <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center">
+                 <div class="h-12 w-12 rounded-xl bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center text-pink-600 dark:text-pink-400 mr-4">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                 </div>
+                 <div>
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Pending ({{ currentMonthName }})</p>
+                    <p class="text-2xl font-black text-pink-600">₹{{ totalPendingThisMonth | number:'1.0-0' }}</p>
+                 </div>
+              </div>
            </div>
 
            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -155,6 +177,51 @@ export class DashboardComponent implements OnInit {
     this.chittiService.getChittis().subscribe(data => this.chittis = data);
     this.interestService.getInterests().subscribe(data => this.interests = data);
     this.customerService.getAllCustomers().subscribe(data => this.allCustomers = data);
+  }
+
+  get currentMonthName(): string {
+    return new Date().toLocaleString('default', { month: 'long' });
+  }
+
+  get totalCollectedThisMonth(): number {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    
+    let total = 0;
+    this.allCustomers.forEach(cust => {
+       (cust.payments || []).forEach(p => {
+          const pDate = new Date(p.date);
+          if (pDate.getMonth() === currentMonth && pDate.getFullYear() === currentYear) {
+             total += p.amount;
+          }
+       });
+    });
+    return total;
+  }
+
+  get totalPendingThisMonth(): number {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    const now = new Date();
+    
+    let totalExpected = 0;
+    this.allCustomers.forEach(cust => {
+      const scheme = this.chittis.find(s => s.id === cust.schemeId);
+      if (scheme && cust.joinedDate) {
+         const joined = new Date(cust.joinedDate);
+         // If joined this month or before, we expect a payment for this month if it's currently that month cycle
+         // Simplest: If now >= joined, expect one payment per cycle.
+         // Let's use the logic: count months from joined to now.
+         let months = (now.getFullYear() - joined.getFullYear()) * 12 + (now.getMonth() - joined.getMonth()) + 1;
+         totalExpected += months * scheme.monthlyAmount;
+      }
+    });
+
+    const totalPaidEver = this.allCustomers.reduce((acc, cust) => {
+       return acc + (cust.payments || []).reduce((sum, p) => sum + p.amount, 0);
+    }, 0);
+
+    return Math.max(0, totalExpected - totalPaidEver);
   }
 
   getCustomerCount(schemeId: string, type: 'chitti'): number {

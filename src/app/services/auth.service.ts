@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { Auth, signInWithEmailAndPassword, signOut, user, User, updateProfile, createUserWithEmailAndPassword } from '@angular/fire/auth';
-import { Firestore, doc, setDoc, getDoc, docData } from '@angular/fire/firestore';
-import { Observable, of, switchMap, map, from, BehaviorSubject } from 'rxjs';
+import { Auth, signInWithEmailAndPassword, signOut, user, User, RecaptchaVerifier, signInWithPhoneNumber } from '@angular/fire/auth';
+import { Firestore, doc, setDoc, getDoc, docData, collection, query, where, getDocs } from '@angular/fire/firestore';
+import { Observable, of, switchMap, BehaviorSubject } from 'rxjs';
 
 export interface UserProfile {
   uid: string;
@@ -10,6 +10,7 @@ export interface UserProfile {
   role: 'admin' | 'customer';
   photoURL?: string;
   phone?: string;
+  username?: string;
 }
 
 @Injectable({
@@ -19,130 +20,178 @@ export class AuthService {
   private auth = inject(Auth);
   private firestore = inject(Firestore);
 
-  // BehaviorSubject for static admin login
-  private staticUserSubject = new BehaviorSubject<User | null>(null);
+  public get firebaseAuth() { return this.auth; }
 
-  // Observable for current user auth state (Firebase + static)
-  user$: Observable<User | null> = this.staticUserSubject.pipe(
+  // BehaviorSubject for static/custom logins (admin + customers)
+  private staticUserSubject = new BehaviorSubject<any | null>(null);
+
+  // Combined user observable
+  user$: Observable<any | null> = this.staticUserSubject.pipe(
     switchMap(staticUser => {
-      if (staticUser) {
-        return of(staticUser);
-      }
+      if (staticUser) return of(staticUser);
       return user(this.auth);
     })
   );
 
   constructor() {
-    // Check if admin is statically logged in
-    const adminLoggedIn = localStorage.getItem('adminLoggedIn');
-    if (adminLoggedIn === 'true') {
-      const adminUserStr = localStorage.getItem('adminUser');
-      if (adminUserStr) {
-        const adminUser = JSON.parse(adminUserStr);
-        this.staticUserSubject.next(adminUser);
-      }
+    // Restore session from localStorage
+    const stored = localStorage.getItem('customSession');
+    if (stored) {
+      try {
+        this.staticUserSubject.next(JSON.parse(stored));
+      } catch { }
     }
   }
 
-  // Observable for current user profile from Firestore or static
+  // Profile observable — reads from Firestore users collection
   userProfile$: Observable<UserProfile | null> = this.user$.pipe(
-    switchMap(user => {
-      if (!user) return of(null);
-      
-      // Check if it's static admin
-      if (user.uid === 'admin-static') {
-        return of({
-          uid: 'admin-static',
-          email: 'admin',
-          displayName: 'Admin',
-          role: 'admin'
-        } as UserProfile);
+    switchMap(u => {
+      if (!u) return of(null);
+      if (u.uid === 'admin-static') {
+        return of({ uid: 'admin-static', email: 'admin', displayName: 'Admin', role: 'admin' } as UserProfile);
       }
-      
-      const userRef = doc(this.firestore, `users/${user.uid}`);
+      const userRef = doc(this.firestore, `users/${u.uid}`);
       return docData(userRef) as Observable<UserProfile>;
     })
   );
 
-  async register(email: string, pass: string, name: string, role: 'admin' | 'customer' = 'customer') {
-    const credentials = await createUserWithEmailAndPassword(this.auth, email, pass);
-    const user = credentials.user;
-    
-    await updateProfile(user, { displayName: name });
+  /**
+   * MAIN LOGIN METHOD
+   * - "admin" / "billa007" → static admin bypass
+   * - anything else → pure Firestore lookup (no Firebase Auth needed)
+   */
+  async login(username: string, password: string) {
+    const clean = username.trim().replace(/^@/, '');
 
-    const userProfile: UserProfile = {
-      uid: user.uid,
-      email: user.email,
-      displayName: name,
-      role: role
-    };
+    // 1. Static admin login
+    if ((clean === 'admin') && password === 'billa007') {
+      const mockAdmin: any = {
+        uid: 'admin-static', email: 'admin', displayName: 'Admin',
+        emailVerified: true, isAnonymous: false, metadata: {} as any,
+        providerData: [], refreshToken: '', tenantId: null,
+        delete: () => Promise.resolve(), getIdToken: () => Promise.resolve(''),
+        getIdTokenResult: () => Promise.resolve({} as any),
+        reload: () => Promise.resolve(), toJSON: () => ({}),
+        phoneNumber: null, photoURL: null, providerId: 'password'
+      };
+      this.staticUserSubject.next(mockAdmin);
+      localStorage.setItem('customSession', JSON.stringify(mockAdmin));
+      return;
+    }
 
-    const userRef = doc(this.firestore, `users/${user.uid}`);
-    await setDoc(userRef, userProfile);
-    
-    return credentials;
+    // 2. Customer login — pure Firestore lookup
+    const lookupRef = doc(this.firestore, `customer_credentials/${clean}`);
+    const lookupSnap = await getDoc(lookupRef);
+
+    if (lookupSnap.exists()) {
+      const data = lookupSnap.data();
+      if (data['password'] === password) {
+        const mockUser: any = {
+          uid: data['uid'],
+          email: `${clean}@billa.finance`,
+          displayName: data['displayName'] || clean,
+          role: 'customer'
+        };
+        this.staticUserSubject.next(mockUser);
+        localStorage.setItem('customSession', JSON.stringify(mockUser));
+        return;
+      } else {
+        throw new Error('Incorrect password. Please try again.');
+      }
+    }
+
+    throw new Error(`No account found for username "${clean}". Please contact your admin.`);
   }
 
-  async login(email: string, pass: string) {
-    // Check for static admin credentials
-    if (email === 'admin' && pass === 'billa007') {
-      // Simulate admin login
-      const mockUser: User = {
-        uid: 'admin-static',
-        email: 'admin',
-        displayName: 'Admin',
-        emailVerified: true,
-        isAnonymous: false,
-        metadata: {} as any,
-        providerData: [],
-        refreshToken: '',
-        tenantId: null,
-        delete: () => Promise.resolve(),
-        getIdToken: () => Promise.resolve(''),
-        getIdTokenResult: () => Promise.resolve({} as any),
-        reload: () => Promise.resolve(),
-        toJSON: () => ({}),
-        phoneNumber: null,
-        photoURL: null,
-        providerId: 'password'
-      };
-      this.staticUserSubject.next(mockUser);
-      localStorage.setItem('adminLoggedIn', 'true');
-      localStorage.setItem('adminUser', JSON.stringify(mockUser));
-      return Promise.resolve();
-    }
-    
-    // Reset static user for regular login
-    this.staticUserSubject.next(null);
-    localStorage.removeItem('adminLoggedIn');
-    localStorage.removeItem('adminUser');
-    
-    return await signInWithEmailAndPassword(this.auth, email, pass);
+  /**
+   * Public registration is disabled. Customers are created by the Admin.
+   * This stub prevents build errors from the RegisterComponent.
+   */
+  async register(_email: string, _pass: string, _name: string, _role: string = 'customer') {
+    throw new Error('Self-registration is disabled. Please contact your Admin to create an account.');
+  }
+
+  /**
+   * CUSTOMER PROVISIONING — pure Firestore, no Firebase Auth needed.
+   * Called when Admin creates a customer in the Chitti scheme.
+   */
+  async provisionCustomer(username: string, name: string, phone: string, defaultPassword = '123456') {
+    const clean = username.trim().replace(/^@/, '');
+
+    // Check if credential already exists (to preserve existing password)
+    const credRef = doc(this.firestore, `customer_credentials/${clean}`);
+    const existingSnap = await getDoc(credRef);
+    const existingPassword = existingSnap.exists() ? existingSnap.data()['password'] : defaultPassword;
+    const existingUid = existingSnap.exists() ? existingSnap.data()['uid'] : `customer_${clean}_${Date.now()}`;
+
+    const profile: UserProfile = {
+      uid: existingUid,
+      email: `${clean}@billa.finance`,
+      displayName: name,
+      role: 'customer',
+      phone,
+      username: clean
+    };
+
+    // Write/update user profile (full overwrite with latest data)
+    await setDoc(doc(this.firestore, `users/${existingUid}`), profile);
+
+    // Write/update credential record (preserve existing password)
+    await setDoc(credRef, {
+      uid: existingUid,
+      username: clean,
+      password: existingPassword,
+      displayName: name,
+      phone,
+      role: 'customer',
+      updatedAt: new Date().toISOString()
+    });
+
+    return existingUid;
+  }
+
+  /**
+   * Change password for currently logged-in customer (Firestore only)
+   */
+  async changeCustomerPassword(username: string, newPassword: string) {
+    const clean = username.trim().replace(/^@/, '');
+    const credRef = doc(this.firestore, `customer_credentials/${clean}`);
+    const snap = await getDoc(credRef);
+    if (!snap.exists()) throw new Error('Credential record not found.');
+    await setDoc(credRef, { ...snap.data(), password: newPassword });
+  }
+
+  async sendOtpWithPhoneNumber(phone: string, recaptchaVerifier: RecaptchaVerifier) {
+    const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
+    return await signInWithPhoneNumber(this.auth, formattedPhone, recaptchaVerifier);
+  }
+
+  async verifyOtpAndChangePassword(confirmationResult: any, otp: string, newPassword: string, username: string) {
+    await confirmationResult.confirm(otp);
+    await this.changeCustomerPassword(username, newPassword);
+  }
+
+  async getUserProfile(uid: string): Promise<UserProfile | null> {
+    const userRef = doc(this.firestore, `users/${uid}`);
+    const snap = await getDoc(userRef);
+    return snap.exists() ? snap.data() as UserProfile : null;
+  }
+
+  async checkUserExists(username: string): Promise<boolean> {
+    const clean = username.trim().replace(/^@/, '');
+    const ref = doc(this.firestore, `customer_credentials/${clean}`);
+    const snap = await getDoc(ref);
+    return snap.exists();
   }
 
   async logout() {
-    // Clear static admin login
     this.staticUserSubject.next(null);
-    localStorage.removeItem('adminLoggedIn');
-    localStorage.removeItem('adminUser');
-    
-    return await signOut(this.auth);
+    localStorage.removeItem('customSession');
+    try { await signOut(this.auth); } catch { }
   }
 
-  // Helper to check if current user is admin
   async isAdmin(): Promise<boolean> {
-    const user = this.staticUserSubject.value;
-    if (user && user.uid === 'admin-static') {
-      return true;
-    }
-    
-    const firebaseUser = this.auth.currentUser;
-    if (!firebaseUser) return false;
-    const userRef = doc(this.firestore, `users/${firebaseUser.uid}`);
-    const snapshot = await getDoc(userRef);
-    if (snapshot.exists()) {
-      return snapshot.data()?.['role'] === 'admin';
-    }
-    return false;
+    const u = this.staticUserSubject.value;
+    return u?.uid === 'admin-static';
   }
 }

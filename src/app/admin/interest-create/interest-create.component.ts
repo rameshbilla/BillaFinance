@@ -25,7 +25,7 @@ import { Storage, ref, uploadBytesResumable, getDownloadURL } from '@angular/fir
          <form [formGroup]="schemeForm" (ngSubmit)="onSubmit()" class="space-y-8">
             
             <!-- Scheme Financials Section -->
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-8">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-4 sm:p-8">
                <h2 class="text-xl font-extrabold text-blue-600 dark:text-blue-400 border-b border-gray-100 dark:border-gray-700 pb-3 mb-6">Financial Details</h2>
                
                <div class="space-y-6">
@@ -64,7 +64,7 @@ import { Storage, ref, uploadBytesResumable, getDownloadURL } from '@angular/fir
             </div>
 
             <!-- Borrower Profile Section -->
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-8">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-4 sm:p-8">
                <h2 class="text-xl font-extrabold text-indigo-600 dark:text-indigo-400 border-b border-gray-100 dark:border-gray-700 pb-3 mb-6">Borrower Identity</h2>
                
                <div class="space-y-6">
@@ -133,9 +133,9 @@ import { Storage, ref, uploadBytesResumable, getDownloadURL } from '@angular/fir
                </div>
             </div>
 
-            <div class="pt-4 flex justify-end space-x-4 sticky bottom-6 z-40 bg-white/50 dark:bg-gray-900/50 backdrop-blur-md p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
-               <button type="button" (click)="goBack()" class="px-6 py-3 font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-colors">Cancel</button>
-               <button type="submit" [disabled]="schemeForm.invalid || isSubmitting" class="px-8 py-3 font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-500 hover:from-blue-500 hover:to-indigo-400 rounded-xl shadow-md cursor-pointer disabled:opacity-50 transition-all hover:-translate-y-0.5">
+            <div class="pt-4 flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 sticky bottom-6 z-40 bg-white/50 dark:bg-gray-900/50 backdrop-blur-md p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+               <button type="button" (click)="goBack()" class="px-6 py-3 font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-colors w-full sm:w-auto">Cancel</button>
+               <button type="submit" [disabled]="schemeForm.invalid || isSubmitting" class="px-8 py-3 font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-500 hover:from-blue-500 hover:to-indigo-400 rounded-xl shadow-md cursor-pointer disabled:opacity-50 transition-all hover:-translate-y-0.5 w-full sm:w-auto">
                   {{ isSubmitting ? 'Saving Data...' : (isEditMode ? 'Save & Update' : 'Finalize & Create Loan') }}
                </button>
             </div>

@@ -19,10 +19,10 @@ import { animate, style, transition, trigger } from '@angular/animations';
     ])
   ],
   template: `
-    <div class="fixed bottom-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none">
+    <div class="fixed bottom-5 left-4 right-4 sm:left-auto sm:right-5 z-[100] flex flex-col gap-3 pointer-events-none">
       @for (toast of toastService.toasts(); track toast.id) {
         <div @toastAnimation
-             class="pointer-events-auto flex items-center min-w-[300px] max-w-md p-4 rounded-xl shadow-xl backdrop-blur-md border text-sm font-medium"
+             class="pointer-events-auto flex items-center w-full sm:min-w-[300px] sm:max-w-md p-4 rounded-xl shadow-xl backdrop-blur-md border text-sm font-medium"
              [ngClass]="{
                'bg-green-500/10 border-green-500/20 text-green-900 dark:text-green-100': toast.type === 'success',
                'bg-red-500/10 border-red-500/20 text-red-900 dark:text-red-100': toast.type === 'error',
