@@ -32,7 +32,7 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
                   <input type="text" formControlName="name" class="block w-full rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-shadow" placeholder="e.g. Diwali Gold Saver 24M">
                </div>
 
-               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Total Tenure (Months)</label>
                      <input type="number" formControlName="tenure" class="block w-full rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-shadow" placeholder="24">
@@ -44,7 +44,7 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
                   </div>
                </div>
 
-               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
                      <input type="date" formControlName="startDate" class="block w-full rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-shadow" [ngClass]="{'border-red-500': schemeForm.get('startDate')?.invalid && schemeForm.get('startDate')?.touched}">
@@ -56,23 +56,23 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
                </div>
 
                <!-- Total Payable Value Calculator Display -->
-               <div class="p-5 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-100 dark:border-purple-800/30 flex justify-between items-center mt-6">
+               <div class="p-5 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-100 dark:border-purple-800/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-6">
                   <div>
                      <p class="text-sm text-purple-800 dark:text-purple-300 font-medium tracking-wide">Total Payable Value</p>
-                     <p class="text-xs text-purple-600/70 dark:text-purple-400 mt-1">Tenure × Monthly Amount</p>
+                     <p class="text-xs text-purple-600/70 dark:text-purple-400 mt-1 leading-none">Tenure × Monthly Amount</p>
                   </div>
-                  <div class="text-right">
-                     <div class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
+                  <div class="text-left sm:text-right">
+                     <div class="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
                         ₹{{ calculatedTotal | number:'1.0-0' }}
                      </div>
-                     <p class="text-[10px] text-purple-600 dark:text-purple-400 mt-1 font-bold italic">{{ amountToWords(calculatedTotal) }}</p>
+                     <p class="text-[9px] sm:text-[10px] text-purple-600 dark:text-purple-400 mt-1 font-bold italic">{{ amountToWords(calculatedTotal) }}</p>
                   </div>
                </div>
 
-               <div class="pt-4 flex justify-end space-x-4">
-                  <button type="button" (click)="goBack()" class="px-6 py-3 font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-colors">Cancel</button>
-                  <button type="submit" [disabled]="schemeForm.invalid || isSubmitting" class="px-8 py-3 font-bold text-white bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 rounded-xl shadow-md cursor-pointer disabled:opacity-50 transition-all hover:-translate-y-0.5">
-                     {{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update Scheme' : 'Submit Scheme') }}
+               <div class="pt-4 flex flex-col sm:flex-row justify-end gap-3">
+                  <button type="button" (click)="goBack()" class="px-8 py-3 font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-colors order-2 sm:order-1">Cancel</button>
+                  <button type="submit" [disabled]="schemeForm.invalid || isSubmitting" class="px-10 py-3 font-black text-white bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 rounded-xl shadow-md cursor-pointer disabled:opacity-50 transition-all hover:-translate-y-0.5 order-1 sm:order-2">
+                     {{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update Scheme' : 'Finalize & Create') }}
                   </button>
                </div>
             </form>

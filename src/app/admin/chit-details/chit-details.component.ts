@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { ChittiService, ChittiScheme } from '../services/chitti.service';
+import { InterestService } from '../services/interest.service';
 import { CustomerService, Customer, CustomerPayment } from '../services/customer.service';
 import { numberToWords } from '../../shared/utils/number-to-words.util';
 import { ToastService } from '../../shared/toast.service';
@@ -39,49 +40,49 @@ import { AuthService } from '../../services/auth.service';
         }
 
         <!-- Scheme-Specific Monthly Snapshot -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-           <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center">
-              <div class="h-12 w-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 mr-4">
-                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <div class="grid grid-cols-2 gap-3 sm:gap-6 mb-8">
+           <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row items-start sm:items-center">
+              <div class="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 mb-3 sm:mb-0 sm:mr-4">
+                 <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               </div>
               <div>
-                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Collected ({{ currentMonthName }})</p>
-                 <p class="text-xl font-black text-gray-900 dark:text-white">₹{{ schemeCollectedThisMonth | number:'1.0-0' }}</p>
+                 <p class="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1 sm:mb-0.5">Collected <span class="hidden md:inline">({{ currentMonthName }})</span></p>
+                 <p class="text-base sm:text-xl font-black text-gray-900 dark:text-white">₹{{ schemeCollectedThisMonth | number:'1.0-0' }}</p>
               </div>
            </div>
-           <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center">
-              <div class="h-12 w-12 rounded-xl bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center text-pink-600 dark:text-pink-400 mr-4">
-                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+           <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row items-start sm:items-center">
+              <div class="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center text-pink-600 dark:text-pink-400 mb-3 sm:mb-0 sm:mr-4">
+                 <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               </div>
               <div>
-                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pending ({{ currentMonthName }})</p>
-                 <p class="text-xl font-black text-pink-600">₹{{ schemePendingThisMonth | number:'1.0-0' }}</p>
+                 <p class="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1 sm:mb-0.5">Pending <span class="hidden md:inline">({{ currentMonthName }})</span></p>
+                 <p class="text-base sm:text-xl font-black text-pink-600">₹{{ schemePendingThisMonth | number:'1.0-0' }}</p>
               </div>
            </div>
         </div>
 
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-          <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-700 flex flex-col lg:flex-row justify-between lg:items-center bg-gray-50/50 dark:bg-gray-800/50 gap-4">
-            <div class="flex flex-col md:flex-row items-start md:items-center space-y-3 md:space-y-0 md:space-x-4 flex-1">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white shrink-0">Enrolled Customers</h3>
+          <div class="px-4 sm:px-6 py-5 border-b border-gray-100 dark:border-gray-700 flex flex-col lg:flex-row justify-between lg:items-center bg-gray-50/50 dark:bg-gray-800/50 gap-6">
+            <div class="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1 w-full">
+              <h3 class="text-lg font-black text-gray-900 dark:text-white shrink-0">Enrolled Customers</h3>
               
               <!-- Search & Filters -->
-              <div class="flex flex-1 w-full max-w-xl space-x-2">
+              <div class="flex flex-1 w-full max-w-2xl gap-2">
                 <div class="relative flex-1">
-                  <input type="text" [(ngModel)]="customerSearchQuery" placeholder="Search name, phone, username..." 
-                         class="w-full pl-9 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-500 transition-all">
-                  <svg class="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                  <input type="text" [(ngModel)]="customerSearchQuery" placeholder="Search customer..." 
+                         class="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 transition-all">
+                  <svg class="absolute left-3 top-3 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
                 <select [(ngModel)]="statusFilter" 
-                        class="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-purple-500">
+                        class="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-500 min-w-[120px]">
                    <option value="all">All Status</option>
                    <option value="Active">Active</option>
                    <option value="Inactive">Inactive</option>
                 </select>
               </div>
             </div>
-            <button (click)="openAddCustomerModal()" class="flex items-center px-4 py-2 font-semibold text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors text-sm self-end lg:self-auto uppercase tracking-wide">
-              <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <button (click)="openAddCustomerModal()" class="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-3 font-bold text-white bg-purple-600 rounded-xl hover:bg-purple-700 transition-all text-sm uppercase tracking-wide shadow-md hover:shadow-lg">
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
               Add New
             </button>
           </div>
@@ -178,7 +179,59 @@ import { AuthService } from '../../services/auth.service';
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
               </button>
             </div>
-            
+
+            <!-- Mode Switcher (only for Add, not Edit) -->
+            @if (!isEditModal) {
+              <div class="flex border-b border-gray-100 dark:border-gray-700">
+                <button type="button" (click)="existingMode = false"
+                  class="flex-1 py-3 text-sm font-bold transition-all"
+                  [class.text-purple-600]="!existingMode" [class.border-b-2]="!existingMode" [class.border-purple-600]="!existingMode"
+                  [class.text-gray-400]="existingMode">
+                  + New Customer
+                </button>
+                <button type="button" (click)="existingMode = true"
+                  class="flex-1 py-3 text-sm font-bold transition-all"
+                  [class.text-purple-600]="existingMode" [class.border-b-2]="existingMode" [class.border-purple-600]="existingMode"
+                  [class.text-gray-400]="!existingMode">
+                  Pick Existing
+                </button>
+              </div>
+
+              <!-- Existing Customer Picker -->
+              @if (existingMode) {
+                <div class="p-4 space-y-3 max-h-[60vh] flex flex-col">
+                  <div class="relative">
+                    <input type="text" [(ngModel)]="existingSearch" [ngModelOptions]="{standalone: true}"
+                      placeholder="Search name, phone or username..."
+                      class="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-purple-500">
+                    <svg class="absolute left-3 top-3 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                  </div>
+                  <div class="overflow-y-auto flex-1 space-y-2 pr-1">
+                    @for (cust of filteredExistingCustomers; track cust.phone) {
+                      <button type="button" (click)="selectExistingCustomer(cust)"
+                        class="w-full text-left p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all group">
+                        <div class="flex justify-between items-center">
+                          <div>
+                            <p class="font-bold text-sm text-gray-900 dark:text-white group-hover:text-purple-700 transition-colors">{{ cust.name }}</p>
+                            <p class="text-xs text-gray-400 mt-0.5">{{ cust.phone }}{{ cust.username ? ' · @' + cust.username : '' }}</p>
+                          </div>
+                          <svg class="w-4 h-4 text-gray-300 group-hover:text-purple-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                        </div>
+                      </button>
+                    }
+                    @if (filteredExistingCustomers.length === 0) {
+                      <div class="py-10 text-center">
+                        <p class="text-gray-400 text-sm">No matching customers found.</p>
+                        <p class="text-gray-400 text-xs mt-1">All existing customers may already be enrolled.</p>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            }
+
+            <!-- New Customer Form (shown when not in existing-pick mode OR in edit mode) -->
+            @if (isEditModal || !existingMode) {
             <form [formGroup]="customerForm" (ngSubmit)="saveCustomer()" class="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
               <!-- Basic Info -->
               <div class="space-y-4">
@@ -288,6 +341,7 @@ import { AuthService } from '../../services/auth.service';
                 </button>
               </div>
             </form>
+            }
           </div>
         </div>
       }
@@ -298,6 +352,7 @@ export class AdminChitDetailsComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private chittiService = inject(ChittiService);
+  private interestService = inject(InterestService);
   private customerService = inject(CustomerService);
   private fb = inject(FormBuilder);
   private toast = inject(ToastService);
@@ -305,7 +360,9 @@ export class AdminChitDetailsComponent implements OnInit {
 
   schemeId: string | null = null;
   scheme: ChittiScheme | null = null;
-  customers: Customer[] = [];
+  customers: Customer[] = [];             // customers in this scheme
+  allCustomers: Customer[] = [];          // ALL chitti customers (for picker)
+  interestBorrowers: any[] = [];          // borrowers from interest schemes (for picker)
 
   showModal = false;
   isEditModal = false;
@@ -313,6 +370,8 @@ export class AdminChitDetailsComponent implements OnInit {
   isSaving = false;
   customerSearchQuery = '';
   statusFilter = 'all';
+  existingMode = false;      // toggle inside add modal
+  existingSearch = '';       // search inside existing picker
 
   customerForm: FormGroup = this.fb.group({
     name: ['', Validators.required],
@@ -362,6 +421,17 @@ export class AdminChitDetailsComponent implements OnInit {
       this.loadScheme();
       this.loadCustomers();
     }
+    // Load all customers for the existing-picker
+    this.customerService.getAllCustomers().subscribe(data => this.allCustomers = data);
+    // Load interest borrowers for picker
+    this.interestService.getInterests().subscribe(schemes => {
+      this.interestBorrowers = schemes.map(s => ({
+        name: s.borrowerName,
+        phone: s.borrowerPhone,
+        email: s.borrowerEmail || '',
+        username: '' // Interest borrowers don't have default usernames, will be generated
+      })).filter(b => !!b.phone);
+    });
   }
 
   loadScheme() {
@@ -383,8 +453,58 @@ export class AdminChitDetailsComponent implements OnInit {
   openAddCustomerModal() {
     this.isEditModal = false;
     this.editingCustomerId = null;
+    this.existingMode = false;
+    this.existingSearch = '';
     this.customerForm.reset({ status: 'Active' });
     this.showModal = true;
+  }
+
+  /** Combined pool of Chitti customers and Interest borrowers minus those already in this scheme. */
+  get filteredExistingCustomers(): any[] {
+    const enrolledPhones = new Set(this.customers.map(c => c.phone));
+    
+    // Combine both pools
+    const chittiPool = this.allCustomers.map(c => ({
+      name: c.name,
+      phone: c.phone,
+      email: c.email || '',
+      username: c.username
+    }));
+
+    let fullPool = [...chittiPool, ...this.interestBorrowers];
+
+    // Filter out people already in this scheme by phone
+    let pool = fullPool.filter(p => !enrolledPhones.has(p.phone));
+
+    if (this.existingSearch.trim()) {
+      const q = this.existingSearch.toLowerCase();
+      pool = pool.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        p.phone.toLowerCase().includes(q) ||
+        (p.username && p.username.toLowerCase().includes(q))
+      );
+    }
+
+    // Deduplicate by phone
+    const seen = new Set<string>();
+    return pool.filter(p => {
+      if (seen.has(p.phone)) return false;
+      seen.add(p.phone);
+      return true;
+    });
+  }
+
+  /** Pre-fill the form from an existing customer record, switch to new-form mode. */
+  selectExistingCustomer(cust: Customer) {
+    this.existingMode = false;
+    this.customerForm.patchValue({
+      name: cust.name,
+      username: cust.username,
+      phone: cust.phone,
+      email: cust.email || '',
+      joinedDate: new Date().toISOString().split('T')[0],
+      status: 'Active'
+    });
   }
 
   openEditCustomerModal(customer: Customer) {

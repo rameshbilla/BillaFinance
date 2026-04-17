@@ -73,31 +73,33 @@ import { ToastService } from '../../shared/toast.service';
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
              <!-- Left Column: KPI Sidebar -->
              <div class="lg:col-span-4 space-y-6">
-                <!-- Snapshots stacked vertically -->
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-md">
-                   <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest">Original Principal</p>
-                   <p class="text-2xl font-black text-gray-900 dark:text-white mt-2">₹{{ scheme.amount | number:'1.0-0' }}</p>
-                   <div class="mt-2 h-1 w-12 bg-blue-500 rounded-full"></div>
-                </div>
-
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-green-100 dark:border-green-900/30 shadow-sm transition-all hover:shadow-md">
-                   <p class="text-[10px] text-green-600 dark:text-green-400 font-black uppercase tracking-widest">Total Settled</p>
-                   <p class="text-2xl font-black text-green-700 dark:text-green-300 mt-2">₹{{ totalSettled | number:'1.0-0' }}</p>
-                   <div class="mt-2 h-1 w-12 bg-green-500 rounded-full"></div>
-                </div>
-
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-red-100 dark:border-red-900/30 shadow-sm transition-all hover:shadow-md">
-                   <p class="text-[10px] text-red-600 dark:text-red-400 font-black uppercase tracking-widest">Current Balance</p>
-                   <p class="text-2xl font-black text-red-700 dark:text-red-400 mt-2">₹{{ currentBalance | number:'1.0-0' }}</p>
-                   <div class="mt-2 h-1 w-12 bg-red-500 rounded-full"></div>
-                </div>
-
-                <div class="bg-gradient-to-br from-indigo-600 to-purple-700 p-6 rounded-2xl shadow-lg relative overflow-hidden group">
-                   <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-125 transition-transform"></div>
-                   <p class="text-[10px] text-indigo-100 font-bold uppercase tracking-widest relative z-10">Monthly Interest</p>
-                   <p class="text-3xl font-black text-white mt-1 relative z-10">₹{{ currentMonthlyInterest | number:'1.0-0' }}</p>
-                   <p class="text-[10px] text-indigo-200 mt-1 font-medium italic relative z-10">Based on {{ currentBalance | number:'1.0-0' }} balance</p>
-                </div>
+          <style>
+            @keyframes kpiFadeIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+            .kpi-card { animation: kpiFadeIn 0.45s ease both; }
+          </style>
+          <div class="grid grid-cols-2 gap-4 mb-8">
+             <div class="kpi-card bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm" style="animation-delay:0.05s">
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Original Principal</p>
+                <p class="text-2xl font-black text-gray-900 dark:text-white">₹{{ scheme.amount | number:'1.0-0' }}</p>
+             </div>
+             <div class="kpi-card bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm" style="animation-delay:0.1s">
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Start Date</p>
+                <p class="text-base font-black text-blue-600 dark:text-blue-400">{{ scheme.startDate || '—' }}</p>
+             </div>
+             <div class="kpi-card bg-white dark:bg-gray-800 p-5 rounded-2xl border border-green-100 dark:border-green-900/30 shadow-sm" style="animation-delay:0.15s">
+                <p class="text-[10px] font-black text-green-600 uppercase tracking-widest mb-2">Total Settled</p>
+                <p class="text-2xl font-black text-green-700 dark:text-green-300">₹{{ totalSettled | number:'1.0-0' }}</p>
+             </div>
+             <div class="kpi-card bg-white dark:bg-gray-800 p-5 rounded-2xl border border-red-100 dark:border-red-900/30 shadow-sm" style="animation-delay:0.2s">
+                <p class="text-[10px] font-black text-red-600 uppercase tracking-widest mb-2">Current Balance</p>
+                <p class="text-2xl font-black text-red-700 dark:text-red-400">₹{{ currentBalance | number:'1.0-0' }}</p>
+             </div>
+             <div class="kpi-card col-span-2 bg-gradient-to-br from-gray-900 to-gray-800 dark:from-black dark:to-gray-900 p-5 rounded-2xl shadow-lg relative overflow-hidden" style="animation-delay:0.25s">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/20 rounded-full blur-xl"></div>
+                <p class="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1 relative z-10">Monthly Interest ({{ scheme.interestRate }}%)</p>
+                <p class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400 mt-1 relative z-10">₹{{ currentMonthlyInterest | number:'1.0-0' }}</p>
+             </div>
+          </div>
 
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-indigo-100 dark:border-indigo-900/30 shadow-sm transition-all hover:shadow-md">
                    <p class="text-[10px] text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-widest">Total Interest Collected</p>

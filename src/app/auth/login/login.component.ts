@@ -20,6 +20,11 @@ export class LoginComponent {
   private toastService = inject(ToastService);
 
   isLoading = signal(false);
+  showPassword = false;
+
+  togglePassword() {
+    this.showPassword = !this.showPassword;
+  }
 
   loginForm: FormGroup = this.fb.group({
     email: ['', [Validators.required]],

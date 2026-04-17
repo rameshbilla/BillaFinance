@@ -1,5 +1,4 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { RecaptchaVerifier } from '@angular/fire/auth';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -42,66 +41,72 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" *ngIf="profile$ | async as profile">
         
         <!-- Total Balance Card -->
-        <div class="bg-gradient-to-br from-purple-600 to-pink-500 rounded-[2rem] p-6 sm:p-8 shadow-xl mb-8 text-white relative overflow-hidden">
-           <div class="absolute top-0 right-0 p-12 opacity-10">
+        <div class="bg-gradient-to-br from-purple-600 to-pink-500 rounded-[2rem] p-6 sm:p-10 shadow-xl mb-8 sm:mb-12 text-white relative overflow-hidden">
+           <div class="absolute top-0 right-0 p-12 opacity-10 hidden sm:block">
               <svg class="w-48 h-48" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.11-1.36-3.11-3.09h2.38c0 1.04 1.15 1.51 2.05 1.51 1.48 0 2.22-.72 2.22-1.63 0-2.31-4.78-1.22-4.78-4.73 0-1.54 1.19-2.61 2.91-2.94V5.1h2.67v1.93c1.68.32 2.76 1.43 2.85 2.89h-2.32c-.11-.84-.96-1.35-1.91-1.35-1.07 0-2.14.54-2.14 1.5 0 2.23 4.78 1.16 4.78 4.79 0 1.83-1.42 2.87-2.93 3.23z"/></svg>
            </div>
            
-           <div class="relative z-10">
-              <p class="text-purple-100 font-medium tracking-wide">Net Outstanding Dues</p>
-              <h2 class="text-3xl sm:text-5xl font-extrabold mt-2 mb-4">₹{{ totalDues$ | async | number:'1.0-0' }}</h2>
-              <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 mt-6">
-                   <button class="px-6 py-2.5 bg-white text-purple-700 rounded-xl font-bold shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all text-sm">Customer Support</button>
-                   <button (click)="showProfileModal = true" class="px-6 py-2.5 bg-white/20 border border-white/30 text-white rounded-xl font-bold hover:bg-white/30 transition-all text-sm backdrop-blur-sm">Change Password</button>
+           <div class="relative z-10 text-center sm:text-left">
+              <p class="text-purple-100 font-bold tracking-widest text-xs uppercase mb-1">Total Outstanding Dues</p>
+              <h2 class="text-4xl sm:text-6xl font-black mt-2 mb-6">₹{{ totalDues$ | async | number:'1.0-0' }}</h2>
+              <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                    <button class="px-8 py-3 bg-white text-purple-700 rounded-2xl font-black shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all text-sm w-full sm:w-auto">Customer Support</button>
+                    <button (click)="showProfileModal = true" class="px-8 py-3 bg-white/20 border border-white/30 text-white rounded-2xl font-black hover:bg-white/30 transition-all text-sm backdrop-blur-sm w-full sm:w-auto">Change Password</button>
                </div>
            </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
           
           <!-- My Chit Schemes -->
-          <div>
-            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">My Chit Schemes</h3>
-            <div class="space-y-4">
-                <div *ngFor="let record of chitRecords$ | async" class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden group">
-                   <div class="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-indigo-400 to-purple-500 rounded-l-2xl"></div>
-                   <div class="flex justify-between items-start">
-                      <div>
-                         <h4 class="font-bold text-gray-900 dark:text-white text-lg">{{ record.scheme.name }}</h4>
-                         <p class="text-gray-500 text-sm mt-1">₹{{ record.scheme.monthlyAmount }}/mo • Valued at ₹{{ record.scheme.totalValue }}</p>
-                         <p class="text-[10px] text-gray-400 mt-2 uppercase tracking-wider">Joined: {{ record.customer.joinedDate }}</p>
+          <div class="space-y-6">
+            <h3 class="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+              <span class="w-1.5 h-6 bg-purple-600 rounded-full"></span>
+              My Chit Schemes
+            </h3>
+            <div class="grid grid-cols-1 gap-4">
+                <div *ngFor="let record of chitRecords$ | async" class="bg-white dark:bg-gray-800 rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden group hover:shadow-md transition-shadow">
+                   <div class="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-indigo-400 to-purple-500"></div>
+                   <div class="flex justify-between items-start gap-4">
+                      <div class="min-w-0">
+                         <h4 class="font-black text-gray-900 dark:text-white text-lg truncate">{{ record.scheme.name }}</h4>
+                         <p class="text-gray-500 text-xs mt-1 font-medium">₹{{ record.scheme.monthlyAmount }}/mo • Valued at ₹{{ record.scheme.totalValue }}</p>
+                         <p class="text-[10px] text-gray-400 mt-2 uppercase tracking-wider font-bold">Joined: {{ record.customer.joinedDate }}</p>
                       </div>
-                      <div class="text-right">
-                         <p class="text-[10px] text-gray-500 uppercase">Pending</p>
-                         <p class="text-lg font-bold text-pink-600">₹{{ getChitPending(record.scheme, record.customer) | number:'1.0-0' }}</p>
-                         <p class="text-[10px] text-green-600 font-medium">Paid: ₹{{ getChitPaid(record.customer) }}</p>
+                      <div class="text-right shrink-0">
+                         <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Pending</p>
+                         <p class="text-xl font-black text-pink-600 leading-tight">₹{{ getChitPending(record.scheme, record.customer) | number:'1.0-0' }}</p>
+                         <p class="text-[10px] text-green-600 font-black mt-1 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full inline-block">Paid: ₹{{ getChitPaid(record.customer) }}</p>
                       </div>
                    </div>
                 </div>
-                <div *ngIf="(chitRecords$ | async)?.length === 0" class="p-8 text-center bg-gray-100 dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
-                  <p class="text-gray-500">You haven't joined any schemes yet.</p>
+                <div *ngIf="(chitRecords$ | async)?.length === 0" class="p-12 text-center bg-gray-100 dark:bg-gray-800 rounded-[2rem] border border-dashed border-gray-300 dark:border-gray-700">
+                  <p class="text-gray-500 font-medium">You haven't joined any schemes yet.</p>
                </div>
             </div>
           </div>
 
           <!-- My Loans -->
-          <div>
-            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Active Loans</h3>
-            <div class="space-y-4">
-               <div *ngFor="let loan of loans$ | async" class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-                  <div class="flex justify-between mb-4">
-                     <div>
-                        <h4 class="font-bold text-gray-900 dark:text-white text-lg">{{ loan.name }}</h4>
-                        <p class="text-gray-500 text-sm">Principal: ₹{{ loan.amount }} &#64; {{ loan.interestRate }}%</p>
+          <div class="space-y-6">
+            <h3 class="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+              <span class="w-1.5 h-6 bg-blue-600 rounded-full"></span>
+              Active Loans
+            </h3>
+            <div class="grid grid-cols-1 gap-4">
+               <div *ngFor="let loan of loans$ | async" class="bg-white dark:bg-gray-800 rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
+                  <div class="flex justify-between items-start gap-4">
+                     <div class="min-w-0">
+                        <h4 class="font-black text-gray-900 dark:text-white text-lg truncate">{{ loan.name }}</h4>
+                        <p class="text-gray-500 text-xs font-medium mt-1">Principal: ₹{{ loan.amount }} &#64; {{ loan.interestRate }}%</p>
                      </div>
-                     <div class="text-right">
-                        <p class="text-sm text-gray-500">Remaining Balance</p>
-                        <p class="font-bold text-gray-900 dark:text-white text-lg text-pink-600">₹{{ getBalance(loan) | number:'1.0-0' }}</p>
+                     <div class="text-right shrink-0">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Balance</p>
+                        <p class="font-black text-pink-600 text-xl leading-tight">₹{{ getBalance(loan) | number:'1.0-0' }}</p>
                      </div>
                   </div>
                </div>
-               <div *ngIf="(loans$ | async)?.length === 0" class="p-8 text-center bg-gray-100 dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
-                  <p class="text-gray-500">No active loans found.</p>
+               <div *ngIf="(loans$ | async)?.length === 0" class="p-12 text-center bg-gray-100 dark:bg-gray-800 rounded-[2rem] border border-dashed border-gray-300 dark:border-gray-700">
+                  <p class="text-gray-500 font-medium">No active loans found.</p>
                </div>
             </div>
           </div>
@@ -112,52 +117,48 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
       <!-- Profile / Change Password Modal -->
       @if (showProfileModal) {
         <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-           <div id="recaptcha-container"></div>
            <div class="bg-white dark:bg-gray-800 rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl transition-all border border-purple-100 dark:border-gray-700">
               <div class="p-8">
                  <div class="flex justify-between items-center mb-6">
                    <div>
-                      <h3 class="text-2xl font-black text-gray-900 dark:text-white">Security Verify</h3>
-                      <p class="text-sm text-gray-500">OTP via {{ profile?.phone }}</p>
+                      <h3 class="text-2xl font-black text-gray-900 dark:text-white">Change Password</h3>
+                      <p class="text-sm text-gray-500">Verify current password then set a new one</p>
                    </div>
                    <button (click)="closeProfileModal()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
                       <svg class="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                    </button>
                  </div>
 
-                 @if (!otpSent) {
-                   <div class="text-center space-y-6">
-                      <div class="p-6 bg-purple-50 dark:bg-purple-900/20 rounded-3xl">
-                         <svg class="w-12 h-12 text-purple-600 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                         <p class="text-sm text-gray-600 dark:text-gray-400">We will send a 6-digit code to your registered mobile number to verify your identity.</p>
-                      </div>
-                      <button (click)="sendOtp()" [disabled]="isUpdating"
-                              class="w-full py-4 bg-purple-600 text-white rounded-2xl font-black shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:-translate-y-1 transition-all disabled:opacity-50">
-                         {{ isUpdating ? 'Sending...' : 'Send OTP' }}
-                      </button>
-                   </div>
-                 } @else {
-                   <form [formGroup]="passwordForm" (ngSubmit)="updatePasswordWithOtp()" class="space-y-4">
-                      <div>
-                         <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">6-Digit OTP</label>
-                         <input type="text" formControlName="otp" 
-                                class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-none outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white tracking-[0.5em] text-center font-bold" 
-                                placeholder="000000" maxlength="6">
-                      </div>
+                 <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="space-y-4">
+                    <div>
+                       <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Current Password</label>
+                       <input type="password" formControlName="currentPassword"
+                              class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-none outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white"
+                              placeholder="Enter current password">
+                    </div>
 
-                      <div class="pt-4 border-t border-gray-100 dark:border-gray-700">
-                         <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">New Password</label>
-                         <input type="password" formControlName="newPassword" 
-                                class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-none outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white" 
-                                placeholder="Min 6 characters">
-                      </div>
+                    <div>
+                       <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">New Password</label>
+                       <input type="password" formControlName="newPassword"
+                              class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-none outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white"
+                              placeholder="Min 6 characters">
+                    </div>
 
-                      <button type="submit" [disabled]="passwordForm.invalid || isUpdating"
-                              class="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-2xl font-black shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:-translate-y-1 transition-all disabled:opacity-50">
-                         {{ isUpdating ? 'Verifying...' : 'Verify & Update' }}
-                      </button>
-                   </form>
-                 }
+                    <div>
+                       <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Confirm New Password</label>
+                       <input type="password" formControlName="confirmPassword"
+                              class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-none outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white"
+                              placeholder="Repeat new password">
+                       @if (passwordForm.errors?.['mismatch'] && passwordForm.get('confirmPassword')?.dirty) {
+                         <p class="text-red-500 text-xs mt-1">Passwords do not match.</p>
+                       }
+                    </div>
+
+                    <button type="submit" [disabled]="passwordForm.invalid || isUpdating"
+                            class="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-2xl font-black shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:-translate-y-1 transition-all disabled:opacity-50">
+                       {{ isUpdating ? 'Updating...' : 'Update Password' }}
+                    </button>
+                 </form>
               </div>
            </div>
         </div>
@@ -181,14 +182,20 @@ export class DashboardComponent implements OnInit {
 
   showProfileModal = false;
   isUpdating = false;
-  otpSent = false;
-  confirmationResult: any;
   profile: any;
 
+  // Custom password change validator
+  private passwordMatchValidator(group: FormGroup) {
+    const np = group.get('newPassword')?.value;
+    const cp = group.get('confirmPassword')?.value;
+    return np && cp && np !== cp ? { mismatch: true } : null;
+  }
+
   passwordForm: FormGroup = this.fb.group({
-     otp: ['', [Validators.required, Validators.pattern(/^[0-9]{6}$/)]],
-     newPassword: ['', [Validators.required, Validators.minLength(6)]]
-  });
+    currentPassword: ['', [Validators.required]],
+    newPassword: ['', [Validators.required, Validators.minLength(6)]],
+    confirmPassword: ['', [Validators.required]]
+  }, { validators: (g: any) => this.passwordMatchValidator(g) });
 
   ngOnInit() {
     this.profile$.subscribe(p => this.profile = p);
@@ -264,55 +271,29 @@ export class DashboardComponent implements OnInit {
     return Math.max(0, totalPayable - paid);
   }
 
-  async updatePasswordWithOtp() {
-    if (this.passwordForm.valid && this.confirmationResult) {
-       this.isUpdating = true;
-       try {
-          await this.authService.verifyOtpAndChangePassword(
-            this.confirmationResult, 
-            this.passwordForm.value.otp, 
-            this.passwordForm.value.newPassword,
-            this.profile?.username || ''
-          );
-          this.toast.success('Password updated successfully via Phone OTP!');
-          this.closeProfileModal();
-       } catch (error: any) {
-          console.error(error);
-          this.toast.error(error.message || 'OTP verification failed. Please try again.');
-       } finally {
-          this.isUpdating = false;
-       }
+  async changePassword() {
+    if (this.passwordForm.invalid) return;
+    const { currentPassword, newPassword } = this.passwordForm.value;
+    const username = this.profile?.username;
+    if (!username) {
+      this.toast.error('Could not determine your username. Please re-login.');
+      return;
     }
-  }
-
-  async sendOtp() {
-    if (!this.profile?.phone) {
-       this.toast.error('No phone number found for this account.');
-       return;
-    }
-    
     this.isUpdating = true;
     try {
-       // Initialize Recaptcha
-       const recaptchaVerifier = new RecaptchaVerifier(this.authService.firebaseAuth, 'recaptcha-container', {
-          size: 'invisible'
-       });
-       
-       this.confirmationResult = await this.authService.sendOtpWithPhoneNumber(this.profile.phone, recaptchaVerifier);
-       this.otpSent = true;
-       this.toast.success('OTP sent to your mobile number.');
+      // Verify current password against Firestore credential
+      await this.authService.verifyAndChangePassword(username, currentPassword, newPassword);
+      this.toast.success('Password updated successfully!');
+      this.closeProfileModal();
     } catch (error: any) {
-       console.error(error);
-       this.toast.error(error.message || 'Failed to send OTP. Please check your network.');
+      this.toast.error(error.message || 'Failed to update password. Please try again.');
     } finally {
-       this.isUpdating = false;
+      this.isUpdating = false;
     }
   }
 
   closeProfileModal() {
      this.showProfileModal = false;
-     this.otpSent = false;
-     this.confirmationResult = null;
      this.passwordForm.reset();
   }
 

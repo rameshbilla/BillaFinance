@@ -161,6 +161,20 @@ export class AuthService {
     await setDoc(credRef, { ...snap.data(), password: newPassword });
   }
 
+  /**
+   * Verify current password then change to a new one (no Firebase Auth required)
+   */
+  async verifyAndChangePassword(username: string, currentPassword: string, newPassword: string) {
+    const clean = username.trim().replace(/^@/, '');
+    const credRef = doc(this.firestore, `customer_credentials/${clean}`);
+    const snap = await getDoc(credRef);
+    if (!snap.exists()) throw new Error('Account not found. Please contact your admin.');
+    const stored = snap.data()['password'];
+    if (stored !== currentPassword) throw new Error('Current password is incorrect. Please try again.');
+    await setDoc(credRef, { ...snap.data(), password: newPassword });
+    // Update the local session with new password awareness (re-login not needed)
+  }
+
   async sendOtpWithPhoneNumber(phone: string, recaptchaVerifier: RecaptchaVerifier) {
     const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
     return await signInWithPhoneNumber(this.auth, formattedPhone, recaptchaVerifier);

@@ -22,12 +22,12 @@ import { animate, style, transition, trigger } from '@angular/animations';
     <div class="fixed top-5 right-5 z-[100] flex flex-col gap-3 pointer-events-none sm:max-w-md w-full sm:w-auto px-4 sm:px-0">
       @for (toast of toastService.toasts(); track toast.id) {
         <div @toastAnimation
-             class="pointer-events-auto flex items-center w-full sm:min-w-[300px] sm:max-w-md p-4 rounded-xl shadow-xl backdrop-blur-md border text-sm font-medium"
+             class="pointer-events-auto flex items-center w-full sm:min-w-[300px] sm:max-w-md p-4 rounded-xl shadow-2xl border text-sm font-semibold"
              [ngClass]="{
-               'bg-green-500/10 border-green-500/20 text-green-900 dark:text-green-100': toast.type === 'success',
-               'bg-red-500/10 border-red-500/20 text-red-900 dark:text-red-100': toast.type === 'error',
-               'bg-yellow-500/10 border-yellow-500/20 text-yellow-900 dark:text-yellow-100': toast.type === 'warning',
-               'bg-blue-500/10 border-blue-500/20 text-blue-900 dark:text-blue-100': toast.type === 'info'
+               'bg-emerald-600 border-emerald-500 text-white': toast.type === 'success',
+               'bg-red-600 border-red-500 text-white': toast.type === 'error',
+               'bg-amber-500 border-amber-400 text-white': toast.type === 'warning',
+               'bg-blue-600 border-blue-500 text-white': toast.type === 'info'
              }">
           
           <div class="mr-3">
