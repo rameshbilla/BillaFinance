@@ -16,6 +16,7 @@ export const routes: Routes = [
       { path: 'create-interest', loadComponent: () => import('./admin/interest-create/interest-create.component').then(m => m.AdminInterestCreateComponent) },
       { path: 'edit-interest/:id', loadComponent: () => import('./admin/interest-create/interest-create.component').then(m => m.AdminInterestCreateComponent) },
       { path: 'interest/:id', loadComponent: () => import('./admin/interest-details/interest-details.component').then(m => m.AdminInterestDetailsComponent) },
+      { path: 'manage-admins', loadComponent: () => import('./admin/manage-admins/manage-admins.component').then(m => m.ManageAdminsComponent) },
     ]
   },
   { 

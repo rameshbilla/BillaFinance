@@ -498,7 +498,7 @@ export class CustomerDashboardComponent implements OnInit {
           this.authService.userProfile$.subscribe(p => resolve(p));
         });
         if (profileVal?.username) {
-          await this.authService.changeCustomerPassword(profileVal.username, this.passwordForm.value.newPassword);
+          await this.authService.changePassword(profileVal.username, this.passwordForm.value.newPassword, 'customer');
           this.toast.success('Password updated successfully!');
           this.passwordForm.reset();
           this.activeTab = 'home';

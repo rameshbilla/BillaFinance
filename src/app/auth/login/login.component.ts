@@ -46,7 +46,7 @@ export class LoginComponent {
         ).subscribe(profile => {
           if (profile) {
             this.toastService.success(`Welcome back, ${profile.displayName}!`);
-            if (profile.role === 'admin') {
+            if (profile.role === 'admin' || profile.role === 'super-admin') {
               this.router.navigate(['/admin']);
             } else {
               this.router.navigate(['/customer']);

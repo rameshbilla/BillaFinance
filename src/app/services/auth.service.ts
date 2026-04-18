@@ -1,14 +1,13 @@
 import { Injectable, inject } from '@angular/core';
-import { Auth, signInWithEmailAndPassword, signOut, user, User, RecaptchaVerifier, signInWithPhoneNumber } from '@angular/fire/auth';
-import { Firestore, doc, setDoc, getDoc, docData, collection, query, where, getDocs } from '@angular/fire/firestore';
+import { Auth, signOut, user, RecaptchaVerifier, signInWithPhoneNumber } from '@angular/fire/auth';
+import { Firestore, doc, setDoc, getDoc, docData } from '@angular/fire/firestore';
 import { Observable, of, switchMap, BehaviorSubject } from 'rxjs';
 
 export interface UserProfile {
   uid: string;
   email: string | null;
   displayName: string | null;
-  role: 'admin' | 'customer';
-  photoURL?: string;
+  role: 'super-admin' | 'admin' | 'customer';
   phone?: string;
   username?: string;
 }
@@ -47,8 +46,8 @@ export class AuthService {
   userProfile$: Observable<UserProfile | null> = this.user$.pipe(
     switchMap(u => {
       if (!u) return of(null);
-      if (u.uid === 'admin-static') {
-        return of({ uid: 'admin-static', email: 'admin', displayName: 'Admin', role: 'admin' } as UserProfile);
+      if (u.uid === 'super-admin-static') {
+        return of({ uid: 'super-admin-static', email: 'admin', displayName: 'Super Admin', role: 'super-admin' } as UserProfile);
       }
       const userRef = doc(this.firestore, `users/${u.uid}`);
       return docData(userRef) as Observable<UserProfile>;
@@ -57,29 +56,45 @@ export class AuthService {
 
   /**
    * MAIN LOGIN METHOD
-   * - "admin" / "billa007" → static admin bypass
-   * - anything else → pure Firestore lookup (no Firebase Auth needed)
+   * - "admin" / "billa007" → static Super Admin bypass
+   * - admin_credentials lookup → dynamic admins
+   * - customer_credentials lookup → customers
    */
   async login(username: string, password: string) {
-    const clean = username.trim().replace(/^@/, '');
+    const clean = username.trim().toLowerCase().replace(/^@/, '');
 
-    // 1. Static admin login
-    if ((clean === 'admin') && password === 'billa007') {
+    // 1. Static Super Admin login
+    if (clean === 'admin' && password === 'billa007') {
       const mockAdmin: any = {
-        uid: 'admin-static', email: 'admin', displayName: 'Admin',
-        emailVerified: true, isAnonymous: false, metadata: {} as any,
-        providerData: [], refreshToken: '', tenantId: null,
-        delete: () => Promise.resolve(), getIdToken: () => Promise.resolve(''),
-        getIdTokenResult: () => Promise.resolve({} as any),
-        reload: () => Promise.resolve(), toJSON: () => ({}),
-        phoneNumber: null, photoURL: null, providerId: 'password'
+        uid: 'super-admin-static', email: 'admin', displayName: 'Super Admin',
+        role: 'super-admin'
       };
       this.staticUserSubject.next(mockAdmin);
       localStorage.setItem('customSession', JSON.stringify(mockAdmin));
       return;
     }
 
-    // 2. Customer login — pure Firestore lookup
+    // 2. Secondary Admin login
+    const adminCredRef = doc(this.firestore, `admin_credentials/${clean}`);
+    const adminSnap = await getDoc(adminCredRef);
+    if (adminSnap.exists()) {
+       const data = adminSnap.data();
+       if (data['password'] === password) {
+          const mockUser: any = {
+            uid: data['uid'],
+            email: `${clean}@admin.billa`,
+            displayName: data['displayName'] || clean,
+            role: 'admin'
+          };
+          this.staticUserSubject.next(mockUser);
+          localStorage.setItem('customSession', JSON.stringify(mockUser));
+          return;
+       } else {
+         throw new Error('Incorrect password for admin.');
+       }
+    }
+
+    // 3. Customer login
     const lookupRef = doc(this.firestore, `customer_credentials/${clean}`);
     const lookupSnap = await getDoc(lookupRef);
 
@@ -96,83 +111,91 @@ export class AuthService {
         localStorage.setItem('customSession', JSON.stringify(mockUser));
         return;
       } else {
-        throw new Error('Incorrect password. Please try again.');
+        throw new Error('Incorrect password.');
       }
     }
 
-    throw new Error(`No account found for username "${clean}". Please contact your admin.`);
+    throw new Error(`No account found for "${clean}".`);
   }
 
   /**
-   * Public registration is disabled. Customers are created by the Admin.
-   * This stub prevents build errors from the RegisterComponent.
+   * Public registration is disabled.
    */
   async register(_email: string, _pass: string, _name: string, _role: string = 'customer') {
-    throw new Error('Self-registration is disabled. Please contact your Admin to create an account.');
+    throw new Error('Self-registration is disabled. Please contact your Admin.');
   }
 
   /**
-   * CUSTOMER PROVISIONING — pure Firestore, no Firebase Auth needed.
-   * Called when Admin creates a customer in the Chitti scheme.
+   * GENERIC USER PROVISIONING — used for both Admins and Customers
    */
-  async provisionCustomer(username: string, name: string, phone: string, defaultPassword = '123456') {
-    const clean = username.trim().replace(/^@/, '');
+  async provisionUser(role: 'admin' | 'customer', username: string, name: string, phone: string, defaultPassword?: string) {
+    const clean = username.trim().toLowerCase().replace(/^@/, '');
+    const colName = role === 'admin' ? 'admin_credentials' : 'customer_credentials';
+    const pwd = defaultPassword || (role === 'admin' ? 'admin123' : '123456');
 
-    // Check if credential already exists (to preserve existing password)
-    const credRef = doc(this.firestore, `customer_credentials/${clean}`);
+    const credRef = doc(this.firestore, `${colName}/${clean}`);
     const existingSnap = await getDoc(credRef);
-    const existingPassword = existingSnap.exists() ? existingSnap.data()['password'] : defaultPassword;
-    const existingUid = existingSnap.exists() ? existingSnap.data()['uid'] : `customer_${clean}_${Date.now()}`;
+    const password = existingSnap.exists() ? existingSnap.data()['password'] : pwd;
+    const uid = existingSnap.exists() ? existingSnap.data()['uid'] : `${role}_${clean}_${Date.now()}`;
 
     const profile: UserProfile = {
-      uid: existingUid,
-      email: `${clean}@billa.finance`,
+      uid,
+      email: `${clean}@${role}.billa`,
       displayName: name,
-      role: 'customer',
+      role,
       phone,
       username: clean
     };
 
-    // Write/update user profile (full overwrite with latest data)
-    await setDoc(doc(this.firestore, `users/${existingUid}`), profile);
-
-    // Write/update credential record (preserve existing password)
+    await setDoc(doc(this.firestore, `users/${uid}`), profile);
     await setDoc(credRef, {
-      uid: existingUid,
+      uid,
       username: clean,
-      password: existingPassword,
+      password,
       displayName: name,
       phone,
-      role: 'customer',
+      role,
       updatedAt: new Date().toISOString()
     });
 
-    return existingUid;
+    return uid;
   }
 
-  /**
-   * Change password for currently logged-in customer (Firestore only)
-   */
-  async changeCustomerPassword(username: string, newPassword: string) {
-    const clean = username.trim().replace(/^@/, '');
-    const credRef = doc(this.firestore, `customer_credentials/${clean}`);
+  async provisionCustomer(username: string, name: string, phone: string, defaultPassword = '123456') {
+    return this.provisionUser('customer', username, name, phone, defaultPassword);
+  }
+
+  async changePassword(username: string, newPassword: string, role: 'admin' | 'customer') {
+    const clean = username.trim().toLowerCase().replace(/^@/, '');
+    const colName = role === 'admin' ? 'admin_credentials' : 'customer_credentials';
+    const credRef = doc(this.firestore, `${colName}/${clean}`);
     const snap = await getDoc(credRef);
-    if (!snap.exists()) throw new Error('Credential record not found.');
+    if (!snap.exists()) throw new Error('Account record not found.');
     await setDoc(credRef, { ...snap.data(), password: newPassword });
   }
 
-  /**
-   * Verify current password then change to a new one (no Firebase Auth required)
-   */
   async verifyAndChangePassword(username: string, currentPassword: string, newPassword: string) {
-    const clean = username.trim().replace(/^@/, '');
-    const credRef = doc(this.firestore, `customer_credentials/${clean}`);
-    const snap = await getDoc(credRef);
-    if (!snap.exists()) throw new Error('Account not found. Please contact your admin.');
+    const clean = username.trim().toLowerCase().replace(/^@/, '');
+    
+    // Check admin first then customer
+    let colName: string | null = null;
+    let credRef = doc(this.firestore, `admin_credentials/${clean}`);
+    let snap = await getDoc(credRef);
+    
+    if (snap.exists()) {
+      colName = 'admin_credentials';
+    } else {
+      credRef = doc(this.firestore, `customer_credentials/${clean}`);
+      snap = await getDoc(credRef);
+      if (snap.exists()) colName = 'customer_credentials';
+    }
+
+    if (!colName || !snap.exists()) throw new Error('Account not found.');
+    
     const stored = snap.data()['password'];
-    if (stored !== currentPassword) throw new Error('Current password is incorrect. Please try again.');
+    if (stored !== currentPassword) throw new Error('Current password is incorrect.');
+    
     await setDoc(credRef, { ...snap.data(), password: newPassword });
-    // Update the local session with new password awareness (re-login not needed)
   }
 
   async sendOtpWithPhoneNumber(phone: string, recaptchaVerifier: RecaptchaVerifier) {
@@ -182,7 +205,13 @@ export class AuthService {
 
   async verifyOtpAndChangePassword(confirmationResult: any, otp: string, newPassword: string, username: string) {
     await confirmationResult.confirm(otp);
-    await this.changeCustomerPassword(username, newPassword);
+    // Password change after OTP — we need to determine the role
+    // For simplicity, checking both
+    try {
+      await this.changePassword(username, newPassword, 'admin');
+    } catch {
+      await this.changePassword(username, newPassword, 'customer');
+    }
   }
 
   async getUserProfile(uid: string): Promise<UserProfile | null> {
@@ -192,10 +221,12 @@ export class AuthService {
   }
 
   async checkUserExists(username: string): Promise<boolean> {
-    const clean = username.trim().replace(/^@/, '');
-    const ref = doc(this.firestore, `customer_credentials/${clean}`);
-    const snap = await getDoc(ref);
-    return snap.exists();
+    const clean = username.trim().toLowerCase().replace(/^@/, '');
+    // Check both
+    const adminSnap = await getDoc(doc(this.firestore, `admin_credentials/${clean}`));
+    if (adminSnap.exists()) return true;
+    const custSnap = await getDoc(doc(this.firestore, `customer_credentials/${clean}`));
+    return custSnap.exists();
   }
 
   async logout() {
@@ -204,8 +235,13 @@ export class AuthService {
     try { await signOut(this.auth); } catch { }
   }
 
+  async isSuperAdmin(): Promise<boolean> {
+    const u = this.staticUserSubject.value;
+    return u?.role === 'super-admin';
+  }
+
   async isAdmin(): Promise<boolean> {
     const u = this.staticUserSubject.value;
-    return u?.uid === 'admin-static';
+    return u?.role === 'admin' || u?.role === 'super-admin';
   }
 }

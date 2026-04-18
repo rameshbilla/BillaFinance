@@ -5,8 +5,10 @@ import { ChittiService, ChittiScheme } from '../services/chitti.service';
 import { InterestService, InterestScheme } from '../services/interest.service';
 import { CustomerService, Customer } from '../services/customer.service';
 import { ToastService } from '../../shared/toast.service';
-import { AuthService } from '../../services/auth.service';
+import { AuthService, UserProfile } from '../../services/auth.service';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Firestore, collection, collectionData, query, where, deleteDoc, doc } from '@angular/fire/firestore';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -108,6 +110,12 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
               <span class="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-500">FinServe Admin</span>
             </div>
             <div class="flex space-x-2 items-center" *ngIf="authService.userProfile$ | async as profile">
+              <!-- Super Admin Controls -->
+              <button *ngIf="isSuperAdmin" (click)="goToManageAdmins()" class="p-2.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all mr-1 flex items-center gap-2" title="Manage Admin Members">
+                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                 <span class="text-[10px] font-black uppercase tracking-widest hidden lg:inline">Manage Admins</span>
+              </button>
+              
               <!-- Theme Toggle -->
               <button (click)="toggleTheme()" class="p-2.5 text-gray-400 hover:text-purple-600 transition-colors mr-1">
                  <svg *ngIf="!isDarkMode" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
@@ -127,27 +135,96 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
 
-        <!-- Tab Switcher -->
-        <div class="hidden sm:flex p-1.5 bg-gray-200/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl w-full sm:max-w-sm mb-8 relative gap-1 overflow-x-auto no-scrollbar whitespace-nowrap border border-gray-100 dark:border-gray-700">
-          <button (click)="activeTab = 'chitti'; activeMobileMenu = 'chitti'"
+        <!-- Tab Switcher (Only for regular admins or Super Admin Security) -->
+        <div class="hidden sm:flex p-1.5 bg-gray-200/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl w-full sm:max-w-md mb-8 relative gap-1 overflow-x-auto no-scrollbar whitespace-nowrap border border-gray-100 dark:border-gray-700">
+          <button *ngIf="!isSuperAdmin" (click)="activeTab = 'chitti'; activeMobileMenu = 'chitti'"
                   [class.tab-active]="activeTab === 'chitti'"
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
             CHITTI
           </button>
-          <button (click)="activeTab = 'interest'; activeMobileMenu = 'interest'"
+          <button *ngIf="!isSuperAdmin" (click)="activeTab = 'interest'; activeMobileMenu = 'interest'"
                   [class.tab-active]="activeTab === 'interest'"
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
             LOANS
           </button>
-          <button (click)="activeTab = 'customers'; activeMobileMenu = 'customers'"
+          <button *ngIf="!isSuperAdmin" (click)="activeTab = 'customers'; activeMobileMenu = 'customers'"
                   [class.tab-active]="activeTab === 'customers'"
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
             CUSTOMERS
           </button>
+          <button (click)="activeTab = 'security'; activeMobileMenu = 'security'"
+                  [class.tab-active]="activeTab === 'security'"
+                  class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
+            SECURITY
+          </button>
         </div>
 
-        <!-- ═══════════ CHITTI DASHBOARD ═══════════ -->
-        @if (activeTab === 'chitti') {
+        <!-- ═══════════ SUPER ADMIN VIEW ═══════════ -->
+        @if (isSuperAdmin && activeTab !== 'security') {
+           <div class="space-y-10 card-animate">
+              <!-- Admin Creation Form -->
+              <section class="bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-xl border border-gray-100 dark:border-gray-800 p-8">
+                 <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-6 uppercase tracking-tighter">Register Admin Member</h2>
+                 <form [formGroup]="adminForm" (ngSubmit)="createAdminMember()" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <div>
+                          <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Full Name</label>
+                          <input type="text" formControlName="name" placeholder="Enter Full Name"
+                             class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                       </div>
+                       <div>
+                          <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Username (Login ID)</label>
+                          <input type="text" formControlName="username" placeholder="Login username"
+                             class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-black">
+                       </div>
+                       <div>
+                          <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Phone Number</label>
+                          <input type="tel" formControlName="phone" placeholder="10 Digit Number"
+                             class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                       </div>
+                       <div>
+                          <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Default Password</label>
+                          <input type="text" readonly value="admin123"
+                             class="w-full px-5 py-4 rounded-2xl bg-gray-100/50 dark:bg-gray-800/30 border-none text-gray-400 font-mono text-xs cursor-not-allowed">
+                       </div>
+                    </div>
+                    <div class="flex justify-end pt-4">
+                       <button type="submit" [disabled]="adminForm.invalid || isSaving"
+                          class="px-10 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all">
+                          {{ isSaving ? 'Establishing Account...' : 'Finalize Admin Access' }}
+                       </button>
+                    </div>
+                 </form>
+              </section>
+
+              <!-- Admin Members List -->
+              <section class="space-y-4">
+                 <h3 class="text-xl font-bold text-gray-900 dark:text-white px-2">Active Administrative Staff</h3>
+                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    @for (admin of admins$ | async; track admin.uid) {
+                       <div class="bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm flex justify-between items-center group hover:shadow-md transition-all">
+                          <div>
+                             <p class="font-black text-gray-900 dark:text-white leading-tight">{{ admin.displayName }}</p>
+                             <p class="text-xs text-indigo-500 font-bold mt-1 tracking-wider">&#64;{{ admin.username }}</p>
+                             <p class="text-[9px] text-gray-400 mt-3 font-bold uppercase tracking-widest">{{ admin.phone }}</p>
+                          </div>
+                          <button (click)="removeAdminMember(admin)" class="p-3 text-red-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-2xl transition-all opacity-0 group-hover:opacity-100">
+                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                          </button>
+                       </div>
+                    }
+                    @if ((admins$ | async)?.length === 0) {
+                       <div class="col-span-full py-20 text-center border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-[3rem] opacity-50">
+                          <p class="text-gray-400 font-black uppercase tracking-widest text-xs">No administrative members found</p>
+                       </div>
+                    }
+                 </div>
+              </section>
+           </div>
+        }
+
+        <!-- ═══════════ CHITTI DASHBOARD (Admin Only) ═══════════ -->
+        @if (!isSuperAdmin && activeTab === 'chitti') {
           <div class="card-animate" style="animation-delay:0.05s">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
               <div>
@@ -223,8 +300,8 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
           </div>
         }
 
-        <!-- ═══════════ INTEREST DASHBOARD ═══════════ -->
-        @if (activeTab === 'interest') {
+        <!-- ═══════════ INTEREST DASHBOARD (Admin Only) ═══════════ -->
+        @if (!isSuperAdmin && activeTab === 'interest') {
           <div class="card-animate" style="animation-delay:0.05s">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
               <div>
@@ -297,8 +374,8 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
           </div>
         }
 
-        <!-- ═══════════ CUSTOMERS DIRECTORY ═══════════ -->
-        @if (activeTab === 'customers') {
+        <!-- ═══════════ CUSTOMERS DIRECTORY (Admin Only) ═══════════ -->
+        @if (!isSuperAdmin && activeTab === 'customers') {
           <div class="card-animate" style="animation-delay:0.05s">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                <div>
@@ -357,6 +434,37 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
                <div class="py-20 text-center opacity-60 italic text-gray-500 dark:text-gray-400">No customers matching your search.</div>
             }
           </div>
+        }
+        <!-- ═══════════ SECURITY & PASSWORD ═══════════ -->
+        @if (activeTab === 'security') {
+           <div class="max-w-md mx-auto card-animate">
+              <div class="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] shadow-xl border border-gray-100 dark:border-gray-800">
+                 <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-3xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 mx-auto mb-4">
+                       <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    </div>
+                    <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Account Security</h3>
+                    <p class="text-sm text-gray-400 mt-1">Update your administrative login password</p>
+                 </div>
+
+                 <form [formGroup]="passwordForm" (ngSubmit)="updatePassword()" class="space-y-6">
+                    <div>
+                       <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">New Password</label>
+                       <input type="password" formControlName="newPassword" placeholder="Minimum 6 characters"
+                          class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                    </div>
+                    <div>
+                       <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Confirm Password</label>
+                       <input type="password" formControlName="confirmPassword" placeholder="Repeat new password"
+                          class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                    </div>
+                    <button type="submit" [disabled]="passwordForm.invalid || isSaving"
+                       class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all">
+                       {{ isSaving ? 'Updating...' : 'Change Password' }}
+                    </button>
+                 </form>
+              </div>
+           </div>
         }
       </main>
 
@@ -533,9 +641,9 @@ export class AdminDashboardComponent implements OnInit {
   private customerService = inject(CustomerService);
   private toast = inject(ToastService);
 
-  activeTab: 'chitti' | 'interest' | 'customers' = 'chitti';
+  activeTab: 'chitti' | 'interest' | 'customers' | 'security' = 'chitti';
   isDarkMode = false;
-  activeMobileMenu: 'chitti' | 'interest' | 'customers' = 'chitti';
+  activeMobileMenu: 'chitti' | 'interest' | 'customers' | 'security' = 'chitti';
 
   chittis: ChittiScheme[] = [];
   interests: InterestScheme[] = [];
@@ -550,6 +658,11 @@ export class AdminDashboardComponent implements OnInit {
   isEditModal = false;
   existingMode = false;
   pickerSearch = '';
+  isSuperAdmin = false;
+  passwordForm: FormGroup;
+  adminForm: FormGroup;
+  admins$: Observable<UserProfile[]> | null = null;
+  private firestore = inject(Firestore);
 
   constructor() {
     this.customerForm = this.fb.group({
@@ -562,11 +675,69 @@ export class AdminDashboardComponent implements OnInit {
       joinedDate: [new Date().toISOString().split('T')[0], Validators.required],
       status: ['Active', Validators.required]
     });
+    this.passwordForm = this.fb.group({
+      newPassword: ['', [Validators.required, Validators.minLength(6)]],
+      confirmPassword: ['', Validators.required]
+    }, { validators: this.passwordMatchValidator });
+    this.adminForm = this.fb.group({
+      name: ['', Validators.required],
+      username: ['', [Validators.required, Validators.pattern(/^[a-zA-Z0-9_\.]+$/)]],
+      phone: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]]
+    });
+  }
+
+  passwordMatchValidator(g: FormGroup) {
+    return g.get('newPassword')?.value === g.get('confirmPassword')?.value ? null : { mismatch: true };
   }
 
   ngOnInit() {
     this.isDarkMode = document.documentElement.classList.contains('dark');
+    this.authService.isSuperAdmin().then(val => {
+      this.isSuperAdmin = val;
+      if (this.isSuperAdmin) {
+        this.loadAdmins();
+      }
+    });
     this.loadData();
+  }
+
+  loadAdmins() {
+    const adminQuery = query(collection(this.firestore, 'users'), where('role', '==', 'admin'));
+    this.admins$ = collectionData(adminQuery) as Observable<UserProfile[]>;
+  }
+
+  async createAdminMember() {
+    if (this.adminForm.valid) {
+      this.isSaving = true;
+      try {
+        const { username, name, phone } = this.adminForm.value;
+        const exists = await this.authService.checkUserExists(username);
+        if (exists) {
+          this.toast.error('Username or Identity already exists.');
+          return;
+        }
+
+        await this.authService.provisionUser('admin', username, name, phone, 'admin123');
+        this.toast.success(`Admin @${username} provisioned successfully!`);
+        this.adminForm.reset();
+      } catch (e: any) {
+        this.toast.error(e.message || 'Failed to provision admin.');
+      } finally {
+        this.isSaving = false;
+      }
+    }
+  }
+
+  async removeAdminMember(admin: UserProfile) {
+    if (confirm(`Revoke all admin privileges for @${admin.username}?`)) {
+       try {
+          await deleteDoc(doc(this.firestore, `users/${admin.uid}`));
+          await deleteDoc(doc(this.firestore, `admin_credentials/${admin.username}`));
+          this.toast.success('Admin privileges revoked.');
+       } catch (e) {
+          this.toast.error('Failed to revoke privileges.');
+       }
+    }
   }
 
   loadData() {
@@ -788,4 +959,28 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+  // --- Super Admin & Security ---
+  goToManageAdmins() {
+    this.router.navigate(['/admin/manage-admins']);
+  }
+
+  async updatePassword() {
+    if (this.passwordForm.valid) {
+       this.isSaving = true;
+       try {
+          const profile = await new Promise<any>(res => this.authService.userProfile$.subscribe(res));
+          if (profile?.username) {
+             await this.authService.changePassword(profile.username, this.passwordForm.value.newPassword, 'admin');
+             this.toast.success('Admin password updated successfully!');
+             this.passwordForm.reset();
+             this.activeTab = 'chitti';
+          }
+       } catch (e) {
+          this.toast.error('Failed to update password.');
+       } finally {
+          this.isSaving = false;
+       }
+    }
+  }
 }

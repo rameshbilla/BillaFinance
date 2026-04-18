@@ -24,7 +24,7 @@ export const adminGuard: CanActivateFn = (route, state) => {
 
   return authService.userProfile$.pipe(
     take(1),
-    map(profile => profile?.role === 'admin'),
+    map(profile => profile?.role === 'admin' || profile?.role === 'super-admin'),
     tap(isAdmin => {
       if (!isAdmin) {
         // Rediect to customer dashboard if not admin but logged in
