@@ -29,6 +29,7 @@ export interface InterestScheme {
   settlements: Settlement[];
   interestCollections?: InterestCollection[];
   startDate: string;
+  username: string;
 }
 
 @Injectable({

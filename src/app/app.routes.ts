@@ -9,7 +9,7 @@ export const routes: Routes = [
     path: 'admin', 
     canActivate: [authGuard, adminGuard],
     children: [
-      { path: '', loadComponent: () => import('./admin/dashboard/dashboard.component').then(m => m.DashboardComponent) },
+      { path: '', loadComponent: () => import('./admin/dashboard/dashboard.component').then(m => m.AdminDashboardComponent) },
       { path: 'create-chit', loadComponent: () => import('./admin/chit-create/chit-create.component').then(m => m.AdminChitCreateComponent) },
       { path: 'edit-chit/:id', loadComponent: () => import('./admin/chit-create/chit-create.component').then(m => m.AdminChitCreateComponent) },
       { path: 'chit/:id', loadComponent: () => import('./admin/chit-details/chit-details.component').then(m => m.AdminChitDetailsComponent) },
@@ -21,6 +21,6 @@ export const routes: Routes = [
   { 
     path: 'customer', 
     canActivate: [authGuard],
-    loadComponent: () => import('./customer/dashboard/dashboard.component').then(m => m.DashboardComponent) 
+    loadComponent: () => import('./customer/dashboard/dashboard.component').then(m => m.CustomerDashboardComponent) 
   }
 ];

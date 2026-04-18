@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormControl } 
 import { InterestService, InterestScheme } from '../services/interest.service';
 import { CustomerService, Customer } from '../services/customer.service';
 import { ToastService } from '../../shared/toast.service';
+import { AuthService } from '../../services/auth.service';
 import { Storage, ref, uploadBytesResumable, getDownloadURL } from '@angular/fire/storage';
 import { numberToWords } from '../../shared/utils/number-to-words.util';
 
@@ -110,6 +111,45 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
                    <p class="text-[10px] text-indigo-400/70 font-bold uppercase tracking-wide">Start typing to search...</p>
                  }
                </div>
+
+               <!-- Login Provision Field (NEW) -->
+                <div class="mb-8 p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800">
+                   <div class="flex items-center justify-between mb-4">
+                      <label class="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center">
+                         <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                         Login Provision
+                      </label>
+                      @if (isCheckingUsername) {
+                         <div class="flex items-center text-[10px] font-bold text-slate-400 uppercase">
+                            <svg class="animate-spin h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            Verifying...
+                         </div>
+                      } @else if (usernameStatus === 'valid') {
+                         <div class="text-[10px] font-black text-green-600 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-lg uppercase flex items-center">
+                            <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                            Access Ready
+                         </div>
+                      } @else if (usernameStatus === 'invalid') {
+                         <div class="text-[10px] font-black text-rose-600 bg-rose-50 dark:bg-rose-900/20 px-2 py-1 rounded-lg uppercase flex items-center">
+                            <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                            No Account Found
+                         </div>
+                      }
+                   </div>
+                   <div class="flex gap-2">
+                     <div class="relative flex-1">
+                       <span class="absolute left-4 top-3.5 text-slate-400 font-bold text-lg">&#64;</span>
+                       <input type="text" formControlName="borrowerUsername" (input)="onUsernameInput()"
+                          class="block w-full rounded-2xl border-none bg-white dark:bg-gray-800 pl-10 pr-4 py-3.5 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none shadow-sm transition-all font-black placeholder:font-medium"
+                          placeholder="username">
+                     </div>
+                     <button type="button" (click)="provisionUser()" *ngIf="usernameStatus === 'invalid' && schemeForm.get('borrowerUsername')?.value"
+                        class="px-4 py-3 bg-slate-900 dark:bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-slate-800 transition-all flex items-center gap-2">
+                        Provision
+                     </button>
+                   </div>
+                   <p class="text-[10px] text-slate-400 mt-2 font-medium px-1">Customer can use this username to login and view their loan statements.</p>
+                </div>
                
                <div class="space-y-6">
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -143,7 +183,7 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
                            <option value="PAN">PAN Card</option>
                            <option value="Voter">Voter ID</option>
                            <option value="Driving License">Driving License</option>
-                        </select>
+                         </select>
                      </div>
                      <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">ID Number</label>
@@ -197,30 +237,36 @@ export class AdminInterestCreateComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private interestService = inject(InterestService);
   private customerService = inject(CustomerService);
+  private authService = inject(AuthService);
   private toast = inject(ToastService);
   private storage = inject(Storage);
 
-  // Combined pool of people already in the system (chitti customers + interest borrowers)
   private chittiCustomers: Customer[] = [];
   private interestBorrowers: { name: string; phone: string; email: string; username?: string }[] = [];
 
   searchControl = new FormControl('');
+  
+  // Username check states
+  isCheckingUsername = false;
+  usernameStatus: 'none' | 'valid' | 'invalid' = 'none';
 
-  /** Unified, deduplicated list of known people for quick-fill. */
   get borrowerPool(): { name: string; phone: string; email: string; username?: string }[] {
     const seen = new Set<string>();
     const result: { name: string; phone: string; email: string; username?: string }[] = [];
 
-    // From chitti customers
     for (const c of this.chittiCustomers) {
-      if (!seen.has(c.phone)) {
+      if (c.phone && !seen.has(c.phone)) {
         seen.add(c.phone);
-        result.push({ name: c.name, phone: c.phone, email: c.email || '', username: c.username });
+        result.push({ 
+          name: c.name || 'Unknown', 
+          phone: c.phone, 
+          email: c.email || '', 
+          username: c.username 
+        });
       }
     }
-    // From interest scheme borrowers
     for (const b of this.interestBorrowers) {
-      if (!seen.has(b.phone)) {
+      if (b.phone && !seen.has(b.phone)) {
         seen.add(b.phone);
         result.push(b);
       }
@@ -242,13 +288,17 @@ export class AdminInterestCreateComponent implements OnInit {
       .slice(0, 8);
   }
 
-  selectExistingBorrower(person: { name: string; phone: string; email: string }) {
+  selectExistingBorrower(person: any) {
     this.schemeForm.patchValue({
       borrowerName: person.name,
       borrowerPhone: person.phone,
-      borrowerEmail: person.email || ''
+      borrowerEmail: person.email || '',
+      borrowerUsername: person.username || ''
     });
     this.searchControl.setValue('');
+    if (person.username) {
+       this.checkUsername(person.username);
+    }
   }
 
   schemeForm: FormGroup = this.fb.group({
@@ -257,6 +307,7 @@ export class AdminInterestCreateComponent implements OnInit {
     borrowerName: ['', Validators.required],
     borrowerPhone: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
     borrowerEmail: ['', [Validators.email]],
+    borrowerUsername: [''],
     borrowerIdType: [''],
     borrowerIdValue: [''],
     amount: ['', [Validators.required, Validators.min(1000)]],
@@ -282,13 +333,60 @@ export class AdminInterestCreateComponent implements OnInit {
     return numberToWords(amount);
   }
 
+  private usernameTimeout: any;
+  onUsernameInput() {
+     const username = this.schemeForm.get('borrowerUsername')?.value;
+     if (!username) {
+        this.usernameStatus = 'none';
+        return;
+     }
+
+     clearTimeout(this.usernameTimeout);
+     this.usernameTimeout = setTimeout(() => {
+        this.checkUsername(username);
+     }, 600);
+  }
+
+  async checkUsername(username: string) {
+     this.isCheckingUsername = true;
+     try {
+        const exists = await this.authService.checkUserExists(username);
+        this.usernameStatus = exists ? 'valid' : 'invalid';
+     } catch (e) {
+        this.usernameStatus = 'none';
+     } finally {
+        this.isCheckingUsername = false;
+     }
+  }
+
+  async provisionUser() {
+     const username = this.schemeForm.get('borrowerUsername')?.value;
+     const name = this.schemeForm.get('borrowerName')?.value;
+     const phone = this.schemeForm.get('borrowerPhone')?.value;
+
+     if (!username || !name || !phone) {
+        this.toast.warning('Please fill Name, Phone and Username first.');
+        return;
+     }
+
+     try {
+        this.isCheckingUsername = true;
+        await this.authService.provisionCustomer(username, name, phone);
+        this.toast.success(`Login provisioned for @${username}`);
+        this.usernameStatus = 'valid';
+     } catch (e) {
+        this.toast.error('Failed to provision login.');
+     } finally {
+        this.isCheckingUsername = false;
+     }
+  }
+
   ngOnInit() {
     this.currentSchemeId = this.route.snapshot.paramMap.get('id');
     if (this.currentSchemeId) {
       this.isEditMode = true;
       this.loadSchemeData(this.currentSchemeId);
     }
-    // Build combined borrower pool from both sources
     this.customerService.getAllCustomers().subscribe(data => {
       this.chittiCustomers = data;
     });
@@ -298,7 +396,8 @@ export class AdminInterestCreateComponent implements OnInit {
         .map(s => ({
           name: s.borrowerName || '',
           phone: s.borrowerPhone || '',
-          email: s.borrowerEmail || ''
+          email: s.borrowerEmail || '',
+          username: (s as any).borrowerUsername || ''
         }));
     });
   }
@@ -313,6 +412,7 @@ export class AdminInterestCreateComponent implements OnInit {
             borrowerName: scheme.borrowerName,
             borrowerPhone: scheme.borrowerPhone,
             borrowerEmail: scheme.borrowerEmail || '',
+            borrowerUsername: (scheme as any).borrowerUsername || '',
             borrowerIdType: scheme.borrowerIdType || '',
             borrowerIdValue: scheme.borrowerIdValue || '',
             amount: scheme.amount,
@@ -320,6 +420,9 @@ export class AdminInterestCreateComponent implements OnInit {
             description: scheme.description,
           });
           this.currentDocUrl = scheme.borrowerIdDoc || null;
+          if ((scheme as any).borrowerUsername) {
+             this.checkUsername((scheme as any).borrowerUsername);
+          }
         }
       },
       error: (error) => console.error('Error loading scheme', error)
@@ -338,7 +441,7 @@ export class AdminInterestCreateComponent implements OnInit {
   }
 
   async uploadDocument(): Promise<string | null> {
-    if (!this.selectedFile) return this.currentDocUrl; // Retain existing if no new file
+    if (!this.selectedFile) return this.currentDocUrl;
 
     return new Promise((resolve, reject) => {
       const fileName = `interest-documents/${Date.now()}_${this.selectedFile!.name}`;
@@ -367,7 +470,6 @@ export class AdminInterestCreateComponent implements OnInit {
       this.isSubmitting = true;
 
       try {
-        // Upload the file to Firebase Storage if a new one is selected
         let uploadedDocUrl: string | null = this.currentDocUrl;
         if (this.selectedFile) {
           uploadedDocUrl = await this.uploadDocument();
@@ -376,11 +478,10 @@ export class AdminInterestCreateComponent implements OnInit {
         const schemeData: InterestScheme = {
           ...this.schemeForm.value,
           borrowerIdDoc: uploadedDocUrl,
-          settlements: [] // Base init, handled properly below during edit
+          settlements: []
         };
 
         if (this.isEditMode && this.currentSchemeId) {
-          // Exclude settlements override during edit
           const { settlements, ...updateData } = schemeData;
           await this.interestService.updateInterest(this.currentSchemeId, updateData);
           this.toast.success('Interest Scheme updated!');

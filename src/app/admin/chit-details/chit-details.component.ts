@@ -14,7 +14,7 @@ import { AuthService } from '../../services/auth.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
   template: `
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300 overflow-x-hidden">
       <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700 shadow-sm px-4 sm:px-6 lg:px-8 py-4">
         <div class="flex items-center space-x-4">
            <button (click)="goBack()" class="text-gray-500 hover:text-purple-600 transition-colors">
@@ -41,21 +41,21 @@ import { AuthService } from '../../services/auth.service';
 
         <!-- Scheme-Specific Monthly Snapshot -->
         <div class="grid grid-cols-2 gap-3 sm:gap-6 mb-8">
-           <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row items-start sm:items-center">
-              <div class="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 mb-3 sm:mb-0 sm:mr-4">
-                 <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+           <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row items-start sm:items-center">
+              <div class="h-10 w-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 mb-2 sm:mb-0 sm:mr-4">
+                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               </div>
               <div>
-                 <p class="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1 sm:mb-0.5">Collected <span class="hidden md:inline">({{ currentMonthName }})</span></p>
+                 <p class="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Collected <span class="hidden md:inline">({{ currentMonthName }})</span></p>
                  <p class="text-base sm:text-xl font-black text-gray-900 dark:text-white">₹{{ schemeCollectedThisMonth | number:'1.0-0' }}</p>
               </div>
            </div>
-           <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row items-start sm:items-center">
-              <div class="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center text-pink-600 dark:text-pink-400 mb-3 sm:mb-0 sm:mr-4">
-                 <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+           <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row items-start sm:items-center">
+              <div class="h-10 w-10 rounded-xl bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center text-pink-600 dark:text-pink-400 mb-2 sm:mb-0 sm:mr-4">
+                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               </div>
               <div>
-                 <p class="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1 sm:mb-0.5">Pending <span class="hidden md:inline">({{ currentMonthName }})</span></p>
+                 <p class="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Pending <span class="hidden md:inline">({{ currentMonthName }})</span></p>
                  <p class="text-base sm:text-xl font-black text-pink-600">₹{{ schemePendingThisMonth | number:'1.0-0' }}</p>
               </div>
            </div>
@@ -109,12 +109,6 @@ import { AuthService } from '../../services/auth.service';
                     <td class="px-6 py-4 text-gray-500 dark:text-gray-400">{{ customer.joinedDate }}</td>
                     <td class="px-6 py-4 font-semibold text-green-600">₹{{ getPaidAmount(customer) | number:'1.0-0' }}</td>
                     <td class="px-6 py-4 font-bold text-pink-600">₹{{ getPendingAmount(customer) | number:'1.0-0' }}</td>
-                    <td class="px-6 py-4">
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" 
-                            [ngClass]="{'bg-green-100 text-green-800': customer.status === 'Active', 'bg-red-100 text-red-800': customer.status === 'Inactive'}">
-                        {{ customer.status }}
-                      </span>
-                    </td>
                     <td class="px-6 py-4 text-right space-x-3 text-sm font-medium">
                       <button (click)="openEditCustomerModal(customer)" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">Edit</button>
                       <button (click)="deleteCustomer(customer.id!)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Delete</button>
@@ -123,7 +117,7 @@ import { AuthService } from '../../services/auth.service';
                 }
                 @if (customers.length === 0) {
                   <tr>
-                    <td colspan="5" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400 text-sm">No customers enrolled yet.</td>
+                    <td colspan="7" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400 text-sm">No customers enrolled yet.</td>
                   </tr>
                 }
               </tbody>
@@ -151,7 +145,7 @@ import { AuthService } from '../../services/auth.service';
                       <span>Joined: {{ customer.joinedDate }}</span>
                       <span>Paid: <span class="text-green-600 font-bold">₹{{ getPaidAmount(customer) }}</span></span>
                    </div>
-                   <div class="flex justify-between items-center text-xs">
+                    <div class="flex justify-between items-center text-xs">
                       <span class="text-pink-600 font-bold">Pending: ₹{{ getPendingAmount(customer) }}</span>
                       <div class="flex space-x-4">
                          <button (click)="openEditCustomerModal(customer)" class="text-indigo-600 font-bold uppercase tracking-wider">Edit / Pay</button>
@@ -299,7 +293,7 @@ import { AuthService } from '../../services/auth.service';
 
                   <!-- Payment List -->
                   <div class="space-y-2 max-h-40 overflow-y-auto pr-2">
-                    @for (pay of currentCustomerPayments; track pay.id) {
+                    @for (pay of sortLatest(currentCustomerPayments); track pay.id) {
                       <div class="flex justify-between items-center p-3 bg-white dark:bg-gray-800 border border-gray-50 dark:border-gray-700 rounded-lg text-xs shadow-sm">
                         <div>
                            <span class="font-bold text-gray-900 dark:text-white">₹{{ pay.amount }}</span>
@@ -337,7 +331,7 @@ import { AuthService } from '../../services/auth.service';
               <div class="pt-4 flex justify-end space-x-3">
                 <button type="button" (click)="closeModal()" class="px-5 py-2 font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors text-sm">Cancel</button>
                 <button type="submit" [disabled]="customerForm.invalid || isSaving" class="px-5 py-2 font-medium text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded-lg transition-colors text-sm">
-                  {{ isSaving ? 'Saving...' : 'Save Changes' }}
+                  {{ isSaving ? 'Saving...' : (isEditModal ? 'Save Changes' : 'Enroll Customer') }}
                 </button>
               </div>
             </form>
@@ -409,8 +403,8 @@ export class AdminChitDetailsComponent implements OnInit {
     
     const q = this.customerSearchQuery.toLowerCase();
     return list.filter(c => 
-      c.name.toLowerCase().includes(q) || 
-      c.phone.toLowerCase().includes(q) || 
+      (c.name?.toLowerCase().includes(q)) || 
+      (c.phone?.toLowerCase().includes(q)) || 
       (c.username && c.username.toLowerCase().includes(q))
     );
   }
@@ -465,10 +459,10 @@ export class AdminChitDetailsComponent implements OnInit {
     
     // Combine both pools
     const chittiPool = this.allCustomers.map(c => ({
-      name: c.name,
-      phone: c.phone,
+      name: c.name || 'Unknown',
+      phone: c.phone || '',
       email: c.email || '',
-      username: c.username
+      username: c.username || ''
     }));
 
     let fullPool = [...chittiPool, ...this.interestBorrowers];
@@ -479,8 +473,8 @@ export class AdminChitDetailsComponent implements OnInit {
     if (this.existingSearch.trim()) {
       const q = this.existingSearch.toLowerCase();
       pool = pool.filter(p =>
-        p.name.toLowerCase().includes(q) ||
-        p.phone.toLowerCase().includes(q) ||
+        (p.name?.toLowerCase().includes(q)) ||
+        (p.phone?.toLowerCase().includes(q)) ||
         (p.username && p.username.toLowerCase().includes(q))
       );
     }
@@ -495,12 +489,12 @@ export class AdminChitDetailsComponent implements OnInit {
   }
 
   /** Pre-fill the form from an existing customer record, switch to new-form mode. */
-  selectExistingCustomer(cust: Customer) {
+  selectExistingCustomer(cust: any) {
     this.existingMode = false;
     this.customerForm.patchValue({
-      name: cust.name,
-      username: cust.username,
-      phone: cust.phone,
+      name: cust.name || '',
+      username: cust.username || '',
+      phone: cust.phone || '',
       email: cust.email || '',
       joinedDate: new Date().toISOString().split('T')[0],
       status: 'Active'
@@ -508,6 +502,7 @@ export class AdminChitDetailsComponent implements OnInit {
   }
 
   openEditCustomerModal(customer: Customer) {
+    this.isEditMode = true;
     this.isEditModal = true;
     this.editingCustomerId = customer.id!;
     this.customerForm.patchValue(customer);
@@ -536,7 +531,7 @@ export class AdminChitDetailsComponent implements OnInit {
           await this.customerService.updateCustomer(this.editingCustomerId, customerData);
           // Sync login profile with updated phone/name
           if (customerData.username) {
-            await this.authService.provisionCustomer(customerData.username, customerData.name, customerData.phone);
+            await this.authService.provisionCustomer(customerData.username, customerData.name || 'Unknown', customerData.phone || '');
           }
           this.toast.success('Customer updated successfully!');
         } else {
@@ -544,7 +539,7 @@ export class AdminChitDetailsComponent implements OnInit {
             // Create customer credentials in Firestore (no Firebase Auth needed)
             const alreadyExists = await this.authService.checkUserExists(customerData.username);
             if (!alreadyExists) {
-              await this.authService.provisionCustomer(customerData.username, customerData.name, customerData.phone);
+              await this.authService.provisionCustomer(customerData.username, customerData.name || 'Unknown', customerData.phone || '');
             }
             // Save customer business record
             await this.customerService.addCustomer(customerData);
@@ -679,7 +674,14 @@ export class AdminChitDetailsComponent implements OnInit {
       } catch (error) {
         console.error('Error deleting customer', error);
         this.toast.error('Failed to remove customer.');
-      }
-    }
+        }
+     }
   }
+
+  sortLatest(arr: any[] | undefined) {
+    if (!arr) return [];
+    return [...arr].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  isEditMode: boolean = false;
 }

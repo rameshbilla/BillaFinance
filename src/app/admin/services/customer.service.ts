@@ -17,12 +17,12 @@ export interface UserProfile {
 
 export interface Customer {
   id?: string;
-  name: string;
-  phone: string;
+  name?: string;
+  phone?: string;
   email?: string;
   address?: string;
   schemeId: string;
-  schemeType: 'chitti';
+  schemeType: 'chitti' | 'interest';
   joinedDate: string;
   username: string;
   status: 'Active' | 'Inactive';

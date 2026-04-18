@@ -1,7 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { takeUntil, debounceTime } from 'rxjs/operators';
 
 @Component({
   selector: 'app-admin-loan-issue',
@@ -55,6 +57,15 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
                   </div>
                </div>
 
+               <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Collect Interest Amount (₹)</label>
+                  <div class="flex items-center space-x-3">
+                     <input type="number" formControlName="collectInterestAmount" class="flex-1 block rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-pink-500 outline-none transition-shadow" placeholder="0">
+                     <button type="button" (click)="autoFillInterestAmount()" class="px-4 py-3 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-medium rounded-xl hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors whitespace-nowrap">Use Calculated</button>
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Default: ₹{{ totalInterest | number:'1.0-0' }}</p>
+               </div>
+
                <!-- EMI Breakdown Visualizer -->
                <div class="mt-8 p-6 bg-gray-50 dark:bg-gray-700/30 rounded-2xl border border-gray-100 dark:border-gray-600 shadow-inner">
                   <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Repayment Forecast</h3>
@@ -84,9 +95,10 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
     </div>
   `
 })
-export class AdminLoanIssueComponent {
+export class AdminLoanIssueComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private destroy$ = new Subject<void>();
 
   loanForm: FormGroup = this.fb.group({
     customerInfo: ['', Validators.required],
@@ -94,7 +106,8 @@ export class AdminLoanIssueComponent {
     interestRate: ['', [Validators.required, Validators.min(0)]],
     tenure: ['', [Validators.required, Validators.min(1)]],
     startDate: ['', Validators.required],
-    firstEmiDate: ['', Validators.required]
+    firstEmiDate: ['', Validators.required],
+    collectInterestAmount: ['', [Validators.required, Validators.min(0)]]
   });
 
   // Basic flat EMI calculation mapping for Interest based standard loans
@@ -120,6 +133,32 @@ export class AdminLoanIssueComponent {
   get totalInterest(): number {
      const p = this.loanForm.get('principal')?.value || 0;
      return this.totalPayable - p;
+  }
+
+  autoFillInterestAmount() {
+    this.loanForm.get('collectInterestAmount')?.setValue(Math.round(this.totalInterest));
+  }
+
+  ngOnInit() {
+    // Auto-update collectInterestAmount when form values change (debounced)
+    this.loanForm.valueChanges
+      .pipe(
+        debounceTime(300),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => {
+        if (!this.loanForm.get('collectInterestAmount')?.value) {
+          this.autoFillInterestAmount();
+        }
+      });
+    
+    // Set initial default value
+    this.autoFillInterestAmount();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   goBack() {
