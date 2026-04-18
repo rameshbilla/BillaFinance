@@ -4,6 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ChittiService, ChittiScheme } from '../services/chitti.service';
 import { ToastService } from '../../shared/toast.service';
+import { AuthService } from '../../services/auth.service';
 import { Subscription } from 'rxjs';
 import { numberToWords } from '../../shared/utils/number-to-words.util';
 
@@ -86,6 +87,7 @@ export class AdminChitCreateComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private chittiService = inject(ChittiService);
+  private authService = inject(AuthService);
   private toast = inject(ToastService);
 
   schemeForm: FormGroup = this.fb.group({
@@ -154,14 +156,17 @@ export class AdminChitCreateComponent implements OnInit {
   async onSubmit() {
     if (this.schemeForm.valid) {
       this.isSubmitting = true;
+      const profile = await new Promise<any>(res => this.authService.userProfile$.subscribe(res));
       const schemeData: ChittiScheme = {
         ...this.schemeForm.value,
-        totalValue: this.calculatedTotal
+        totalValue: this.calculatedTotal,
+        createdBy: profile?.uid
       };
 
       try {
         if (this.isEditMode && this.currentSchemeId) {
-          await this.chittiService.updateChitti(this.currentSchemeId, schemeData);
+          const { createdBy, ...updateData } = schemeData;
+          await this.chittiService.updateChitti(this.currentSchemeId, updateData);
           this.toast.success('Chit Scheme successfully updated!');
         } else {
           await this.chittiService.addChitti(schemeData);

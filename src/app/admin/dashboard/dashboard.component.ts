@@ -164,7 +164,7 @@ import { Observable } from 'rxjs';
            <div class="space-y-10 card-animate">
               <!-- Admin Creation Form -->
               <section class="bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-xl border border-gray-100 dark:border-gray-800 p-8">
-                 <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-6 uppercase tracking-tighter">Register Admin Member</h2>
+                 <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-6 uppercase tracking-tighter">{{ isAdminEditMode ? 'Update' : 'Register' }} Admin Member</h2>
                  <form [formGroup]="adminForm" (ngSubmit)="createAdminMember()" class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                        <div>
@@ -175,7 +175,8 @@ import { Observable } from 'rxjs';
                        <div>
                           <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Username (Login ID)</label>
                           <input type="text" formControlName="username" placeholder="Login username"
-                             class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-black">
+                             class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-black"
+                              [ngClass]="{'bg-gray-100 dark:bg-gray-800/50 cursor-not-allowed': isAdminEditMode}">
                        </div>
                        <div>
                           <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Phone Number</label>
@@ -183,15 +184,47 @@ import { Observable } from 'rxjs';
                              class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
                        </div>
                        <div>
-                          <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Default Password</label>
-                          <input type="text" readonly value="admin123"
-                             class="w-full px-5 py-4 rounded-2xl bg-gray-100/50 dark:bg-gray-800/30 border-none text-gray-400 font-mono text-xs cursor-not-allowed">
+                          <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">
+                             {{ isAdminEditMode ? 'Reset Password (Optional)' : 'Admin Password' }}
+                          </label>
+                          <div class="relative">
+                             <input [type]="showAdminPassword ? 'text' : 'password'" formControlName="password" 
+                                [placeholder]="isAdminEditMode ? 'Leave blank to keep current' : 'Enter password (Default: admin123)'"
+                                class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold pr-14">
+                             <button type="button" (click)="showAdminPassword = !showAdminPassword" 
+                                class="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-indigo-600 transition-colors"
+                                [title]="showAdminPassword ? 'Hide Password' : 'Show Password'">
+                                <svg *ngIf="!showAdminPassword" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                <svg *ngIf="showAdminPassword" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 1.274-4.057 5.064-7 9.542-7 1.253 0 2.426.287 3.477.799m-1.763 3.064a3 3 0 11-4.243 4.243m4.242-4.242L9.88 9.88m-2.012-2.012L2.031 2.031" /></svg>
+                             </button>
+                          </div>
                        </div>
+                        <div class="md:col-span-2">
+                           <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Full Residential Address</label>
+                           <textarea formControlName="address" rows="3" placeholder="Enter complete address"
+                              class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold resize-none"></textarea>
+                        </div>
+                        <div>
+                           <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">ID Proof Type</label>
+                           <select formControlName="idType"
+                              class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold appearance-none">
+                              <option value="">Select ID Type</option>
+                              <option value="Aadhar">Aadhar Card</option>
+                              <option value="Voter ID">Voter ID</option>
+                              <option value="PAN">PAN Card</option>
+                              <option value="Driving License">Driving License</option>
+                           </select>
+                        </div>
+                        <div>
+                           <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">ID Document Number</label>
+                           <input type="text" formControlName="idValue" placeholder="e.g. 1234 5678 9012"
+                              class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                        </div>
                     </div>
                     <div class="flex justify-end pt-4">
                        <button type="submit" [disabled]="adminForm.invalid || isSaving"
                           class="px-10 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all">
-                          {{ isSaving ? 'Establishing Account...' : 'Finalize Admin Access' }}
+                          {{ isSaving ? (isAdminEditMode ? 'Updating...' : 'Establishing...') : (isAdminEditMode ? 'Update Admin Account' : 'Finalize Admin Access') }}
                        </button>
                     </div>
                  </form>
@@ -202,15 +235,52 @@ import { Observable } from 'rxjs';
                  <h3 class="text-xl font-bold text-gray-900 dark:text-white px-2">Active Administrative Staff</h3>
                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     @for (admin of admins$ | async; track admin.uid) {
-                       <div class="bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm flex justify-between items-center group hover:shadow-md transition-all">
-                          <div>
-                             <p class="font-black text-gray-900 dark:text-white leading-tight">{{ admin.displayName }}</p>
-                             <p class="text-xs text-indigo-500 font-bold mt-1 tracking-wider">&#64;{{ admin.username }}</p>
-                             <p class="text-[9px] text-gray-400 mt-3 font-bold uppercase tracking-widest">{{ admin.phone }}</p>
+                       <div class="bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col group hover:shadow-md transition-all relative overflow-hidden">
+                          <div class="flex justify-between items-start mb-4">
+                             <div>
+                                <div class="flex items-center gap-2">
+                                   <h4 class="font-black text-gray-900 dark:text-white leading-none">{{ admin.displayName }}</h4>
+                                   <span class="text-[10px] bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full font-black uppercase tracking-tighter leading-none">&#64;{{ admin.username }}</span>
+                                </div>
+                                <p class="text-xs text-gray-500 font-bold mt-2 leading-none">{{ admin.phone }}</p>
+                             </div>
+                             <div class="flex gap-1 transition-all">
+                                <button (click)="editAdminMember(admin)" class="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl" title="Edit Staff">
+                                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                </button>
+                                <button (click)="removeAdminMember(admin)" class="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl" title="Revoke Access">
+                                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                             </div>
                           </div>
-                          <button (click)="removeAdminMember(admin)" class="p-3 text-red-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-2xl transition-all opacity-0 group-hover:opacity-100">
-                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                          </button>
+                          
+                          <!-- Admin Identity & Password Details -->
+                          <div class="mt-2 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-4">
+                             <div>
+                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 italic">Resident Address</p>
+                                <p class="text-xs text-gray-600 dark:text-gray-300 font-bold leading-relaxed">{{ admin.address || 'No address provided' }}</p>
+                             </div>
+                             
+                             <div class="grid grid-cols-2 gap-4">
+                                @if (admin.idType) {
+                                   <div>
+                                      <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 italic">{{ admin.idType }}</p>
+                                      <p class="text-xs font-black text-gray-900 dark:text-white">{{ admin.idValue || '---' }}</p>
+                                   </div>
+                                }
+                                <div>
+                                   <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 italic text-indigo-400">Access Password</p>
+                                   <div class="flex items-center gap-2">
+                                      <button type="button" (click)="togglePasswordReveal(admin.username!)" class="text-indigo-500 hover:text-indigo-700 transition-colors" [title]="revealedPasswords[admin.username!] ? 'Hide' : 'Reveal'">
+                                         <svg *ngIf="!revealedPasswords[admin.username!]" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                         <svg *ngIf="revealedPasswords[admin.username!]" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 1.274-4.057 5.064-7 9.542-7 1.253 0 2.426.287 3.477.799m-1.763 3.064a3 3 0 11-4.243 4.243m4.242-4.242L9.88 9.88m-2.012-2.012L2.031 2.031" /></svg>
+                                      </button>
+                                      <span *ngIf="revealedPasswords[admin.username!]" class="text-xs font-mono font-black text-rose-500 animate-in fade-in duration-300">{{ revealedPasswords[admin.username!] }}</span>
+                                      <span *ngIf="!revealedPasswords[admin.username!]" class="text-xs font-mono font-bold text-gray-300 italic">Hidden</span>
+                                   </div>
+                                </div>
+                             </div>
+                          </div>
                        </div>
                     }
                     @if ((admins$ | async)?.length === 0) {
@@ -450,19 +520,53 @@ import { Observable } from 'rxjs';
                  <form [formGroup]="passwordForm" (ngSubmit)="updatePassword()" class="space-y-6">
                     <div>
                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">New Password</label>
-                       <input type="password" formControlName="newPassword" placeholder="Minimum 6 characters"
-                          class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                       <div class="relative">
+                          <input [type]="showAdminPassword ? 'text' : 'password'" formControlName="newPassword" placeholder="Minimum 6 characters"
+                             class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold pr-14">
+                          <button type="button" (click)="showAdminPassword = !showAdminPassword" 
+                             class="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-indigo-600 transition-colors">
+                             <svg *ngIf="!showAdminPassword" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                             <svg *ngIf="showAdminPassword" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 1.274-4.057 5.064-7 9.542-7 1.253 0 2.426.287 3.477.799m-1.763 3.064a3 3 0 11-4.243 4.243m4.242-4.242L9.88 9.88m-2.012-2.012L2.031 2.031" /></svg>
+                          </button>
+                       </div>
                     </div>
                     <div>
                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Confirm Password</label>
-                       <input type="password" formControlName="confirmPassword" placeholder="Repeat new password"
-                          class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                       <div class="relative">
+                          <input [type]="showAdminPassword ? 'text' : 'password'" formControlName="confirmPassword" placeholder="Repeat new password"
+                             class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold pr-14">
+                          <button type="button" (click)="showAdminPassword = !showAdminPassword" 
+                             class="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-indigo-600 transition-colors">
+                             <svg *ngIf="!showAdminPassword" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                             <svg *ngIf="showAdminPassword" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 1.274-4.057 5.064-7 9.542-7 1.253 0 2.426.287 3.477.799m-1.763 3.064a3 3 0 11-4.243 4.243m4.242-4.242L9.88 9.88m-2.012-2.012L2.031 2.031" /></svg>
+                          </button>
+                       </div>
                     </div>
                     <button type="submit" [disabled]="passwordForm.invalid || isSaving"
                        class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all">
                        {{ isSaving ? 'Updating...' : 'Change Password' }}
                     </button>
                  </form>
+
+                 <!-- Data Management / Backfill -->
+                 <div class="mt-12 pt-8 border-t border-gray-100 dark:border-gray-800">
+                    <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Ownership Management</h4>
+                    <p class="text-xs text-gray-500 mb-4 font-medium">Assign existing unowned data to a specific admin username.</p>
+                    
+                    <div class="mb-4">
+                       <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Target Username</label>
+                       <div class="relative">
+                          <span class="absolute left-4 top-3.5 text-gray-400 font-bold">&#64;</span>
+                          <input type="text" [(ngModel)]="migrationUsername" placeholder="e.g. ram"
+                             class="w-full pl-8 pr-5 py-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-black">
+                       </div>
+                    </div>
+
+                    <button (click)="backfillOwnership()" [disabled]="isSaving"
+                       class="w-full py-4 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-gray-200 transition-all">
+                       {{ isSaving ? 'Processing Migration...' : 'Migrate Unowned Data' }}
+                    </button>
+                 </div>
               </div>
            </div>
         }
@@ -682,7 +786,11 @@ export class AdminDashboardComponent implements OnInit {
     this.adminForm = this.fb.group({
       name: ['', Validators.required],
       username: ['', [Validators.required, Validators.pattern(/^[a-zA-Z0-9_\.]+$/)]],
-      phone: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]]
+      phone: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
+      password: [''],
+      idType: [''],
+      idValue: [''],
+      address: ['']
     });
   }
 
@@ -706,26 +814,84 @@ export class AdminDashboardComponent implements OnInit {
     this.admins$ = collectionData(adminQuery) as Observable<UserProfile[]>;
   }
 
+  isAdminEditMode = false;
+  editingAdminUid: string | null = null;
+  revealedPasswords: { [username: string]: string } = {};
+  showAdminPassword = false;
+
+  async togglePasswordReveal(username: string) {
+    if (this.revealedPasswords[username]) {
+       delete this.revealedPasswords[username];
+    } else {
+       const pwd = await this.authService.getAdminPassword(username);
+       this.revealedPasswords[username] = pwd || '---';
+    }
+  }
+
   async createAdminMember() {
     if (this.adminForm.valid) {
       this.isSaving = true;
       try {
-        const { username, name, phone } = this.adminForm.value;
-        const exists = await this.authService.checkUserExists(username);
-        if (exists) {
-          this.toast.error('Username or Identity already exists.');
-          return;
+        const { username, name, phone, password, address, idType, idValue } = this.adminForm.getRawValue();
+        const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
+        
+        if (this.isAdminEditMode && this.editingAdminUid) {
+          // Update basic info + address/ID
+          await this.authService.updateAdminInfo(this.editingAdminUid, cleanUsername, name, phone, address, idType, idValue);
+          
+          // If password field is filled, update it
+          if (password && password.trim()) {
+            await this.authService.changePassword(cleanUsername, password, 'admin');
+          }
+          
+          this.toast.success('Admin account updated correctly!');
+          this.cancelAdminEdit();
+        } else {
+          const exists = await this.authService.checkUserExists(cleanUsername);
+          if (exists) {
+            this.toast.error('Username or Identity already exists.');
+            return;
+          }
+          
+          // Use provided password or fallback to admin123
+          const finalPassword = (password && password.trim()) ? password : 'admin123';
+          await this.authService.provisionUser('admin', cleanUsername, name, phone, finalPassword, address, idType, idValue);
+          this.toast.success('New Admin established!');
+          this.adminForm.reset();
         }
-
-        await this.authService.provisionUser('admin', username, name, phone, 'admin123');
-        this.toast.success(`Admin @${username} provisioned successfully!`);
-        this.adminForm.reset();
       } catch (e: any) {
-        this.toast.error(e.message || 'Failed to provision admin.');
+        this.toast.error(e.message || 'Failed to process admin account.');
       } finally {
         this.isSaving = false;
       }
     }
+  }
+
+  editAdminMember(admin: any) {
+    this.isAdminEditMode = true;
+    this.editingAdminUid = admin.uid;
+    this.adminForm.patchValue({
+      name: admin.displayName,
+      username: admin.username,
+      phone: admin.phone,
+      address: admin.address || '',
+      idType: admin.idType || '',
+      idValue: admin.idValue || ''
+    });
+    this.adminForm.get('username')?.disable();
+    this.scrollToTop();
+  }
+
+  expandedAdminDetails: { [uid: string]: boolean } = {};
+  toggleAdminDetails(uid: string) {
+    this.expandedAdminDetails[uid] = !this.expandedAdminDetails[uid];
+  }
+
+  cancelAdminEdit() {
+    this.isAdminEditMode = false;
+    this.editingAdminUid = null;
+    this.adminForm.reset();
+    this.adminForm.get('username')?.enable();
   }
 
   async removeAdminMember(admin: UserProfile) {
@@ -740,10 +906,16 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
-  loadData() {
-    this.chittiService.getChittis().subscribe(data => this.chittis = data);
-    this.interestService.getInterests().subscribe(data => this.interests = data);
-    this.customerService.getAllCustomers().subscribe(data => this.allCustomers = data);
+  async loadData() {
+    this.authService.userProfile$.subscribe(profile => {
+      if (!profile) return;
+      
+      const filterUid = profile.role === 'super-admin' ? undefined : profile.uid;
+      
+      this.chittiService.getChittis(filterUid).subscribe(data => this.chittis = data);
+      this.interestService.getInterests(filterUid).subscribe(data => this.interests = data);
+      this.customerService.getAllCustomers(filterUid).subscribe(data => this.allCustomers = data);
+    });
   }
 
   get currentMonthName(): string {
@@ -895,11 +1067,14 @@ export class AdminDashboardComponent implements OnInit {
       this.isSaving = true;
       try {
         const val = this.customerForm.value;
+        const profile = await new Promise<any>(res => this.authService.userProfile$.subscribe(res));
+        
         if (this.isEditModal && this.editingCustomer?.id) {
            await this.customerService.updateCustomer(this.editingCustomer.id, val);
            this.toast.success('Customer updated!');
         } else {
-           await this.customerService.addCustomer(val);
+           const newCustomer = { ...val, createdBy: profile?.uid };
+           await this.customerService.addCustomer(newCustomer);
            this.toast.success('Customer created!');
         }
         this.closeCustomerModal();
@@ -963,6 +1138,69 @@ export class AdminDashboardComponent implements OnInit {
   // --- Super Admin & Security ---
   goToManageAdmins() {
     this.router.navigate(['/admin/manage-admins']);
+  }
+
+  migrationUsername: string = '';
+
+  async backfillOwnership() {
+    const target = this.migrationUsername.trim();
+    const promptMsg = target 
+      ? `This will assign all current unowned data to the user "@${target}". Proceed?` 
+      : 'This will assign all current unowned data to YOUR account. Proceed?';
+      
+    if (!confirm(promptMsg)) return;
+    
+    this.isSaving = true;
+    try {
+      let targetUid: string | null = null;
+      
+      if (target) {
+        targetUid = await this.authService.getUidByUsername(target);
+        if (!targetUid) {
+          this.toast.error(`User "@${target}" not found.`);
+          return;
+        }
+      } else {
+        const profile = await new Promise<any>(res => this.authService.userProfile$.subscribe(res));
+        targetUid = profile?.uid;
+      }
+
+      if (!targetUid) {
+        this.toast.error('Could not determine target account.');
+        return;
+      }
+      
+      const adminUid = targetUid;
+      
+      // Update Customers
+      for (const cust of this.allCustomers) {
+        if (!cust.createdBy) {
+          await this.customerService.updateCustomer(cust.id!, { createdBy: adminUid });
+        }
+      }
+      
+      // Update Chittis
+      for (const chit of this.chittis) {
+        if (!chit.createdBy) {
+          await this.chittiService.updateChitti(chit.id!, { createdBy: adminUid });
+        }
+      }
+      
+      // Update Interests
+      for (const interest of this.interests) {
+        if (!interest.createdBy) {
+          await this.interestService.updateInterest(interest.id!, { createdBy: adminUid });
+        }
+      }
+      
+      this.toast.success('Ownership migration completed successfully!');
+      this.migrationUsername = '';
+      this.loadData();
+    } catch (e) {
+      this.toast.error('Migration failed.');
+    } finally {
+      this.isSaving = false;
+    }
   }
 
   async updatePassword() {

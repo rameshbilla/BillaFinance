@@ -475,10 +475,12 @@ export class AdminInterestCreateComponent implements OnInit {
           uploadedDocUrl = await this.uploadDocument();
         }
 
+        const profile = await new Promise<any>(res => this.authService.userProfile$.subscribe(res));
         const schemeData: InterestScheme = {
           ...this.schemeForm.value,
           borrowerIdDoc: uploadedDocUrl,
-          settlements: []
+          settlements: [],
+          createdBy: profile?.uid
         };
 
         if (this.isEditMode && this.currentSchemeId) {

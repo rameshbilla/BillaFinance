@@ -6,6 +6,7 @@ export interface CustomerPayment {
   id: string;
   date: string;
   amount: number;
+  createdBy?: string;
 }
 
 export interface UserProfile {
@@ -13,6 +14,7 @@ export interface UserProfile {
   photoURL?: string;
   phone?: string;
   username?: string;
+  createdBy?: string;
 }
 
 export interface Customer {
@@ -27,6 +29,7 @@ export interface Customer {
   username: string;
   status: 'Active' | 'Inactive';
   payments?: CustomerPayment[];
+  createdBy?: string;
 }
 
 @Injectable({
@@ -36,7 +39,11 @@ export class CustomerService {
   private firestore = inject(Firestore);
   private customerCollection = collection(this.firestore, 'customers');
 
-  getAllCustomers(): Observable<Customer[]> {
+  getAllCustomers(adminUid?: string): Observable<Customer[]> {
+    if (adminUid) {
+      const q = query(this.customerCollection, where('createdBy', '==', adminUid));
+      return collectionData(q, { idField: 'id' }) as Observable<Customer[]>;
+    }
     return collectionData(this.customerCollection, { idField: 'id' }) as Observable<Customer[]>;
   }
 

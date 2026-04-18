@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Auth, signOut, user, RecaptchaVerifier, signInWithPhoneNumber } from '@angular/fire/auth';
-import { Firestore, doc, setDoc, getDoc, docData } from '@angular/fire/firestore';
+import { Firestore, doc, setDoc, getDoc, docData, updateDoc } from '@angular/fire/firestore';
 import { Observable, of, switchMap, BehaviorSubject } from 'rxjs';
 
 export interface UserProfile {
@@ -10,6 +10,9 @@ export interface UserProfile {
   role: 'super-admin' | 'admin' | 'customer';
   phone?: string;
   username?: string;
+  address?: string;
+  idType?: string;
+  idValue?: string;
 }
 
 @Injectable({
@@ -128,7 +131,7 @@ export class AuthService {
   /**
    * GENERIC USER PROVISIONING — used for both Admins and Customers
    */
-  async provisionUser(role: 'admin' | 'customer', username: string, name: string, phone: string, defaultPassword?: string) {
+  async provisionUser(role: 'admin' | 'customer', username: string, name: string, phone: string, defaultPassword?: string, address?: string, idType?: string, idValue?: string) {
     const clean = username.trim().toLowerCase().replace(/^@/, '');
     const colName = role === 'admin' ? 'admin_credentials' : 'customer_credentials';
     const pwd = defaultPassword || (role === 'admin' ? 'admin123' : '123456');
@@ -144,7 +147,10 @@ export class AuthService {
       displayName: name,
       role,
       phone,
-      username: clean
+      username: clean,
+      address,
+      idType,
+      idValue
     };
 
     await setDoc(doc(this.firestore, `users/${uid}`), profile);
@@ -155,10 +161,52 @@ export class AuthService {
       displayName: name,
       phone,
       role,
+      address,
+      idType,
+      idValue,
       updatedAt: new Date().toISOString()
     });
 
     return uid;
+  }
+
+  async updateAdminInfo(uid: string, username: string, name: string, phone: string, address?: string, idType?: string, idValue?: string) {
+    const clean = username.trim().toLowerCase().replace(/^@/, '');
+    
+    // Update Users Collection
+    const userRef = doc(this.firestore, `users/${uid}`);
+    await updateDoc(userRef, {
+       displayName: name,
+       phone: phone,
+       username: clean,
+       address: address || '',
+       idType: idType || '',
+       idValue: idValue || ''
+    });
+
+    // Update Admin Credentials
+    const credRef = doc(this.firestore, `admin_credentials/${clean}`);
+    const snap = await getDoc(credRef);
+    if (snap.exists()) {
+       await updateDoc(credRef, {
+          displayName: name,
+          phone: phone,
+          address: address || '',
+          idType: idType || '',
+          idValue: idValue || '',
+          updatedAt: new Date().toISOString()
+       });
+    }
+  }
+
+  async getAdminPassword(username: string): Promise<string | null> {
+    const clean = username.trim().toLowerCase().replace(/^@/, '');
+    const credRef = doc(this.firestore, `admin_credentials/${clean}`);
+    const snap = await getDoc(credRef);
+    if (snap.exists()) {
+       return snap.data()['password'] || null;
+    }
+    return null;
   }
 
   async provisionCustomer(username: string, name: string, phone: string, defaultPassword = '123456') {
@@ -227,6 +275,15 @@ export class AuthService {
     if (adminSnap.exists()) return true;
     const custSnap = await getDoc(doc(this.firestore, `customer_credentials/${clean}`));
     return custSnap.exists();
+  }
+
+  async getUidByUsername(username: string): Promise<string | null> {
+    const clean = username.trim().toLowerCase().replace(/^@/, '');
+    const adminSnap = await getDoc(doc(this.firestore, `admin_credentials/${clean}`));
+    if (adminSnap.exists()) return adminSnap.data()!['uid'];
+    const custSnap = await getDoc(doc(this.firestore, `customer_credentials/${clean}`));
+    if (custSnap.exists()) return custSnap.data()!['uid'];
+    return null;
   }
 
   async logout() {

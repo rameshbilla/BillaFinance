@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, addDoc, collectionData, doc, updateDoc, deleteDoc, docData } from '@angular/fire/firestore';
+import { Firestore, collection, addDoc, collectionData, doc, updateDoc, deleteDoc, docData, query, where } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 
 export interface Settlement {
@@ -30,6 +30,7 @@ export interface InterestScheme {
   interestCollections?: InterestCollection[];
   startDate: string;
   username: string;
+  createdBy?: string;
 }
 
 @Injectable({
@@ -39,7 +40,11 @@ export class InterestService {
   private firestore = inject(Firestore);
   private interestCollection = collection(this.firestore, 'interests');
 
-  getInterests(): Observable<InterestScheme[]> {
+  getInterests(adminUid?: string): Observable<InterestScheme[]> {
+    if (adminUid) {
+      const q = query(this.interestCollection, where('createdBy', '==', adminUid));
+      return collectionData(q, { idField: 'id' }) as Observable<InterestScheme[]>;
+    }
     return collectionData(this.interestCollection, { idField: 'id' }) as Observable<InterestScheme[]>;
   }
 

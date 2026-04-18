@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, addDoc, collectionData, doc, updateDoc, deleteDoc, docData } from '@angular/fire/firestore';
+import { Firestore, collection, addDoc, collectionData, doc, updateDoc, deleteDoc, docData, query, where } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 
 export interface ChittiScheme {
@@ -10,6 +10,7 @@ export interface ChittiScheme {
   startDate: string;
   endDate: string;
   totalValue: number;
+  createdBy?: string;
 }
 
 @Injectable({
@@ -19,7 +20,11 @@ export class ChittiService {
   private firestore = inject(Firestore);
   private chittiCollection = collection(this.firestore, 'chittis');
 
-  getChittis(): Observable<ChittiScheme[]> {
+  getChittis(adminUid?: string): Observable<ChittiScheme[]> {
+    if (adminUid) {
+      const q = query(this.chittiCollection, where('createdBy', '==', adminUid));
+      return collectionData(q, { idField: 'id' }) as Observable<ChittiScheme[]>;
+    }
     return collectionData(this.chittiCollection, { idField: 'id' }) as Observable<ChittiScheme[]>;
   }
 
