@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Auth, signOut, user, RecaptchaVerifier, signInWithPhoneNumber } from '@angular/fire/auth';
 import { Firestore, doc, setDoc, getDoc, docData, updateDoc } from '@angular/fire/firestore';
-import { Observable, of, switchMap, BehaviorSubject } from 'rxjs';
+import { Observable, of, switchMap, BehaviorSubject, map } from 'rxjs';
 
 export interface UserProfile {
   uid: string;
@@ -53,7 +53,9 @@ export class AuthService {
         return of({ uid: 'super-admin-static', email: 'admin', displayName: 'Super Admin', role: 'super-admin' } as UserProfile);
       }
       const userRef = doc(this.firestore, `users/${u.uid}`);
-      return docData(userRef) as Observable<UserProfile>;
+      return docData(userRef).pipe(
+        map(data => (data || u) as UserProfile)
+      );
     })
   );
 
@@ -81,20 +83,20 @@ export class AuthService {
     const adminCredRef = doc(this.firestore, `admin_credentials/${clean}`);
     const adminSnap = await getDoc(adminCredRef);
     if (adminSnap.exists()) {
-       const data = adminSnap.data();
-       if (data['password'] === password) {
-          const mockUser: any = {
-            uid: data['uid'],
-            email: `${clean}@admin.billa`,
-            displayName: data['displayName'] || clean,
-            role: 'admin'
-          };
-          this.staticUserSubject.next(mockUser);
-          localStorage.setItem('customSession', JSON.stringify(mockUser));
-          return;
-       } else {
-         throw new Error('Incorrect password for admin.');
-       }
+      const data = adminSnap.data();
+      if (data['password'] === password) {
+        const mockUser: any = {
+          uid: data['uid'],
+          email: `${clean}@admin.billa`,
+          displayName: data['displayName'] || clean,
+          role: 'admin'
+        };
+        this.staticUserSubject.next(mockUser);
+        localStorage.setItem('customSession', JSON.stringify(mockUser));
+        return;
+      } else {
+        throw new Error('Incorrect password for admin.');
+      }
     }
 
     // 3. Customer login
@@ -132,31 +134,34 @@ export class AuthService {
    * GENERIC USER PROVISIONING — used for both Admins and Customers
    */
   async provisionUser(role: 'admin' | 'customer', username: string, name: string, phone: string, defaultPassword?: string, address?: string, idType?: string, idValue?: string) {
-    const clean = username.trim().toLowerCase().replace(/^@/, '');
+    const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
     const colName = role === 'admin' ? 'admin_credentials' : 'customer_credentials';
     const pwd = defaultPassword || (role === 'admin' ? 'admin123' : '123456');
 
-    const credRef = doc(this.firestore, `${colName}/${clean}`);
+    const credRef = doc(this.firestore, `${colName}/${cleanUsername}`);
     const existingSnap = await getDoc(credRef);
-    const password = existingSnap.exists() ? existingSnap.data()['password'] : pwd;
-    const uid = existingSnap.exists() ? existingSnap.data()['uid'] : `${role}_${clean}_${Date.now()}`;
+    const existingData = existingSnap.exists() ? existingSnap.data() : null;
 
-    const profile: UserProfile = {
+    // Ensure we don't accidentally pull undefined if an old record was incomplete
+    const password = (existingData && existingData['password']) ? existingData['password'] : pwd;
+    const uid = (existingData && existingData['uid']) ? existingData['uid'] : `${role}_${cleanUsername}_${Date.now()}`;
+
+    const profileData = this.cleanData({
       uid,
-      email: `${clean}@${role}.billa`,
+      email: `${cleanUsername}@${role}.billa`,
       displayName: name,
       role,
       phone,
-      username: clean,
+      username: cleanUsername,
       address,
       idType,
       idValue
-    };
+    });
 
-    await setDoc(doc(this.firestore, `users/${uid}`), profile);
-    await setDoc(credRef, {
+    await setDoc(doc(this.firestore, `users/${uid}`), profileData);
+    await setDoc(credRef, this.cleanData({
       uid,
-      username: clean,
+      username: cleanUsername,
       password,
       displayName: name,
       phone,
@@ -165,37 +170,47 @@ export class AuthService {
       idType,
       idValue,
       updatedAt: new Date().toISOString()
-    });
+    }));
 
     return uid;
   }
 
+  private cleanData(obj: any): any {
+    const result: any = {};
+    Object.keys(obj).forEach(key => {
+      if (obj[key] !== undefined) {
+        result[key] = obj[key];
+      }
+    });
+    return result;
+  }
+
   async updateAdminInfo(uid: string, username: string, name: string, phone: string, address?: string, idType?: string, idValue?: string) {
     const clean = username.trim().toLowerCase().replace(/^@/, '');
-    
+
     // Update Users Collection
     const userRef = doc(this.firestore, `users/${uid}`);
-    await updateDoc(userRef, {
-       displayName: name,
-       phone: phone,
-       username: clean,
-       address: address || '',
-       idType: idType || '',
-       idValue: idValue || ''
-    });
+    await updateDoc(userRef, this.cleanData({
+      displayName: name,
+      phone: phone,
+      username: clean,
+      address,
+      idType,
+      idValue
+    }));
 
     // Update Admin Credentials
     const credRef = doc(this.firestore, `admin_credentials/${clean}`);
     const snap = await getDoc(credRef);
     if (snap.exists()) {
-       await updateDoc(credRef, {
-          displayName: name,
-          phone: phone,
-          address: address || '',
-          idType: idType || '',
-          idValue: idValue || '',
-          updatedAt: new Date().toISOString()
-       });
+      await updateDoc(credRef, this.cleanData({
+        displayName: name,
+        phone: phone,
+        address,
+        idType,
+        idValue,
+        updatedAt: new Date().toISOString()
+      }));
     }
   }
 
@@ -204,14 +219,15 @@ export class AuthService {
     const credRef = doc(this.firestore, `admin_credentials/${clean}`);
     const snap = await getDoc(credRef);
     if (snap.exists()) {
-       return snap.data()['password'] || null;
+      return snap.data()['password'] || null;
     }
     return null;
   }
 
-  async provisionCustomer(username: string, name: string, phone: string, defaultPassword = '123456') {
-    return this.provisionUser('customer', username, name, phone, defaultPassword);
+  async provisionCustomer(username: string, name: string, phone: string, defaultPassword = '123456', address?: string, idType?: string, idValue?: string) {
+    return this.provisionUser('customer', username, name, phone, defaultPassword, address, idType, idValue);
   }
+
 
   async changePassword(username: string, newPassword: string, role: 'admin' | 'customer') {
     const clean = username.trim().toLowerCase().replace(/^@/, '');
@@ -224,12 +240,12 @@ export class AuthService {
 
   async verifyAndChangePassword(username: string, currentPassword: string, newPassword: string) {
     const clean = username.trim().toLowerCase().replace(/^@/, '');
-    
+
     // Check admin first then customer
     let colName: string | null = null;
     let credRef = doc(this.firestore, `admin_credentials/${clean}`);
     let snap = await getDoc(credRef);
-    
+
     if (snap.exists()) {
       colName = 'admin_credentials';
     } else {
@@ -239,10 +255,10 @@ export class AuthService {
     }
 
     if (!colName || !snap.exists()) throw new Error('Account not found.');
-    
+
     const stored = snap.data()['password'];
     if (stored !== currentPassword) throw new Error('Current password is incorrect.');
-    
+
     await setDoc(credRef, { ...snap.data(), password: newPassword });
   }
 

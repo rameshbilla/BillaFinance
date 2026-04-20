@@ -468,20 +468,20 @@ import { Observable } from 'rxjs';
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                @for (cust of getFilteredCustomers(); track cust.id; let i = $index) {
-                  <div class="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all relative group">
+                  <div (click)="openEditCustomer(cust)" class="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all relative group cursor-pointer">
                      <div class="absolute top-4 right-4 flex items-center gap-1 transition-all">
-                        <button (click)="openEditCustomer(cust)" class="p-2 text-gray-400 hover:text-purple-600 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 transition-colors" title="Edit">
-                           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                        <button (click)="openEditCustomer(cust); $event.stopPropagation()" class="p-2 text-gray-400 hover:text-purple-600 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 transition-colors cursor-pointer z-10" title="Edit">
+                           <svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                         </button>
-                        <button (click)="deleteCustomer(cust.id!)" class="p-2 text-gray-400 hover:text-red-500 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 transition-colors" title="Delete">
-                           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        <button (click)="deleteCustomer(cust.id!); $event.stopPropagation()" class="p-2 text-gray-400 hover:text-red-500 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 transition-colors cursor-pointer z-10" title="Delete">
+                           <svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>
                      </div>
                      <div class="flex items-center gap-4 mb-4">
                         <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 font-black text-lg shadow-inner">
                            {{ cust.name?.charAt(0) || '?' }}
                         </div>
-                        <div class="min-w-0">
+                        <div class="min-w-0 pr-16">
                            <h4 class="font-black text-gray-900 dark:text-white truncate">{{ cust.name }}</h4>
                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ cust.username ? '@' + cust.username : 'Temporary' }}</p>
                         </div>
@@ -493,7 +493,7 @@ import { Observable } from 'rxjs';
                         </div>
                         <div class="flex justify-between items-center pt-3 border-t border-gray-50 dark:border-gray-700/50">
                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Type: <span class="text-purple-600">{{ cust.schemeType || 'Interest' }}</span></p>
-                           <button (click)="cust.schemeType === 'chitti' ? viewChitDetails(cust.schemeId) : viewInterestDetails(cust.schemeId)" class="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:underline">View Account →</button>
+                           <button (click)="viewCustomerAccounts(cust); $event.stopPropagation()" class="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:underline z-10 cursor-pointer relative">View Accounts →</button>
                         </div>
                      </div>
                   </div>
@@ -613,6 +613,43 @@ import { Observable } from 'rxjs';
          </div>
       </div>
 
+      <!-- Multiple Accounts Modal -->
+      @if (showAccountsModal) {
+          <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-md px-4">
+             <div class="bg-white dark:bg-gray-900 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+                <div class="p-8">
+                   <div class="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
+                      <div>
+                         <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Select Account</h3>
+                         <p class="text-sm text-gray-500 font-medium">@if (selectedCustomerForAccounts?.name) { {{ selectedCustomerForAccounts!.name }} } @else { Customer }</p>
+                      </div>
+                      <button (click)="showAccountsModal = false" class="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:rotate-90 transition-all text-gray-500 hover:text-red-500">
+                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                   </div>
+                   
+                   <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                      @for (acc of customerAccountsList; track acc.id) {
+                         <div (click)="acc.type === 'chitti' ? viewChitDetails(acc.id) : viewInterestDetails(acc.id); showAccountsModal = false;"
+                              class="p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-800 hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer transition-all group flex justify-between items-center">
+                            <div>
+                               <p class="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest">{{ acc.info }}</p>
+                               <h4 class="text-base font-black text-gray-900 dark:text-white mt-1">{{ acc.name }}</h4>
+                            </div>
+                            <div class="text-right">
+                               <p class="text-sm font-black text-gray-900 dark:text-white">₹{{ acc.amount | number:'1.0-0' }}</p>
+                               <div class="mt-1 flex justify-end">
+                                  <span class="text-[10px] font-bold px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/40 group-hover:text-purple-600 dark:group-hover:text-purple-400 rounded-full transition-colors uppercase">View &rarr;</span>
+                               </div>
+                            </div>
+                         </div>
+                      }
+                   </div>
+                </div>
+             </div>
+          </div>
+      }
+
       <!-- Add/Edit Customer Modal -->
       @if (showCustomerModal) {
          <div class="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md px-4">
@@ -664,13 +701,32 @@ import { Observable } from 'rxjs';
                        </div>
 
                        <div>
-                          <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Username (for login)</label>
+                          <div class="flex items-center justify-between mb-2 px-1">
+                             <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest">Username (for login)</label>
+                             @if (isCheckingUsername) {
+                                <div class="flex items-center text-[10px] font-bold text-purple-400 uppercase tracking-wider">
+                                   <svg class="animate-spin h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                   Checking...
+                                </div>
+                             } @else if (usernameStatus === 'available') {
+                                <div class="text-[10px] font-black text-green-600 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded uppercase flex items-center">
+                                   <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                   Available
+                                </div>
+                             } @else if (usernameStatus === 'taken') {
+                                <div class="text-[10px] font-black text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded uppercase flex items-center">
+                                   <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                   Exists (Will Link)
+                                </div>
+                             }
+                          </div>
                           <div class="relative">
                              <span class="absolute left-4 top-3.5 text-gray-400 font-bold">&#64;</span>
-                             <input type="text" formControlName="username" placeholder="johndoe"
+                             <input type="text" formControlName="username" (input)="onUsernameInput()" placeholder="johndoe"
                                 class="w-full pl-8 pr-5 py-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white">
                           </div>
                        </div>
+
 
                        <div class="grid grid-cols-2 gap-4">
                           <div>
@@ -763,6 +819,42 @@ export class AdminDashboardComponent implements OnInit {
   existingMode = false;
   pickerSearch = '';
   isSuperAdmin = false;
+  
+  showAccountsModal = false;
+  selectedCustomerForAccounts: Customer | null = null;
+  customerAccountsList: any[] = [];
+  
+  // Login Provisioning Check states
+  isCheckingUsername = false;
+  usernameStatus: 'none' | 'available' | 'taken' = 'none';
+  private usernameTimeout: any;
+
+  onUsernameInput() {
+     const username = this.customerForm.get('username')?.value;
+     if (!username || this.isEditModal) {
+        this.usernameStatus = 'none';
+        return;
+     }
+
+     clearTimeout(this.usernameTimeout);
+     this.usernameTimeout = setTimeout(() => {
+        this.checkUsername(username);
+     }, 600);
+  }
+
+  async checkUsername(username: string) {
+     this.isCheckingUsername = true;
+     try {
+        const clean = username.trim().toLowerCase().replace(/^@/, '');
+        const exists = await this.authService.checkUserExists(clean);
+        this.usernameStatus = exists ? 'taken' : 'available';
+     } catch (e) {
+        this.usernameStatus = 'none';
+     } finally {
+        this.isCheckingUsername = false;
+     }
+  }
+
   passwordForm: FormGroup;
   adminForm: FormGroup;
   admins$: Observable<UserProfile[]> | null = null;
@@ -1005,12 +1097,62 @@ export class AdminDashboardComponent implements OnInit {
     );
   }
 
+  viewCustomerAccounts(cust: Customer) {
+    if (!cust.phone) {
+      this.toast.error('Customer has no registered phone number.');
+      return;
+    }
+    const accounts: any[] = [];
+
+    // Gather Chittis
+    const chittiEnrolments = this.allCustomers.filter(c => c.phone === cust.phone && c.schemeType === 'chitti');
+    chittiEnrolments.forEach(c => {
+      const scheme = this.chittis.find(s => s.id === c.schemeId);
+      if (scheme) {
+        accounts.push({
+           type: 'chitti',
+           id: scheme.id,
+           name: scheme.name,
+           amount: scheme.totalValue,
+           info: `Chit - ${scheme.tenure} Months`
+        });
+      }
+    });
+
+    // Gather Interest Loans
+    const loans = this.interests.filter(i => i.borrowerPhone === cust.phone);
+    loans.forEach(loan => {
+       accounts.push({
+           type: 'interest',
+           id: loan.id,
+           name: loan.name,
+           amount: loan.amount,
+           info: `Loan - ${loan.interestRate}% Interest p.m.`
+       });
+    });
+
+    if (accounts.length === 0) {
+       this.toast.error('No active loan or chitti accounts found for this customer.');
+    } else if (accounts.length === 1) {
+       // Direct navigation
+       if (accounts[0].type === 'chitti') this.viewChitDetails(accounts[0].id);
+       else this.viewInterestDetails(accounts[0].id);
+    } else {
+       // Multiple - show modal
+       this.customerAccountsList = accounts;
+       this.selectedCustomerForAccounts = cust;
+       this.showAccountsModal = true;
+    }
+  }
+
   // --- Customer Operations ---
   openAddCustomerModal() {
     this.isEditModal = false;
     this.editingCustomer = null;
     this.existingMode = false;
     this.pickerSearch = '';
+    this.usernameStatus = 'none';
+    this.isCheckingUsername = false;
     this.customerForm.reset({
       schemeType: 'chitti',
       schemeId: '',
@@ -1041,6 +1183,8 @@ export class AdminDashboardComponent implements OnInit {
     this.showCustomerModal = false;
     this.editingCustomer = null;
     this.isSaving = false;
+    this.usernameStatus = 'none';
+    this.isCheckingUsername = false;
   }
 
   get filteredPickerCustomers() {
@@ -1071,11 +1215,29 @@ export class AdminDashboardComponent implements OnInit {
         
         if (this.isEditModal && this.editingCustomer?.id) {
            await this.customerService.updateCustomer(this.editingCustomer.id, val);
+           
+           // Optionally update provision if username changed, but basic info is enough for now
+           if (val.username) {
+             await this.authService.provisionCustomer(val.username, val.name, val.phone);
+           }
            this.toast.success('Customer updated!');
         } else {
-           const newCustomer = { ...val, createdBy: profile?.uid };
-           await this.customerService.addCustomer(newCustomer);
-           this.toast.success('Customer created!');
+           try {
+             // 1. Provision Login
+             const alreadyExists = await this.authService.checkUserExists(val.username);
+             if (!alreadyExists) {
+               await this.authService.provisionCustomer(val.username, val.name, val.phone);
+             }
+             
+             // 2. Save Customer profile
+             const newCustomer = { ...val, createdBy: profile?.uid };
+             await this.customerService.addCustomer(newCustomer);
+             this.toast.success('Customer created & login provisioned!');
+           } catch (e: any) {
+             console.error('Registration failed', e);
+             this.toast.error(e.message || 'Could not provision login account. Username might be taken.');
+             return;
+           }
         }
         this.closeCustomerModal();
         this.loadData();

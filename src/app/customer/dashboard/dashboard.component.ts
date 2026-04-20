@@ -89,6 +89,9 @@ import { ToastService } from '../../shared/toast.service';
               <h1 class="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 tracking-tighter">BillaFinance</h1>
             </div>
             <div class="flex items-center gap-4">
+              <button (click)="activeTab = 'security'; activeMobileMenu = 'security'" class="p-2 text-gray-500 hover:text-indigo-600 transition-colors hidden sm:block" title="Security & Password">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+              </button>
               <button (click)="toggleTheme()" class="p-2 text-gray-500 hover:text-purple-600 transition-colors">
                 <svg *ngIf="!isDarkMode" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
                 <svg *ngIf="isDarkMode" class="w-6 h-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
@@ -184,19 +187,19 @@ import { ToastService } from '../../shared/toast.service';
                     <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-[10px] font-black uppercase tracking-widest rounded-full">{{ loan.interestRate }}% Interest p.m.</span>
                   </div>
                   <div class="text-right">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Balance</p>
-                    <p class="text-lg font-black text-red-600">₹{{ getBalance(loan) | number:'1.0-0' }}</p>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Outstanding</p>
+                    <p class="text-lg font-black text-red-600">₹{{ getBalance(loan) + getPendingInterest(loan) | number:'1.0-0' }}</p>
                   </div>
                 </div>
 
                 <div class="grid grid-cols-3 gap-2 mb-8">
                   <div class="space-y-1">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase truncate">Sanctioned</p>
-                    <p class="text-base font-black text-gray-900 dark:text-white truncate">₹{{ loan.amount | number:'1.0-0' }}</p>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase truncate">Principal</p>
+                    <p class="text-base font-black text-gray-900 dark:text-white truncate">₹{{ getBalance(loan) | number:'1.0-0' }}</p>
                   </div>
                   <div class="space-y-1 text-center">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase truncate">Paid Back</p>
-                    <p class="text-base font-black text-green-600 truncate">₹{{ getLoanPaid(loan) | number:'1.0-0' }}</p>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase truncate">Pending Int.</p>
+                    <p class="text-base font-black text-orange-500 truncate">₹{{ getPendingInterest(loan) | number:'1.0-0' }}</p>
                   </div>
                   <div class="space-y-1 text-right">
                     <p class="text-[10px] font-bold text-blue-400 uppercase truncate">Monthly Int.</p>
@@ -206,9 +209,9 @@ import { ToastService } from '../../shared/toast.service';
 
                 <div class="space-y-3 mb-8">
                   <div class="flex justify-between items-end">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Repayment</p>
-                    <p class="text-xs font-black text-blue-600 dark:text-blue-400">
-                      {{ (getLoanPaid(loan) / loan.amount * 100) | number:'1.0-0' }}% Completed
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Next Due: <span class="text-indigo-600 dark:text-indigo-400">{{ getNextPayableDate(loan) | date:'MMM dd, yyyy' }}</span></p>
+                    <p class="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase">
+                      Repayment: {{ (getLoanPaid(loan) / loan.amount * 100) | number:'1.0-0' }}%
                     </p>
                   </div>
                   <div class="w-full progress-professional h-1.5 rounded-full overflow-hidden">
@@ -269,8 +272,8 @@ import { ToastService } from '../../shared/toast.service';
 
       <!-- Password Update Modal -->
       @if (activeTab === 'security') {
-        <div class="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md px-4 sm:hidden">
-            <div class="bg-white dark:bg-gray-900 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in slide-in-from-bottom duration-500">
+        <div class="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md px-4">
+            <div class="bg-white dark:bg-gray-900 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in slide-in-from-bottom sm:zoom-in-95 duration-500">
                <div class="p-8">
                   <div class="flex justify-between items-center mb-8">
                      <div>
@@ -468,6 +471,39 @@ export class CustomerDashboardComponent implements OnInit {
 
   getLoanInterestPaid(loan: InterestScheme): number {
     return (loan.interestCollections || []).reduce((sum, c) => sum + c.amount, 0);
+  }
+
+  getPendingInterest(loan: InterestScheme): number {
+    if (!loan.startDate) return 0;
+    const start = new Date(loan.startDate);
+    const now = new Date();
+    if (isNaN(start.getTime())) return 0;
+    
+    // Approximate months diff (full months)
+    const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+    const cappedMonths = Math.max(0, months);
+    
+    const balance = this.getBalance(loan);
+    const expectedInterest = balance * (loan.interestRate / 100) * cappedMonths;
+    const paidInterest = this.getLoanInterestPaid(loan);
+    
+    return Math.max(0, expectedInterest - paidInterest);
+  }
+
+  getNextPayableDate(loan: InterestScheme): Date | null {
+    if (!loan.startDate) return null;
+    const start = new Date(loan.startDate);
+    const now = new Date();
+    if (isNaN(start.getTime())) return null;
+    
+    let nextDate = new Date(now.getFullYear(), now.getMonth(), start.getDate());
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    if (today.getTime() > nextDate.getTime()) {
+      nextDate = new Date(now.getFullYear(), now.getMonth() + 1, start.getDate());
+    }
+    
+    return nextDate;
   }
 
   getAllLoanTransactions(loan: InterestScheme) {

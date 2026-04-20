@@ -363,6 +363,8 @@ export class AdminInterestCreateComponent implements OnInit {
      const username = this.schemeForm.get('borrowerUsername')?.value;
      const name = this.schemeForm.get('borrowerName')?.value;
      const phone = this.schemeForm.get('borrowerPhone')?.value;
+     const idType = this.schemeForm.get('borrowerIdType')?.value;
+     const idValue = this.schemeForm.get('borrowerIdValue')?.value;
 
      if (!username || !name || !phone) {
         this.toast.warning('Please fill Name, Phone and Username first.');
@@ -371,7 +373,8 @@ export class AdminInterestCreateComponent implements OnInit {
 
      try {
         this.isCheckingUsername = true;
-        await this.authService.provisionCustomer(username, name, phone);
+        // Password defaults to 123456, address is not available in this form
+        await this.authService.provisionCustomer(username, name, phone, '123456', undefined, idType, idValue);
         this.toast.success(`Login provisioned for @${username}`);
         this.usernameStatus = 'valid';
      } catch (e) {
@@ -380,6 +383,7 @@ export class AdminInterestCreateComponent implements OnInit {
         this.isCheckingUsername = false;
      }
   }
+
 
   ngOnInit() {
     this.currentSchemeId = this.route.snapshot.paramMap.get('id');
