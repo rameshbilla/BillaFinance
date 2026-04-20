@@ -21,6 +21,10 @@ import { ToastService } from '../../shared/toast.service';
       .custom-scrollbar::-webkit-scrollbar { width: 4px; }
       .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
       
+      .history-step { position: relative; padding-left: 3.2rem; }
+      .stepper-line { position: absolute; left: 1rem; top: 2.25rem; bottom: -2rem; width: 2px; transform: translateX(-50%); }
+      .stepper-dot { position: absolute; left: 1rem; top: 0.25rem; transform: translateX(-50%); }
+      
       .bottom-nav-pill {
         position: fixed;
         bottom: 24px;
@@ -106,8 +110,9 @@ import { ToastService } from '../../shared/toast.service';
 
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
         
-        <!-- Welcome Section -->
-        <section class="fade-in-up" *ngIf="authService.userProfile$ | async as profile" style="animation-delay: 0.1s">
+        @if (!selectedChit && !selectedLoan) {
+          <!-- Welcome Section -->
+          <section class="fade-in-up" *ngIf="authService.userProfile$ | async as profile" style="animation-delay: 0.1s">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
             <div>
               <p class="text-sm font-black text-purple-600 dark:text-purple-400 uppercase tracking-[0.2em] mb-2">Welcome Back</p>
@@ -133,7 +138,12 @@ import { ToastService } from '../../shared/toast.service';
                 <div class="flex justify-between items-start mb-6">
                   <div>
                     <h4 class="text-xl font-black text-gray-900 dark:text-white mb-1">{{ item.scheme.name }}</h4>
-                    <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 text-[10px] font-black uppercase tracking-widest rounded-full">Monthly Chitti</span>
+                    <div class="flex items-center gap-2">
+                      <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 text-[10px] font-black uppercase tracking-widest rounded-full">Monthly Chitti</span>
+                      <button (click)="openIdentityProfile('chit', item)" class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-purple-600 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-1">
+                        Profile
+                      </button>
+                    </div>
                   </div>
                   <div class="text-right">
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Balance</p>
@@ -165,7 +175,9 @@ import { ToastService } from '../../shared/toast.service';
                   </div>
                 </div>
 
-                <button (click)="openChitHistory(item)" class="w-full py-4 bg-gray-900 dark:bg-white text-white dark:text-black rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-purple-600 dark:hover:bg-purple-500 hover:text-white transition-all">View Statement</button>
+                <div class="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-gray-700/50">
+                   <button (click)="openChitHistory(item)" class="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">View Statement</button>
+                </div>
               </div>
             }
           </div>
@@ -184,7 +196,12 @@ import { ToastService } from '../../shared/toast.service';
                 <div class="flex justify-between items-start mb-6">
                   <div>
                     <h4 class="text-xl font-black text-gray-900 dark:text-white mb-1">{{ loan.name }}</h4>
-                    <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-[10px] font-black uppercase tracking-widest rounded-full">{{ loan.interestRate }}% Interest p.m.</span>
+                    <div class="flex items-center gap-2">
+                       <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-[10px] font-black uppercase tracking-widest rounded-full">{{ loan.interestRate }}% Interest p.m.</span>
+                       <button (click)="openIdentityProfile('loan', loan)" class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-1">
+                         Profile
+                       </button>
+                    </div>
                   </div>
                   <div class="text-right">
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Outstanding</p>
@@ -220,7 +237,9 @@ import { ToastService } from '../../shared/toast.service';
                   </div>
                 </div>
 
-                <button (click)="openLoanHistory(loan)" class="w-full py-4 bg-gray-900 dark:bg-white text-white dark:text-black rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-600 dark:hover:bg-blue-500 hover:text-white transition-all">Loan Statement</button>
+                <div class="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-gray-700/50">
+                   <button (click)="openLoanHistory(loan)" class="px-6 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-md transition-all">Loan Statement</button>
+                </div>
               </div>
             }
           </div>
@@ -234,7 +253,99 @@ import { ToastService } from '../../shared/toast.service';
             <h3 class="text-xl font-bold text-gray-900 dark:text-white">No active records found</h3>
             <p class="text-gray-500 mt-2">You don't have any active chit or loan schemes at the moment.</p>
         </div>
+        } @else {
+           <!-- Statement Directive View -->
+           <div class="animate-in fade-in slide-in-from-right-4 duration-500 col-span-full w-full">
+             <button (click)="selectedChit = null; selectedLoan = null" class="flex items-center gap-2 text-[10px] font-black text-gray-500 hover:text-purple-600 transition-colors uppercase tracking-[0.2em] mb-6">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                Back to Dashboard
+             </button>
+             
+             <!-- Restored Inline layout core -->
+             <div class="bg-white dark:bg-gray-800 rounded-[3rem] w-full mt-2 overflow-hidden shadow-2xl transition-all border border-gray-100 dark:border-gray-700">
+               <div class="p-8 sm:p-10">
+                  <div class="flex justify-between items-start mb-8">
+                     <div>
+                        <div class="flex items-center gap-2 mb-1">
+                           <span class="w-3 h-3 rounded-full" [class]="selectedChit ? 'bg-purple-500' : 'bg-blue-500'"></span>
+                           <h3 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">
+                             {{ selectedChit ? selectedChit.scheme.name : selectedLoan?.name }}
+                           </h3>
+                        </div>
+                        <p class="text-gray-500 font-medium">Transaction Statement</p>
+                     </div>
+                  </div>
 
+                  <div class="grid grid-cols-2 gap-2 sm:gap-4 mb-8">
+                    <div class="bg-gray-50 dark:bg-gray-900/50 p-4 sm:p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 flex flex-col justify-center">
+                       <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 truncate">
+                         {{ selectedChit ? 'Total Paid' : 'Principal Paid' }}
+                       </p>
+                       <p class="text-2xl font-black text-gray-900 dark:text-white truncate">
+                         ₹{{ selectedChit ? getChitPaid(selectedChit.customer) : getLoanPaid(selectedLoan!) | number:'1.0-0' }}
+                       </p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-900/50 p-4 sm:p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 flex flex-col justify-center">
+                       <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 truncate">Balance</p>
+                       <p class="text-2xl font-black text-red-600 truncate">
+                         ₹{{ selectedChit ? getChitPending(selectedChit.scheme, selectedChit.customer) : getBalance(selectedLoan!) | number:'1.0-0' }}
+                       </p>
+                    </div>
+                  </div>
+
+                  <div class="max-h-[50vh] overflow-y-auto pr-3 space-y-0 custom-scrollbar mt-2">
+                     @if (selectedChit) {
+                        @let chitTrans = sortLatest(selectedChit.customer.payments);
+                        @for (payment of chitTrans; track payment.id; let i = $index) {
+                           <div class="history-step group relative pb-6">
+                              @if (i < chitTrans.length - 1) { <div class="stepper-line bg-purple-500/30"></div> }
+                              <div class="stepper-dot w-8 h-8 rounded-full flex items-center justify-center text-white bg-purple-600 shadow-lg shadow-purple-500/30 z-10 transition-transform group-hover:scale-110">
+                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                              </div>
+                              <div class="p-4 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-md hover:border-purple-200 flex justify-between items-center">
+                                 <div>
+                                    <p class="font-bold text-gray-900 dark:text-white">{{ payment.date | date:'longDate' }}</p>
+                                    <p class="text-[10px] text-purple-500 font-black uppercase tracking-widest mt-1">REF: {{ payment.id?.slice(-8) || 'N/A' }}</p>
+                                 </div>
+                                 <div class="text-right">
+                                    <p class="text-xl font-black text-gray-900 dark:text-white">+₹{{ payment.amount | number:'1.0-0' }}</p>
+                                 </div>
+                              </div>
+                           </div>
+                        }
+                     }
+                     @if (selectedLoan) {
+                        @let loanTrans = getAllLoanTransactions(selectedLoan);
+                        @for (item of loanTrans; track item.id; let i = $index) {
+                           <div class="history-step group relative pb-6">
+                              @if (i < loanTrans.length - 1) { <div class="stepper-line" [class]="item.type === 'interest' ? 'bg-indigo-500/30' : 'bg-green-500/30'"></div> }
+                              <div class="stepper-dot w-8 h-8 rounded-full flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110 z-10"
+                                   [class]="item.type === 'interest' ? 'bg-indigo-600 shadow-indigo-500/30' : 'bg-green-600 shadow-green-500/30'">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                              </div>
+                              <div class="p-4 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all flex justify-between items-center"
+                                   [class]="item.type === 'interest' ? 'hover:border-indigo-200 hover:shadow-md' : 'hover:border-green-200 hover:shadow-md'">
+                                <div>
+                                   <p class="font-bold text-gray-900 dark:text-white leading-tight">{{ item.date | date:'longDate' }}</p>
+                                   <p class="text-[9px] font-black uppercase tracking-widest mt-1" [class]="item.type === 'interest' ? 'text-indigo-500' : 'text-green-500'">
+                                     {{ item.type === 'interest' ? 'Interest Payment' : 'Principal Repayment' }}
+                                   </p>
+                                </div>
+                                <div class="text-right">
+                                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Amount Paid</p>
+                                  <p class="text-xl font-black leading-none" [class]="item.type === 'interest' ? 'text-indigo-600' : 'text-green-600'">
+                                    +₹{{ item.amount | number:'1.0-0' }}
+                                  </p>
+                                </div>
+                              </div>
+                           </div>
+                        }
+                     }
+                  </div>
+               </div>
+             </div>
+           </div>
+        }
       </main>
 
       <!-- Bottom Mobile Nav -->
@@ -308,69 +419,80 @@ import { ToastService } from '../../shared/toast.service';
         </div>
       }
 
-      <!-- Shared Statement Modal -->
-      @if (selectedChit || selectedLoan) {
-        <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 backdrop-blur-lg px-4">
-            <div class="bg-white dark:bg-gray-800 rounded-[3rem] w-full max-w-2xl overflow-hidden shadow-2xl transition-all border border-gray-100 dark:border-gray-700">
-               <div class="p-8 sm:p-10">
-                  <div class="flex justify-between items-start mb-8">
+      <!-- Identity Popup Modal -->
+      @if (showIdentityPopup && identityPayload) {
+        <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-md px-4">
+            <div class="bg-white dark:bg-gray-900 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 border border-gray-100 dark:border-gray-800">
+               <div class="p-8">
+                  <div class="flex justify-between items-center mb-6">
                      <div>
-                        <div class="flex items-center gap-2 mb-1">
-                           <span class="w-3 h-3 rounded-full" [class]="selectedChit ? 'bg-purple-500' : 'bg-blue-500'"></span>
-                           <h3 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">
-                             {{ selectedChit ? selectedChit.scheme.name : selectedLoan?.name }}
-                           </h3>
-                        </div>
-                        <p class="text-gray-500 font-medium">Transaction Statement</p>
+                        <h3 class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter uppercase">Profile details</h3>
+                        <p class="text-[10px] font-black text-purple-600 uppercase tracking-widest mt-0.5">{{ identityPayload.type }}</p>
                      </div>
-                     <button (click)="selectedChit = null; selectedLoan = null" class="p-3 bg-gray-100 dark:bg-gray-700 rounded-full hover:rotate-90 transition-all duration-300">
-                        <svg class="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                     <button (click)="showIdentityPopup = false" class="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:rotate-90 transition-all text-gray-500">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                      </button>
                   </div>
-
-                  <div class="grid grid-cols-2 gap-2 sm:gap-4 mb-8">
-                    <div class="bg-gray-50 dark:bg-gray-900/50 p-3 sm:p-5 rounded-[1.5rem] sm:rounded-[2rem] border border-gray-100 dark:border-gray-800 flex flex-col justify-center">
-                       <p class="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 truncate">
-                         {{ selectedChit ? 'Total Paid' : 'Principal Paid' }}
-                       </p>
-                       <p class="text-xs sm:text-2xl font-black text-gray-900 dark:text-white truncate">
-                         ₹{{ selectedChit ? getChitPaid(selectedChit.customer) : getLoanPaid(selectedLoan!) | number:'1.0-0' }}
-                       </p>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-gray-900/50 p-3 sm:p-5 rounded-[1.5rem] sm:rounded-[2rem] border border-gray-100 dark:border-gray-800 flex flex-col justify-center">
-                       <p class="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 truncate">Balance</p>
-                       <p class="text-xs sm:text-2xl font-black text-red-600 truncate">
-                         ₹{{ selectedChit ? getChitPending(selectedChit.scheme, selectedChit.customer) : getBalance(selectedLoan!) | number:'1.0-0' }}
-                       </p>
-                    </div>
-                  </div>
-
-                  <div class="max-h-[35vh] overflow-y-auto pr-3 space-y-3 custom-scrollbar">
-                     @if (selectedChit) {
-                        @for (payment of sortLatest(selectedChit.customer.payments); track payment.id) {
-                           <div class="flex justify-between items-center p-5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
-                              <div>
-                                 <p class="font-bold text-gray-900 dark:text-white">{{ payment.date | date:'mediumDate' }}</p>
-                                 <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">REF: {{ payment.id?.slice(-8) }}</p>
-                              </div>
-                              <p class="text-xl font-black text-green-600">+₹{{ payment.amount | number:'1.0-0' }}</p>
-                           </div>
-                        }
+                  <div class="space-y-4">
+                     <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-3xl pb-5">
+                       <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Full Name</p>
+                       <p class="text-lg font-black text-gray-900 dark:text-white leading-none">{{ identityPayload.name }}</p>
+                     </div>
+                     <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-[1.5rem] pb-5">
+                          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Mobile</p>
+                          <p class="text-sm font-black text-gray-900 dark:text-white">{{ identityPayload.phone }}</p>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-[1.5rem] pb-5 overflow-hidden">
+                          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Email</p>
+                          <p class="text-xs font-black text-gray-900 dark:text-white truncate" [title]="identityPayload.email">{{ identityPayload.email }}</p>
+                        </div>
+                     </div>
+                     <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-[1.5rem] pb-5">
+                          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Username</p>
+                          <p class="text-xs font-black text-purple-600 dark:text-purple-400">&#64;{{ identityPayload.username }}</p>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-[1.5rem] pb-5">
+                          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Joined Date</p>
+                          <p class="text-xs font-black text-gray-900 dark:text-white">{{ identityPayload.joinedDate | date:'mediumDate' }}</p>
+                        </div>
+                     </div>
+                     <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-[1.5rem] pb-5 overflow-hidden">
+                          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 truncate">Scheme ({{ identityPayload.schemeType }})</p>
+                          <p class="text-xs font-black text-gray-900 dark:text-white truncate" [title]="identityPayload.targetScheme">{{ identityPayload.targetScheme }}</p>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-[1.5rem] pb-5">
+                          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Status</p>
+                          <span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-black uppercase tracking-widest rounded">{{ identityPayload.status }}</span>
+                        </div>
+                     </div>
+                     @if (identityPayload.address !== 'N/A') {
+                       <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-3xl pb-5">
+                         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Registered Address</p>
+                         <p class="text-sm font-black text-gray-900 dark:text-white">{{ identityPayload.address }}</p>
+                       </div>
                      }
-                     @if (selectedLoan) {
-                        @for (item of getAllLoanTransactions(selectedLoan); track item.id) {
-                           <div class="flex justify-between items-center bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
-                              <div>
-                                 <p class="font-bold text-gray-900 dark:text-white">{{ item.date | date:'mediumDate' }}</p>
-                                 <p class="text-[10px] font-bold uppercase tracking-wider" [class]="item.type === 'interest' ? 'text-indigo-500' : 'text-green-500'">
-                                   {{ item.type === 'interest' ? 'Interest Payment' : 'Principal Repayment' }}
-                                 </p>
-                              </div>
-                              <p class="text-xl font-black" [class]="item.type === 'interest' ? 'text-indigo-600' : 'text-green-600'">
-                                +₹{{ item.amount | number:'1.0-0' }}
-                              </p>
-                           </div>
-                        }
+                     @if (identityPayload.description !== 'N/A') {
+                       <div class="bg-indigo-50/50 dark:bg-gray-800/50 p-4 rounded-3xl pb-5 mt-4 border border-indigo-100/50 dark:border-gray-700/50">
+                         <p class="text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-widest mb-1">Scheme Description</p>
+                         <p class="text-sm font-medium text-gray-600 dark:text-gray-400 italic leading-snug">"{{ identityPayload.description }}"</p>
+                       </div>
+                     }
+                     @if (identityPayload.idType !== 'N/A') {
+                       <div class="mt-4">
+                         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Customer ID Proof details</p>
+                         <div class="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 p-4 rounded-3xl border border-blue-100 dark:border-blue-800">
+                            <div>
+                               <p class="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">{{ identityPayload.idType }}</p>
+                               <p class="text-sm font-black text-blue-700 dark:text-blue-300">{{ identityPayload.idValue }}</p>
+                            </div>
+                            @if (identityPayload.idDoc) {
+                               <a [href]="identityPayload.idDoc" target="_blank" class="px-4 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-colors shadow-sm">View Proof &rarr;</a>
+                            }
+                         </div>
+                       </div>
                      }
                   </div>
                </div>
@@ -397,6 +519,49 @@ export class CustomerDashboardComponent implements OnInit {
 
   selectedChit: { scheme: ChittiScheme, customer: Customer } | null = null;
   selectedLoan: InterestScheme | null = null;
+  showIdentityPopup = false;
+  identityPayload: any = null;
+
+  openIdentityProfile(type: 'chit' | 'loan', payload: any) {
+    if (type === 'chit') {
+      const cust = payload as { scheme: ChittiScheme, customer: Customer };
+      this.identityPayload = {
+        name: cust.customer.name,
+        phone: cust.customer.phone,
+        email: cust.customer.email || 'N/A',
+        address: cust.customer.address || 'N/A',
+        username: cust.customer.username || 'N/A',
+        schemeType: 'Chitti',
+        targetScheme: cust.scheme.name,
+        joinedDate: cust.customer.joinedDate || 'N/A',
+        status: cust.customer.status || 'Active',
+        description: `A ${cust.scheme.tenure}-month Chitti scheme totaling ₹${cust.scheme.totalValue}.`,
+        type: 'Chit Member',
+        idType: 'N/A',
+        idValue: 'N/A',
+        idDoc: null
+      };
+    } else {
+      const loan = payload as InterestScheme;
+      this.identityPayload = {
+        name: loan.borrowerName,
+        phone: loan.borrowerPhone,
+        email: loan.borrowerEmail || 'N/A',
+        address: 'N/A',
+        username: loan.username || 'N/A',
+        schemeType: 'Interest Loan',
+        targetScheme: loan.name,
+        joinedDate: loan.startDate || 'N/A',
+        status: 'Active',
+        description: loan.description || 'N/A',
+        type: 'Loan Borrower',
+        idType: loan.borrowerIdType || 'N/A',
+        idValue: loan.borrowerIdValue || 'N/A',
+        idDoc: loan.borrowerIdDoc || null
+      };
+    }
+    this.showIdentityPopup = true;
+  }
 
   passwordForm: FormGroup = this.fb.group({
     newPassword: ['', [Validators.required, Validators.minLength(6)]],
