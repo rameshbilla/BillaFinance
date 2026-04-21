@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">BillaFinance</string>
-    <string name="title_activity_main">BillaFinance</string>
-    <string name="package_name">io.billafinance.app</string>
-    <string name="custom_url_scheme">io.billafinance.app</string>
+    <string name="app_name">FinServe</string>
+    <string name="title_activity_main">FinServe</string>
+    <string name="package_name">io.finserve.app</string>
+    <string name="custom_url_scheme">io.finserve.app</string>
 </resources>

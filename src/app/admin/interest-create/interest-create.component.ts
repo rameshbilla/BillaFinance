@@ -401,7 +401,7 @@ export class AdminInterestCreateComponent implements OnInit {
           name: s.borrowerName || '',
           phone: s.borrowerPhone || '',
           email: s.borrowerEmail || '',
-          username: (s as any).borrowerUsername || ''
+          username: s.borrowerUsername || ''
         }));
     });
   }
@@ -416,7 +416,7 @@ export class AdminInterestCreateComponent implements OnInit {
             borrowerName: scheme.borrowerName,
             borrowerPhone: scheme.borrowerPhone,
             borrowerEmail: scheme.borrowerEmail || '',
-            borrowerUsername: (scheme as any).borrowerUsername || '',
+            borrowerUsername: scheme.borrowerUsername || '',
             borrowerIdType: scheme.borrowerIdType || '',
             borrowerIdValue: scheme.borrowerIdValue || '',
             amount: scheme.amount,
@@ -424,8 +424,8 @@ export class AdminInterestCreateComponent implements OnInit {
             description: scheme.description,
           });
           this.currentDocUrl = scheme.borrowerIdDoc || null;
-          if ((scheme as any).borrowerUsername) {
-             this.checkUsername((scheme as any).borrowerUsername);
+          if (scheme.borrowerUsername) {
+             this.checkUsername(scheme.borrowerUsername);
           }
         }
       },

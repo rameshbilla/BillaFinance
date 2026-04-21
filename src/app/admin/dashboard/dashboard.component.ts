@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ChittiService, ChittiScheme } from '../services/chitti.service';
@@ -9,11 +9,13 @@ import { AuthService, UserProfile } from '../../services/auth.service';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Firestore, collection, collectionData, query, where, deleteDoc, doc } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
+import { BaseChartDirective } from 'ng2-charts';
+import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, BaseChartDirective],
   template: `
     <style>
       @keyframes fadeInUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
@@ -137,15 +139,15 @@ import { Observable } from 'rxjs';
 
         <!-- Tab Switcher (Only for regular admins or Super Admin Security) -->
         <div class="hidden sm:flex p-1.5 bg-gray-200/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl w-full sm:max-w-md mb-8 relative gap-1 overflow-x-auto no-scrollbar whitespace-nowrap border border-gray-100 dark:border-gray-700">
-          <button *ngIf="!isSuperAdmin" (click)="activeTab = 'chitti'; activeMobileMenu = 'chitti'"
-                  [class.tab-active]="activeTab === 'chitti'"
-                  class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
-            CHITTI
-          </button>
           <button *ngIf="!isSuperAdmin" (click)="activeTab = 'interest'; activeMobileMenu = 'interest'"
                   [class.tab-active]="activeTab === 'interest'"
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
             LOANS
+          </button>
+          <button *ngIf="!isSuperAdmin" (click)="activeTab = 'chitti'; activeMobileMenu = 'chitti'"
+                  [class.tab-active]="activeTab === 'chitti'"
+                  class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
+            CHITTI
           </button>
           <button *ngIf="!isSuperAdmin" (click)="activeTab = 'customers'; activeMobileMenu = 'customers'"
                   [class.tab-active]="activeTab === 'customers'"
@@ -293,6 +295,119 @@ import { Observable } from 'rxjs';
            </div>
         }
 
+        <!-- ═══════════ INTEREST DASHBOARD (Admin Only) ═══════════ -->
+        @if (!isSuperAdmin && activeTab === 'interest') {
+          <div class="card-animate" style="animation-delay:0.05s">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+              <div>
+                <h2 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Interest Management</h2>
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ interests.length }} active loan schemes</p>
+              </div>
+              <button (click)="goToCreateInterest()" class="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 font-bold text-white bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                New Loan
+              </button>
+            </div>
+
+            <!-- Analytics & Insights -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+              <!-- Bar Chart Card -->
+              <div class="lg:col-span-2 bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700 h-[280px] sm:h-[320px] relative overflow-hidden card-animate">
+                <div class="flex justify-between items-center mb-6">
+                  <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Monthly Collections · {{ selectedYear }}</h3>
+                  <div class="flex gap-2">
+                    <div class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></div>
+                    <div class="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" style="animation-delay: 0.2s"></div>
+                  </div>
+                </div>
+                <div class="h-[180px] sm:h-[220px] w-full">
+                  <canvas #loanChart="base-chart" baseChart
+                    [data]="barChartData"
+                    [options]="barChartOptions"
+                    [type]="barChartType">
+                  </canvas>
+                </div>
+              </div>
+
+              <!-- Filter & Summary Card -->
+              <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col justify-between h-[280px] sm:h-[320px] kpi-animate">
+                <div>
+                  <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Analytics Filter</h3>
+                  
+                  <div class="space-y-4">
+                    <div>
+                      <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 px-1 block">Select Year</label>
+                      <select [(ngModel)]="selectedYear" (ngModelChange)="updateLoanAnalytics()"
+                              class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 rounded-xl border-none outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-black text-gray-700 dark:text-gray-300 appearance-none cursor-pointer">
+                        @for (year of availableYears; track year) {
+                          <option [value]="year">{{ year }}</option>
+                        }
+                      </select>
+                    </div>
+
+                    <div>
+                      <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 px-1 block">Select Month</label>
+                      <select [(ngModel)]="selectedMonth" (ngModelChange)="updateLoanAnalytics()"
+                              class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 rounded-xl border-none outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-black text-gray-700 dark:text-gray-300 appearance-none cursor-pointer">
+                        <option [value]="-1">All Months</option>
+                        <option [value]="0">January</option>
+                        <option [value]="1">February</option>
+                        <option [value]="2">March</option>
+                        <option [value]="3">April</option>
+                        <option [value]="4">May</option>
+                        <option [value]="5">June</option>
+                        <option [value]="6">July</option>
+                        <option [value]="7">August</option>
+                        <option [value]="8">September</option>
+                        <option [value]="9">October</option>
+                        <option [value]="10">November</option>
+                        <option [value]="11">December</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="pt-4 border-t border-gray-50 dark:border-gray-700/50">
+                  <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Filtered Interest</p>
+                  <p class="text-3xl font-black text-indigo-600">₹{{ filteredTotalInterest | number:'1.0-0' }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Interest Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+              @for (loan of interests; track loan.id; let i = $index) {
+                <div class="scheme-card bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden card-animate"
+                     [style.animation-delay]="(i * 0.07 + 0.2) + 's'">
+                  <div class="h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600"></div>
+                  <div class="p-6">
+                    <div class="flex justify-between items-start mb-4 text-xs font-bold text-blue-600 dark:text-blue-400 capitalize">{{ loan.interestRate }}% Interest p.m.</div>
+                    <h3 class="text-lg font-black text-gray-900 dark:text-white cursor-pointer hover:text-indigo-600 transition-colors truncate mb-1" (click)="viewInterestDetails(loan.id!)">{{ loan.name }}</h3>
+                    <p class="text-xs text-gray-500 font-bold mb-4">{{ loan.borrowerName }}</p>
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                      <div class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-2xl">
+                        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Principal</p>
+                        <p class="text-sm font-black text-gray-900 dark:text-white">₹{{ loan.amount | number:'1.0-0' }}</p>
+                      </div>
+                      <div class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-2xl text-right">
+                        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Monthly Int.</p>
+                        <p class="text-sm font-black text-indigo-600">₹{{ (loan.amount * loan.interestRate / 100) | number:'1.0-0' }}</p>
+                      </div>
+                    </div>
+                    <div class="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-gray-700/50">
+                       <button (click)="viewInterestDetails(loan.id!)" class="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">Loan Statement</button>
+                       <div class="flex space-x-1">
+                          <button (click)="editInterest(loan.id!)" class="p-2 text-gray-400 hover:text-indigo-600 transition-all"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                          <button (click)="deleteInterest(loan.id!)" class="p-2 text-gray-400 hover:text-red-500 transition-all"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                       </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
         <!-- ═══════════ CHITTI DASHBOARD (Admin Only) ═══════════ -->
         @if (!isSuperAdmin && activeTab === 'chitti') {
           <div class="card-animate" style="animation-delay:0.05s">
@@ -307,19 +422,68 @@ import { Observable } from 'rxjs';
               </button>
             </div>
 
-            <!-- Chitti KPI Banner -->
-            <div class="grid grid-cols-2 gap-3 mb-8">
-              <div class="kpi-animate bg-gradient-to-br from-green-500 to-emerald-600 p-3 sm:p-4 rounded-xl shadow-lg shadow-green-500/20 text-white" style="animation-delay:0.1s">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-[9px] font-bold uppercase tracking-widest text-green-100">Collected <span class="hidden lg:inline">· {{ currentMonthName }}</span></span>
+            <!-- Analytics & Insights -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+              <!-- Bar Chart Card -->
+              <div class="lg:col-span-2 bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700 h-[280px] sm:h-[320px] relative overflow-hidden card-animate">
+                <div class="flex justify-between items-center mb-6">
+                  <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Monthly Collections · {{ chittiSelectedYear }}</h3>
+                  <div class="flex gap-2">
+                    <div class="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse"></div>
+                    <div class="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" style="animation-delay: 0.2s"></div>
+                  </div>
                 </div>
-                <p class="text-lg sm:text-2xl font-black">₹{{ totalCollectedThisMonth | number:'1.0-0' }}</p>
+                <div class="h-[180px] sm:h-[220px] w-full">
+                  <canvas #chittiChart="base-chart" baseChart
+                    [data]="chittiBarChartData"
+                    [options]="barChartOptions"
+                    [type]="barChartType">
+                  </canvas>
+                </div>
               </div>
-              <div class="kpi-animate bg-gradient-to-br from-pink-500 to-rose-600 p-3 sm:p-4 rounded-xl shadow-lg shadow-pink-500/20 text-white" style="animation-delay:0.18s">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-[9px] font-bold uppercase tracking-widest text-pink-100">Pending <span class="hidden lg:inline">· {{ currentMonthName }}</span></span>
+
+              <!-- Filter & Summary Card -->
+              <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col justify-between h-[280px] sm:h-[320px] kpi-animate">
+                <div>
+                  <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Analytics Filter</h3>
+                  
+                  <div class="space-y-4">
+                    <div>
+                      <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 px-1 block">Select Year</label>
+                      <select [(ngModel)]="chittiSelectedYear" (ngModelChange)="updateChittiAnalytics()"
+                              class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 rounded-xl border-none outline-none focus:ring-2 focus:ring-purple-500 text-sm font-black text-gray-700 dark:text-gray-300 appearance-none cursor-pointer">
+                        @for (year of chittiAvailableYears; track year) {
+                          <option [value]="year">{{ year }}</option>
+                        }
+                      </select>
+                    </div>
+
+                    <div>
+                      <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 px-1 block">Select Month</label>
+                      <select [(ngModel)]="chittiSelectedMonth" (ngModelChange)="updateChittiAnalytics()"
+                              class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 rounded-xl border-none outline-none focus:ring-2 focus:ring-purple-500 text-sm font-black text-gray-700 dark:text-gray-300 appearance-none cursor-pointer">
+                        <option [value]="-1">All Months</option>
+                        <option [value]="0">January</option>
+                        <option [value]="1">February</option>
+                        <option [value]="2">March</option>
+                        <option [value]="3">April</option>
+                        <option [value]="4">May</option>
+                        <option [value]="5">June</option>
+                        <option [value]="6">July</option>
+                        <option [value]="7">August</option>
+                        <option [value]="8">September</option>
+                        <option [value]="9">October</option>
+                        <option [value]="10">November</option>
+                        <option [value]="11">December</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
-                <p class="text-lg sm:text-2xl font-black">₹{{ totalPendingThisMonth | number:'1.0-0' }}</p>
+
+                <div class="pt-4 border-t border-gray-50 dark:border-gray-700/50">
+                  <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Filtered Collection</p>
+                  <p class="text-3xl font-black text-pink-600">₹{{ filteredTotalChitti | number:'1.0-0' }}</p>
+                </div>
               </div>
             </div>
 
@@ -362,80 +526,6 @@ import { Observable } from 'rxjs';
                           <button (click)="editChit(chit.id!)" class="p-2 text-gray-400 hover:text-indigo-600 transition-all"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
                           <button (click)="deleteChit(chit.id!)" class="p-2 text-gray-400 hover:text-red-500 transition-all"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
                        </div>
-                    </div>
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
-        }
-
-        <!-- ═══════════ INTEREST DASHBOARD (Admin Only) ═══════════ -->
-        @if (!isSuperAdmin && activeTab === 'interest') {
-          <div class="card-animate" style="animation-delay:0.05s">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-              <div>
-                <h2 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Interest Management</h2>
-                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ interests.length }} active loan schemes</p>
-              </div>
-              <button (click)="goToCreateInterest()" class="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 font-bold text-white bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                New Loan
-              </button>
-            </div>
-
-            <!-- Interest KPI Banner -->
-            <div class="grid grid-cols-2 gap-3 mb-8">
-              <div class="kpi-animate bg-gradient-to-br from-blue-500 to-indigo-600 p-3 sm:p-4 rounded-xl shadow-lg shadow-blue-500/20 text-white" style="animation-delay:0.1s">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-[9px] font-bold uppercase tracking-widest text-blue-100">Interest Collected</span>
-                </div>
-                <p class="text-lg sm:text-2xl font-black">₹{{ totalInterestCollectedThisMonth | number:'1.0-0' }}</p>
-              </div>
-              <div class="kpi-animate bg-gradient-to-br from-slate-700 to-slate-900 p-3 sm:p-4 rounded-xl shadow-lg text-white" style="animation-delay:0.18s">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-[9px] font-bold uppercase tracking-widest text-slate-300">Active Loans</span>
-                </div>
-                <p class="text-lg sm:text-2xl font-black">{{ interests.length }}</p>
-              </div>
-            </div>
-
-            <!-- Interest Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-              @for (interest of interests; track interest.id; let i = $index) {
-                <div class="interest-card bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 overflow-hidden"
-                     [style.animation-delay]="(i * 0.07 + 0.2) + 's'">
-                  <div class="h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500"></div>
-                  <div class="p-5">
-                    <div class="flex justify-between items-start mb-3">
-                      <div class="flex-1 min-w-0">
-                        <h3 class="text-base font-black text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 transition-colors leading-tight" (click)="viewInterestDetails(interest.id!)">
-                          {{ interest.borrowerName || 'Unknown' }}
-                        </h3>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{{ interest.name }}</p>
-                      </div>
-                      <div class="flex items-center gap-1 ml-2 shrink-0 text-xs font-black px-2 py-0.5 bg-indigo-100 rounded-full text-indigo-600">{{ interest.interestRate }}%</div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 mb-3">
-                      <div class="bg-gray-50 dark:bg-gray-700/50 rounded-2xl p-3">
-                        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Principal</p>
-                        <p class="text-sm font-black text-gray-900 dark:text-white mt-0.5">₹{{ interest.amount | number:'1.0-0' }}</p>
-                      </div>
-                      <div class="bg-red-50 dark:bg-red-900/10 rounded-2xl p-3 text-right">
-                        <p class="text-[9px] font-bold text-red-500 uppercase tracking-widest">Balance</p>
-                        <p class="text-sm font-black text-red-600 dark:text-red-400 mt-0.5">₹{{ getInterestBalance(interest) | number:'1.0-0' }}</p>
-                      </div>
-                    </div>
-                    <div class="pt-3 flex justify-between items-center border-t border-gray-100 dark:border-gray-700/50">
-                      <button (click)="viewInterestDetails(interest.id!)" class="px-6 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-md transition-all">Manage Account</button>
-                      <div class="flex space-x-1">
-                         <button (click)="editInterest(interest.id!)" class="p-1.5 text-gray-400 hover:text-blue-600 transition-all">
-                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                         </button>
-                         <button (click)="deleteInterest(interest.id!)" class="p-1.5 text-gray-400 hover:text-red-600 transition-all">
-                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                         </button>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -580,18 +670,10 @@ import { Observable } from 'rxjs';
             <div class="absolute inset-0 px-2.5 flex items-center pointer-events-none">
                <div class="relative w-full h-full flex items-center">
                   <div class="nav-indicator" 
-                       [style.left]="activeMobileMenu === 'chitti' ? '16.66%' : activeMobileMenu === 'interest' ? '50%' : '83.33%'"
+                       [style.left]="activeMobileMenu === 'interest' ? '16.66%' : activeMobileMenu === 'chitti' ? '50%' : '83.33%'"
                        style="transform: translateX(-50%)">
                   </div>
                </div>
-            </div>
-
-            <!-- Chitties -->
-            <div (click)="scrollToTop(); activeMobileMenu = 'chitti'; activeTab = 'chitti'" 
-                 class="nav-item-box">
-               <svg class="w-7 h-7 nav-icon" [class]="activeMobileMenu === 'chitti' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-               </svg>
             </div>
 
             <!-- Interest (Loans) -->
@@ -599,6 +681,14 @@ import { Observable } from 'rxjs';
                  class="nav-item-box">
                <svg class="w-7 h-7 nav-icon" [class]="activeMobileMenu === 'interest' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+               </svg>
+            </div>
+
+            <!-- Chitties -->
+            <div (click)="scrollToTop(); activeMobileMenu = 'chitti'; activeTab = 'chitti'" 
+                 class="nav-item-box">
+               <svg class="w-7 h-7 nav-icon" [class]="activeMobileMenu === 'chitti' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                </svg>
             </div>
 
@@ -801,14 +891,111 @@ export class AdminDashboardComponent implements OnInit {
   private customerService = inject(CustomerService);
   private toast = inject(ToastService);
 
-  activeTab: 'chitti' | 'interest' | 'customers' | 'security' = 'chitti';
+  activeTab: 'chitti' | 'interest' | 'customers' | 'security' = 'interest';
   isDarkMode = false;
-  activeMobileMenu: 'chitti' | 'interest' | 'customers' | 'security' = 'chitti';
+  activeMobileMenu: 'chitti' | 'interest' | 'customers' | 'security' = 'interest';
 
   chittis: ChittiScheme[] = [];
   interests: InterestScheme[] = [];
   allCustomers: Customer[] = [];
   customerSearchQuery: string = '';
+
+  @ViewChild('loanChart') loanChart?: BaseChartDirective;
+  @ViewChild('chittiChart') chittiChart?: BaseChartDirective;
+
+  // Analytics State
+  selectedYear: number = new Date().getFullYear();
+  selectedMonth: number = -1; // -1 for All
+  availableYears: number[] = [new Date().getFullYear()];
+  filteredTotalInterest: number = 0;
+
+  public barChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { 
+        grid: { display: false },
+        ticks: { 
+          font: { size: 9, weight: 'bold' },
+          maxRotation: 45,
+          minRotation: 0,
+          autoSkip: true
+        }
+      },
+      y: { 
+        beginAtZero: true, 
+        grid: { color: 'rgba(0,0,0,0.05)' },
+        ticks: { 
+          font: { size: 9 },
+          callback: (value) => `₹${Number(value).toLocaleString()}`
+        }
+      }
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1f2937',
+        titleFont: { size: 12, weight: 'bold' },
+        bodyFont: { size: 14, weight: 'bold' },
+        padding: 12,
+        cornerRadius: 12,
+        displayColors: false,
+        callbacks: {
+          label: (context) => ` ₹${(context.parsed.y || 0).toLocaleString()}`
+        }
+      }
+    }
+  };
+  public barChartType: ChartType = 'bar';
+  public barChartData: ChartData<'bar'> = {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    datasets: [
+      { 
+        data: Array(12).fill(0), 
+        label: 'Interest',
+        backgroundColor: (context) => {
+          const chart = context.chart;
+          const {ctx, chartArea} = chart;
+          if (!chartArea) return 'rgba(99, 102, 241, 0.8)';
+          const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+          gradient.addColorStop(0, '#6366f1');
+          gradient.addColorStop(1, '#a855f7');
+          return gradient;
+        },
+        hoverBackgroundColor: '#4f46e5',
+        borderRadius: 6,
+        barThickness: 12
+      }
+    ]
+  };
+
+  // Chitti Analytics State
+  chittiSelectedYear: number = new Date().getFullYear();
+  chittiSelectedMonth: number = -1; // -1 for All
+  chittiAvailableYears: number[] = [new Date().getFullYear()];
+  filteredTotalChitti: number = 0;
+
+  public chittiBarChartData: ChartData<'bar'> = {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    datasets: [
+      { 
+        data: Array(12).fill(0), 
+        label: 'Collections',
+        backgroundColor: (context) => {
+          const chart = context.chart;
+          const {ctx, chartArea} = chart;
+          if (!chartArea) return 'rgba(236, 72, 153, 0.8)';
+          const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+          gradient.addColorStop(0, '#ec4899');
+          gradient.addColorStop(1, '#8b5cf6');
+          return gradient;
+        },
+        hoverBackgroundColor: '#db2777',
+        borderRadius: 6,
+        barThickness: 12
+      }
+    ]
+  };
 
   editingCustomer: Customer | null = null;
   customerForm: FormGroup;
@@ -1005,9 +1192,101 @@ export class AdminDashboardComponent implements OnInit {
       const filterUid = profile.role === 'super-admin' ? undefined : profile.uid;
       
       this.chittiService.getChittis(filterUid).subscribe(data => this.chittis = data);
-      this.interestService.getInterests(filterUid).subscribe(data => this.interests = data);
-      this.customerService.getAllCustomers(filterUid).subscribe(data => this.allCustomers = data);
+      this.interestService.getInterests(filterUid).subscribe(data => {
+        this.interests = data;
+        this.updateLoanAnalytics();
+      });
+      this.customerService.getAllCustomers(filterUid).subscribe(data => {
+        this.allCustomers = data;
+        this.updateChittiAnalytics();
+      });
     });
+  }
+
+  updateLoanAnalytics() {
+    const monthlyData = Array(12).fill(0);
+    const yearsSet = new Set<number>([new Date().getFullYear()]);
+    let total = 0;
+
+    const sYear = Number(this.selectedYear);
+    const sMonth = Number(this.selectedMonth);
+
+    this.interests.forEach(interest => {
+      (interest.interestCollections || []).forEach(c => {
+        const cDate = new Date(c.date);
+        if (isNaN(cDate.getTime())) return;
+        
+        const year = cDate.getFullYear();
+        const month = cDate.getMonth();
+        yearsSet.add(year);
+
+        if (year === sYear) {
+          monthlyData[month] += c.amount;
+        }
+
+        // Apply filters for total KPI
+        if (year === sYear && (sMonth === -1 || month === sMonth)) {
+          total += c.amount;
+        }
+      });
+    });
+
+    this.availableYears = Array.from(yearsSet).sort((a, b) => b - a);
+    
+    // Explicitly update chart data to trigger change detection
+    this.barChartData = {
+      ...this.barChartData,
+      datasets: [{
+        ...this.barChartData.datasets[0],
+        data: monthlyData
+      }]
+    };
+    
+    this.filteredTotalInterest = total;
+    this.loanChart?.update();
+  }
+
+  updateChittiAnalytics() {
+    const monthlyData = Array(12).fill(0);
+    const yearsSet = new Set<number>([new Date().getFullYear()]);
+    let total = 0;
+
+    const sYear = Number(this.chittiSelectedYear);
+    const sMonth = Number(this.chittiSelectedMonth);
+
+    this.allCustomers.forEach(cust => {
+      if (cust.schemeType === 'chitti') {
+        (cust.payments || []).forEach(p => {
+          const pDate = new Date(p.date);
+          if (isNaN(pDate.getTime())) return;
+          
+          const year = pDate.getFullYear();
+          const month = pDate.getMonth();
+          yearsSet.add(year);
+
+          if (year === sYear) {
+            monthlyData[month] += p.amount;
+          }
+
+          if (year === sYear && (sMonth === -1 || month === sMonth)) {
+            total += p.amount;
+          }
+        });
+      }
+    });
+
+    this.chittiAvailableYears = Array.from(yearsSet).sort((a, b) => b - a);
+    
+    this.chittiBarChartData = {
+      ...this.chittiBarChartData,
+      datasets: [{
+        ...this.chittiBarChartData.datasets[0],
+        data: monthlyData
+      }]
+    };
+    
+    this.filteredTotalChitti = total;
+    this.chittiChart?.update();
   }
 
   get currentMonthName(): string {

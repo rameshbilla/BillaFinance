@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.billafinance.app',
-  appName: 'BillaFinance',
+  appId: 'io.finserve.app',
+  appName: 'FinServe',
   webDir: 'dist/finance-app/browser'
 };
 
