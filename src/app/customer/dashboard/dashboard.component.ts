@@ -2,6 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { BiometricService } from '../../services/biometric.service';
 import { ChittiService, ChittiScheme } from '../../admin/services/chitti.service';
 import { InterestService, InterestScheme } from '../../admin/services/interest.service';
 import { CustomerService, Customer } from '../../admin/services/customer.service';
@@ -414,6 +415,27 @@ import { ToastService } from '../../shared/toast.service';
                         {{ isUpdating ? 'Updating...' : 'Update Password' }}
                     </button>
                   </form>
+
+                  <!-- ═══════════ BIOMETRIC AUTH ═══════════ -->
+                  @if (biometricService.isAvailable$ | async) {
+                     <div class="mt-8 pt-8 border-t border-gray-100 dark:border-gray-800">
+                        <div class="flex items-center justify-between p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-800">
+                           <div class="flex items-center gap-4">
+                              <div class="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center text-purple-600 shadow-sm">
+                                 <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0112 3c1.268 0 2.39.234 3.41.659m-4.74 12.57c-1.285-.378-2.56-1.1-3.33-2.14m7.41 1.53A9.914 9.914 0 0021 12c0-5.523-4.477-10-10-10a10.003 10.003 0 00-6.73 2.6c1.176.4 2.223 1.096 3.033 1.983m0 0l2.224 2.224"/></svg>
+                              </div>
+                              <div>
+                                 <p class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest leading-none">Biometric Login</p>
+                                 <p class="text-[10px] text-gray-400 font-bold mt-1">Unlock with fingerprint/Face ID</p>
+                              </div>
+                           </div>
+                           <label class="relative inline-flex items-center cursor-pointer">
+                              <input type="checkbox" [checked]="isBiometricEnabled" (change)="toggleBiometric($event)" class="sr-only peer">
+                              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
+                           </label>
+                        </div>
+                     </div>
+                  }
                </div>
             </div>
         </div>
@@ -510,12 +532,14 @@ export class CustomerDashboardComponent implements OnInit {
   private router = inject(Router);
   private fb = inject(FormBuilder);
   private toast = inject(ToastService);
+  public biometricService = inject(BiometricService);
 
   customerChitties: { scheme: ChittiScheme, customer: Customer }[] = [];
   activeLoans: InterestScheme[] = [];
   isDarkMode = false;
   activeMobileMenu: 'home' | 'security' = 'home';
   activeTab: 'home' | 'security' = 'home';
+  isBiometricEnabled = false;
 
   selectedChit: { scheme: ChittiScheme, customer: Customer } | null = null;
   selectedLoan: InterestScheme | null = null;
@@ -577,6 +601,7 @@ export class CustomerDashboardComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.isBiometricEnabled = this.biometricService.isBiometricEnabled();
     this.isDarkMode = document.documentElement.classList.contains('dark');
     this.loadData();
   }
@@ -716,6 +741,26 @@ export class CustomerDashboardComponent implements OnInit {
   toggleTheme() {
     this.isDarkMode = !this.isDarkMode;
     document.documentElement.classList.toggle('dark');
+  }
+
+  async toggleBiometric(event: any) {
+    const enabled = event.target.checked;
+    if (enabled) {
+      const success = await this.biometricService.getCredentials();
+      if (success) {
+        this.isBiometricEnabled = true;
+        this.biometricService.setBiometricEnabled(true);
+        this.toast.success('Biometric login enabled. It will be active from your next login.');
+      } else {
+        event.target.checked = false;
+        this.isBiometricEnabled = false;
+        this.toast.error('Identity verification failed.');
+      }
+    } else {
+      this.isBiometricEnabled = false;
+      await this.biometricService.clearCredentials();
+      this.toast.success('Biometric login disabled.');
+    }
   }
 
   logout() { this.router.navigate(['/login']); }

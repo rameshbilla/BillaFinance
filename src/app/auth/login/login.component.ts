@@ -1,10 +1,11 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../shared/toast.service';
 import { CommonModule } from '@angular/common';
 import { take, filter } from 'rxjs';
+import { BiometricService } from '../../services/biometric.service';
 
 @Component({
   selector: 'app-login',
@@ -13,14 +14,27 @@ import { take, filter } from 'rxjs';
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
+  public biometricService = inject(BiometricService);
 
   isLoading = signal(false);
   showPassword = false;
+  showEnrollmentModal = false;
+  private pendingProfile: any = null;
+
+  ngOnInit() {
+    // If biometrics are enabled, automatically trigger the login prompt
+    if (this.biometricService.isBiometricEnabled()) {
+      // Small delay to ensure UI is ready on native devices
+      setTimeout(() => {
+        this.biometricLogin();
+      }, 500);
+    }
+  }
 
   togglePassword() {
     this.showPassword = !this.showPassword;
@@ -39,18 +53,12 @@ export class LoginComponent {
       try {
         await this.authService.login(email, password);
         
-        // On successful login, check role and redirect
         this.authService.userProfile$.pipe(
           filter(profile => !!profile),
           take(1)
         ).subscribe(profile => {
           if (profile) {
-            this.toastService.success(`Welcome back, ${profile.displayName}!`);
-            if (profile.role === 'admin' || profile.role === 'super-admin') {
-              this.router.navigate(['/admin']);
-            } else {
-              this.router.navigate(['/customer']);
-            }
+            this.handleLoginSuccess(profile);
           }
         });
       } catch (error: any) {
@@ -59,6 +67,73 @@ export class LoginComponent {
       } finally {
         this.isLoading.set(false);
       }
+    }
+  }
+
+  async biometricLogin() {
+    this.isLoading.set(true);
+    try {
+      const credentials = await this.biometricService.getCredentials();
+      if (credentials) {
+        await this.authService.login(credentials.username, credentials.password);
+        
+        this.authService.userProfile$.pipe(
+          filter(profile => !!profile),
+          take(1)
+        ).subscribe(profile => {
+          if (profile) {
+            this.handleLoginSuccess(profile, true);
+          }
+        });
+      } else {
+         this.toastService.error('Biometric authentication failed.');
+      }
+    } catch (error: any) {
+      this.toastService.error(error.message || 'Biometric login failed.');
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  private async handleLoginSuccess(profile: any, isBiometric = false) {
+    const isEnabled = this.biometricService.isBiometricEnabled();
+    const isAvailable = await this.biometricService.checkAvailability();
+    const hasPrompted = this.biometricService.hasPromptedForEnrollment();
+
+    if (!isBiometric && !isEnabled && isAvailable && !hasPrompted) {
+      this.pendingProfile = profile;
+      this.showEnrollmentModal = true;
+    } else {
+      this.completeNavigation(profile);
+    }
+  }
+
+  async enableBiometrics() {
+    try {
+      const { email, password } = this.loginForm.getRawValue();
+      await this.biometricService.saveCredentials(email, password);
+      this.biometricService.setBiometricEnabled(true);
+      this.biometricService.setPromptedForEnrollment(true);
+      this.toastService.success('Biometric login enabled!');
+      this.showEnrollmentModal = false;
+      this.completeNavigation(this.pendingProfile);
+    } catch (e) {
+      this.toastService.error('Failed to enable biometrics.');
+    }
+  }
+
+  skipBiometrics() {
+    this.biometricService.setPromptedForEnrollment(true);
+    this.showEnrollmentModal = false;
+    this.completeNavigation(this.pendingProfile);
+  }
+
+  private completeNavigation(profile: any) {
+    this.toastService.success(`Welcome back, ${profile.displayName}!`);
+    if (profile.role === 'admin' || profile.role === 'super-admin') {
+      this.router.navigate(['/admin']);
+    } else {
+      this.router.navigate(['/customer']);
     }
   }
 

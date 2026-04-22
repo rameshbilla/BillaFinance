@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Auth, signOut, user, RecaptchaVerifier, signInWithPhoneNumber } from '@angular/fire/auth';
 import { Firestore, doc, setDoc, getDoc, docData, updateDoc } from '@angular/fire/firestore';
 import { Observable, of, switchMap, BehaviorSubject, map } from 'rxjs';
+import { BiometricService } from './biometric.service';
 
 export interface UserProfile {
   uid: string;
@@ -21,6 +22,7 @@ export interface UserProfile {
 export class AuthService {
   private auth = inject(Auth);
   private firestore = inject(Firestore);
+  private biometricService = inject(BiometricService);
 
   public get firebaseAuth() { return this.auth; }
 
@@ -76,6 +78,11 @@ export class AuthService {
       };
       this.staticUserSubject.next(mockAdmin);
       localStorage.setItem('customSession', JSON.stringify(mockAdmin));
+      
+      // Save biometric credentials if enabled
+      if (this.biometricService.isBiometricEnabled()) {
+        await this.biometricService.saveCredentials(username, password);
+      }
       return;
     }
 
@@ -93,6 +100,9 @@ export class AuthService {
         };
         this.staticUserSubject.next(mockUser);
         localStorage.setItem('customSession', JSON.stringify(mockUser));
+        if (this.biometricService.isBiometricEnabled()) {
+          await this.biometricService.saveCredentials(clean, password);
+        }
         return;
       } else {
         throw new Error('Incorrect password for admin.');
@@ -114,6 +124,9 @@ export class AuthService {
         };
         this.staticUserSubject.next(mockUser);
         localStorage.setItem('customSession', JSON.stringify(mockUser));
+        if (this.biometricService.isBiometricEnabled()) {
+          await this.biometricService.saveCredentials(clean, password);
+        }
         return;
       } else {
         throw new Error('Incorrect password.');

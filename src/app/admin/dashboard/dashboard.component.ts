@@ -9,6 +9,7 @@ import { AuthService, UserProfile } from '../../services/auth.service';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Firestore, collection, collectionData, query, where, deleteDoc, doc } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
+import { BiometricService } from '../../services/biometric.service';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 
@@ -334,7 +335,7 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
                 <div>
                   <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Analytics Filter</h3>
                   
-                  <div class="space-y-4">
+                  <div class="grid grid-cols-2 gap-4 sm:grid-cols-1">
                     <div>
                       <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 px-1 block">Select Year</label>
                       <select [(ngModel)]="selectedYear" (ngModelChange)="updateLoanAnalytics()"
@@ -384,15 +385,19 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
                     <div class="flex justify-between items-start mb-4 text-xs font-bold text-blue-600 dark:text-blue-400 capitalize">{{ loan.interestRate }}% Interest p.m.</div>
                     <h3 class="text-lg font-black text-gray-900 dark:text-white cursor-pointer hover:text-indigo-600 transition-colors truncate mb-1" (click)="viewInterestDetails(loan.id!)">{{ loan.name }}</h3>
                     <p class="text-xs text-gray-500 font-bold mb-4">{{ loan.borrowerName }}</p>
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                      <div class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-2xl">
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                      <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-100/50 dark:border-gray-700/50">
                         <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Principal</p>
                         <p class="text-sm font-black text-gray-900 dark:text-white">₹{{ loan.amount | number:'1.0-0' }}</p>
                       </div>
-                      <div class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-2xl text-right">
+                      <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl text-right border border-gray-100/50 dark:border-gray-700/50">
                         <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Monthly Int.</p>
                         <p class="text-sm font-black text-indigo-600">₹{{ (loan.amount * loan.interestRate / 100) | number:'1.0-0' }}</p>
                       </div>
+                    </div>
+                    <div class="mb-4 bg-indigo-50/30 dark:bg-indigo-900/10 p-3 rounded-2xl flex justify-between items-center border border-indigo-100/30 dark:border-indigo-900/20">
+                       <p class="text-[9px] font-black text-indigo-500 uppercase tracking-widest italic opacity-70">Overall Interest</p>
+                       <p class="text-sm font-black text-indigo-600 dark:text-indigo-400">₹{{ getTotalLoanInterest(loan) | number:'1.0-0' }}</p>
                     </div>
                     <div class="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-gray-700/50">
                        <button (click)="viewInterestDetails(loan.id!)" class="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">Loan Statement</button>
@@ -447,7 +452,7 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
                 <div>
                   <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Analytics Filter</h3>
                   
-                  <div class="space-y-4">
+                  <div class="grid grid-cols-2 gap-4 sm:grid-cols-1">
                     <div>
                       <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 px-1 block">Select Year</label>
                       <select [(ngModel)]="chittiSelectedYear" (ngModelChange)="updateChittiAnalytics()"
@@ -496,15 +501,19 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
                   <div class="p-6">
                     <div class="flex justify-between items-start mb-4 text-xs font-bold text-gray-400 capitalize">{{ chit.tenure }} Months Tenure</div>
                     <h3 class="text-lg font-black text-gray-900 dark:text-white cursor-pointer hover:text-purple-600 transition-colors truncate mb-1" (click)="viewChitDetails(chit.id!)">{{ chit.name }}</h3>
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                      <div class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-2xl">
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                      <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-100/50 dark:border-gray-700/50">
                         <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Monthly</p>
                         <p class="text-sm font-black text-gray-900 dark:text-white">₹{{ chit.monthlyAmount | number:'1.0-0' }}</p>
                       </div>
-                      <div class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-2xl text-right">
+                      <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl text-right border border-gray-100/50 dark:border-gray-700/50">
                         <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Members</p>
                         <p class="text-sm font-black text-gray-900 dark:text-white">{{ getCustomerCount(chit.id!, 'chitti') }}</p>
                       </div>
+                    </div>
+                    <div class="mb-4 bg-purple-50/30 dark:bg-purple-900/10 p-3 rounded-2xl flex justify-between items-center border border-purple-100/30 dark:border-purple-900/20">
+                       <p class="text-[9px] font-black text-purple-500 uppercase tracking-widest italic opacity-70">Total Collection</p>
+                       <p class="text-sm font-black text-purple-600 dark:text-purple-400">₹{{ getTotalChittiPaid(chit.id!) | number:'1.0-0' }}</p>
                     </div>
 
                     <!-- Professional Progress Bar -->
@@ -623,7 +632,7 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
                     <div>
                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Confirm Password</label>
                        <div class="relative">
-                          <input [type]="showAdminPassword ? 'text' : 'password'" formControlName="confirmPassword" placeholder="Repeat new password"
+                  <input [type]="showAdminPassword ? 'text' : 'password'" formControlName="confirmPassword" placeholder="Repeat new password"
                              class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold pr-14">
                           <button type="button" (click)="showAdminPassword = !showAdminPassword" 
                              class="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-indigo-600 transition-colors">
@@ -637,6 +646,27 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
                        {{ isSaving ? 'Updating...' : 'Change Password' }}
                     </button>
                  </form>
+
+                 <!-- ═══════════ BIOMETRIC AUTH ═══════════ -->
+                 @if (biometricService.isAvailable$ | async) {
+                    <div class="mt-10 pt-8 border-t border-gray-100 dark:border-gray-800">
+                       <div class="flex items-center justify-between p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-800">
+                          <div class="flex items-center gap-4">
+                             <div class="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0112 3c1.268 0 2.39.234 3.41.659m-4.74 12.57c-1.285-.378-2.56-1.1-3.33-2.14m7.41 1.53A9.914 9.914 0 0021 12c0-5.523-4.477-10-10-10a10.003 10.003 0 00-6.73 2.6c1.176.4 2.223 1.096 3.033 1.983m0 0l2.224 2.224"/></svg>
+                             </div>
+                             <div>
+                                <p class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest">Fingerprint Login</p>
+                                <p class="text-[10px] text-gray-400 font-bold">Use biometrics to sign in quickly</p>
+                             </div>
+                          </div>
+                          <label class="relative inline-flex items-center cursor-pointer">
+                             <input type="checkbox" [checked]="isBiometricEnabled" (change)="toggleBiometric($event)" class="sr-only peer">
+                             <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+                          </label>
+                       </div>
+                    </div>
+                 }
 
                  <!-- Data Management / Backfill -->
                  <div class="mt-12 pt-8 border-t border-gray-100 dark:border-gray-800">
@@ -890,6 +920,7 @@ export class AdminDashboardComponent implements OnInit {
   private interestService = inject(InterestService);
   private customerService = inject(CustomerService);
   private toast = inject(ToastService);
+  public biometricService = inject(BiometricService);
 
   activeTab: 'chitti' | 'interest' | 'customers' | 'security' = 'interest';
   isDarkMode = false;
@@ -899,6 +930,7 @@ export class AdminDashboardComponent implements OnInit {
   interests: InterestScheme[] = [];
   allCustomers: Customer[] = [];
   customerSearchQuery: string = '';
+  isBiometricEnabled = false;
 
   @ViewChild('loanChart') loanChart?: BaseChartDirective;
   @ViewChild('chittiChart') chittiChart?: BaseChartDirective;
@@ -1078,6 +1110,7 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.isBiometricEnabled = this.biometricService.isBiometricEnabled();
     this.isDarkMode = document.documentElement.classList.contains('dark');
     this.authService.isSuperAdmin().then(val => {
       this.isSuperAdmin = val;
@@ -1559,6 +1592,43 @@ export class AdminDashboardComponent implements OnInit {
       await this.interestService.deleteInterest(id);
       this.toast.success('Deleted.');
     }
+  }
+
+  async toggleBiometric(event: any) {
+    const enabled = event.target.checked;
+    if (enabled) {
+      // Prompt for identity to verify before enabling
+      const success = await this.biometricService.getCredentials();
+      if (success) {
+        this.isBiometricEnabled = true;
+        this.biometricService.setBiometricEnabled(true);
+        // Important: We need a password to save for future biometric logins.
+        // If they just enabled it, we should ask them to log in again or at least notify them.
+        // For now, we'll wait for the next manual login to save credentials via AuthService.
+        this.toast.success('Biometric login enabled. It will be active from your next login.');
+      } else {
+        event.target.checked = false;
+        this.isBiometricEnabled = false;
+        this.toast.error('Identity verification failed.');
+      }
+    } else {
+      this.isBiometricEnabled = false;
+      await this.biometricService.clearCredentials();
+      this.toast.success('Biometric login disabled.');
+    }
+  }
+
+  getTotalLoanInterest(loan: InterestScheme): number {
+    return (loan.interestCollections || []).reduce((sum, c) => sum + c.amount, 0);
+  }
+
+  getTotalChittiPaid(schemeId: string): number {
+    return this.allCustomers
+      .filter(c => c.schemeId === schemeId && c.schemeType === 'chitti')
+      .reduce((sum, cust) => {
+        const paid = (cust.payments || []).reduce((pSum, p) => pSum + p.amount, 0);
+        return sum + paid;
+      }, 0);
   }
 
   logout() { this.router.navigate(['/login']); }
