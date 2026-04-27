@@ -13,6 +13,12 @@ export interface UserProfile {
   address?: string;
   idType?: string;
   idValue?: string;
+  tabConfig?: {
+    interest: boolean;
+    chitti: boolean;
+    customers: boolean;
+    bills: boolean;
+  };
 }
 
 @Injectable({
@@ -133,7 +139,7 @@ export class AuthService {
   /**
    * GENERIC USER PROVISIONING — used for both Admins and Customers
    */
-  async provisionUser(role: 'admin' | 'customer', username: string, name: string, phone: string, defaultPassword?: string, address?: string, idType?: string, idValue?: string) {
+  async provisionUser(role: 'admin' | 'customer', username: string, name: string, phone: string, defaultPassword?: string, address?: string, idType?: string, idValue?: string, tabConfig?: any) {
     const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
     const colName = role === 'admin' ? 'admin_credentials' : 'customer_credentials';
     const pwd = defaultPassword || (role === 'admin' ? 'admin123' : '123456');
@@ -155,7 +161,8 @@ export class AuthService {
       username: cleanUsername,
       address,
       idType,
-      idValue
+      idValue,
+      tabConfig
     });
 
     await setDoc(doc(this.firestore, `users/${uid}`), profileData);
@@ -169,6 +176,7 @@ export class AuthService {
       address,
       idType,
       idValue,
+      tabConfig,
       updatedAt: new Date().toISOString()
     }));
 
@@ -185,7 +193,7 @@ export class AuthService {
     return result;
   }
 
-  async updateAdminInfo(uid: string, username: string, name: string, phone: string, address?: string, idType?: string, idValue?: string) {
+  async updateAdminInfo(uid: string, username: string, name: string, phone: string, address?: string, idType?: string, idValue?: string, tabConfig?: any) {
     const clean = username.trim().toLowerCase().replace(/^@/, '');
 
     // Update Users Collection
@@ -196,7 +204,8 @@ export class AuthService {
       username: clean,
       address,
       idType,
-      idValue
+      idValue,
+      tabConfig
     }));
 
     // Update Admin Credentials
@@ -209,6 +218,7 @@ export class AuthService {
         address,
         idType,
         idValue,
+        tabConfig,
         updatedAt: new Date().toISOString()
       }));
     }
