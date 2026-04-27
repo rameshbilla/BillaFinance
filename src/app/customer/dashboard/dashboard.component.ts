@@ -8,11 +8,13 @@ import { InterestService, InterestScheme } from '../../admin/services/interest.s
 import { CustomerService, Customer } from '../../admin/services/customer.service';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ToastService } from '../../shared/toast.service';
+import { BaseChartDirective } from 'ng2-charts';
+import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 
 @Component({
   selector: 'app-customer-dashboard',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, BaseChartDirective],
   template: `
     <style>
       @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -123,6 +125,25 @@ import { ToastService } from '../../shared/toast.service';
                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Outstanding</p>
                <p class="text-3xl font-black text-red-600 dark:text-red-400">₹{{ totalOutstanding | number:'1.0-0' }}</p>
             </div>
+          </div>
+        </section>
+
+        <!-- OVERALL ACTIVITY CHART -->
+        <section *ngIf="(customerChitties.length > 0 || activeLoans.length > 0) && overallChartData.datasets.length > 0" class="fade-in-up mb-10" style="animation-delay: 0.15s">
+          <div class="glass-card rounded-[2.5rem] p-6 shadow-sm border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800">
+             <div class="flex justify-between items-center mb-4">
+               <div class="flex items-center gap-2">
+                 <div class="h-4 w-1 bg-gradient-to-b from-purple-500 to-blue-500 rounded-full"></div>
+                 <h3 class="text-xs font-black text-gray-500 uppercase tracking-widest">Financial Activity</h3>
+               </div>
+               <select [(ngModel)]="selectedYearOverall" (ngModelChange)="generateOverallChart($event)"
+                       class="px-3 py-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-[10px] font-bold text-gray-700 dark:text-gray-300 outline-none focus:ring-1 focus:ring-purple-500 transition-colors cursor-pointer appearance-none pr-8 relative">
+                  <option *ngFor="let y of availableYears" [ngValue]="y">{{y}}</option>
+               </select>
+             </div>
+             <div class="w-full h-[200px] sm:h-[250px]">
+                <canvas baseChart [data]="overallChartData" [options]="chartOptions" [type]="chartType"></canvas>
+             </div>
           </div>
         </section>
 
@@ -293,6 +314,20 @@ import { ToastService } from '../../shared/toast.service';
                        </p>
                     </div>
                   </div>
+
+                  @if (selectedLoan || selectedChit) {
+                     <div class="w-full h-[220px] sm:h-[260px] mb-8 p-4 rounded-[2rem] border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800 shadow-sm relative overflow-hidden">
+                        <div class="absolute top-4 right-4 z-10">
+                           <select [(ngModel)]="selectedYearStatement" (ngModelChange)="onStatementYearChange($event)"
+                                   class="px-3 py-1 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur border border-gray-200 dark:border-gray-700 rounded-xl text-[10px] font-bold text-gray-700 dark:text-gray-300 outline-none focus:ring-1 focus:ring-purple-500 transition-colors cursor-pointer appearance-none pr-8">
+                              <option *ngFor="let y of availableYears" [ngValue]="y">{{y}}</option>
+                           </select>
+                        </div>
+                        <div class="w-full h-full pt-6">
+                           <canvas baseChart [data]="chartData" [options]="chartOptions" [type]="chartType"></canvas>
+                        </div>
+                     </div>
+                  }
 
                   <div class="max-h-[50vh] overflow-y-auto pr-3 space-y-0 custom-scrollbar mt-2">
                      @if (selectedChit) {
@@ -541,6 +576,10 @@ export class CustomerDashboardComponent implements OnInit {
   activeTab: 'home' | 'security' = 'home';
   isBiometricEnabled = false;
 
+  availableYears: number[] = Array.from({length: 10}, (_, i) => new Date().getFullYear() - i);
+  selectedYearOverall: number = new Date().getFullYear();
+  selectedYearStatement: number = new Date().getFullYear();
+
   selectedChit: { scheme: ChittiScheme, customer: Customer } | null = null;
   selectedLoan: InterestScheme | null = null;
   showIdentityPopup = false;
@@ -615,7 +654,10 @@ export class CustomerDashboardComponent implements OnInit {
           this.customerChitties = [];
           mine.forEach(cust => {
             this.chittiService.getChittiById(cust.schemeId).subscribe(scheme => {
-              if (scheme) this.customerChitties.push({ scheme, customer: cust });
+              if (scheme) {
+                 this.customerChitties.push({ scheme, customer: cust });
+                 this.generateOverallChart();
+              }
             });
           });
         });
@@ -623,6 +665,7 @@ export class CustomerDashboardComponent implements OnInit {
         // Load Loans for this customer
         this.interestService.getInterests().subscribe(allLoans => {
           this.activeLoans = allLoans.filter(l => l.borrowerPhone === profile.phone);
+          this.generateOverallChart();
         });
       }
     });
@@ -709,8 +752,123 @@ export class CustomerDashboardComponent implements OnInit {
     return [...list].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
 
-  openChitHistory(item: { scheme: ChittiScheme, customer: Customer }) { this.selectedChit = item; }
-  openLoanHistory(loan: InterestScheme) { this.selectedLoan = loan; }
+  openChitHistory(item: { scheme: ChittiScheme, customer: Customer }) { 
+     this.selectedChit = item; 
+     this.selectedYearStatement = new Date().getFullYear();
+     this.generateChitChart(item);
+  }
+  openLoanHistory(loan: InterestScheme) { 
+     this.selectedLoan = loan;
+     this.selectedYearStatement = new Date().getFullYear();
+     this.generateLoanChart(loan);
+  }
+
+  onStatementYearChange(year: number) {
+     if (this.selectedChit) this.generateChitChart(this.selectedChit, year);
+     if (this.selectedLoan) this.generateLoanChart(this.selectedLoan, year);
+  }
+
+  public chartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 9, weight: 'bold' } }, stacked: true },
+      y: { 
+         beginAtZero: true, 
+         stacked: true,
+         grid: { color: 'rgba(0,0,0,0.05)' },
+         ticks: { font: { size: 9 }, callback: (val) => '₹' + Number(val).toLocaleString() }
+      }
+    },
+    plugins: {
+      legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10, weight: 'bold' } } },
+      tooltip: {
+         backgroundColor: '#1f2937', titleFont: { size: 12, weight: 'bold' },
+         bodyFont: { size: 13, weight: 'bold' }, padding: 12, cornerRadius: 8,
+         callbacks: { label: (ctx) => ` ₹${(ctx.parsed.y || 0).toLocaleString()}` }
+      }
+    }
+  };
+  public chartType: ChartType = 'bar';
+  public chartData: ChartData<'bar'> = { labels: [], datasets: [] };
+  public overallChartData: ChartData<'bar'> = { labels: [], datasets: [] };
+
+  generateOverallChart(year: number = this.selectedYearOverall) {
+    this.selectedYearOverall = year;
+    const labels: string[] = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const chittiData: number[] = new Array(12).fill(0);
+    const loanPrincipalData: number[] = new Array(12).fill(0);
+    const loanInterestData: number[] = new Array(12).fill(0);
+
+    this.customerChitties.forEach(item => {
+      (item.customer.payments || []).forEach(p => {
+        const pd = new Date(p.date);
+        if (pd.getFullYear() === year) chittiData[pd.getMonth()] += p.amount;
+      });
+    });
+
+    this.activeLoans.forEach(loan => {
+      (loan.settlements || []).forEach(s => {
+        const sd = new Date(s.date);
+        if (sd.getFullYear() === year) loanPrincipalData[sd.getMonth()] += s.amount;
+      });
+      (loan.interestCollections || []).forEach(c => {
+        const cd = new Date(c.date);
+        if (cd.getFullYear() === year) loanInterestData[cd.getMonth()] += c.amount;
+      });
+    });
+
+    this.overallChartData = {
+      labels,
+      datasets: [
+        { data: chittiData, label: 'Chitti Installments', backgroundColor: '#a855f7', borderRadius: 4 },
+        { data: loanPrincipalData, label: 'Loan Principal', backgroundColor: '#22c55e', borderRadius: 4 },
+        { data: loanInterestData, label: 'Loan Interest', backgroundColor: '#6366f1', borderRadius: 4 }
+      ]
+    };
+  }
+
+  generateChitChart(item: { scheme: ChittiScheme, customer: Customer }, year: number = this.selectedYearStatement) {
+    this.selectedYearStatement = year;
+    const labels: string[] = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const paymentData: number[] = new Array(12).fill(0);
+
+    (item.customer.payments || []).forEach(p => {
+      const pd = new Date(p.date);
+      if (pd.getFullYear() === year) paymentData[pd.getMonth()] += p.amount;
+    });
+
+    this.chartData = {
+      labels,
+      datasets: [
+        { data: paymentData, label: 'Installments Paid', backgroundColor: '#a855f7', borderRadius: 4 }
+      ]
+    };
+  }
+
+  generateLoanChart(loan: InterestScheme, year: number = this.selectedYearStatement) {
+    this.selectedYearStatement = year;
+    const labels: string[] = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const principalData: number[] = new Array(12).fill(0);
+    const interestData: number[] = new Array(12).fill(0);
+    
+    (loan.settlements || []).forEach(s => {
+      const sd = new Date(s.date);
+      if (sd.getFullYear() === year) principalData[sd.getMonth()] += s.amount;
+    });
+    (loan.interestCollections || []).forEach(c => {
+      const cd = new Date(c.date);
+      if (cd.getFullYear() === year) interestData[cd.getMonth()] += c.amount;
+    });
+
+    this.chartData = {
+      labels,
+      datasets: [
+        { data: principalData, label: 'Principal Paid', backgroundColor: '#22c55e', borderRadius: 4 },
+        { data: interestData, label: 'Interest Paid', backgroundColor: '#6366f1', borderRadius: 4 }
+      ]
+    };
+  }
 
   passwordMatchValidator(g: FormGroup) {
     return g.get('newPassword')?.value === g.get('confirmPassword')?.value ? null : { mismatch: true };

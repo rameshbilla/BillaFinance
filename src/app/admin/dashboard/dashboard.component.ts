@@ -13,10 +13,14 @@ import { BiometricService } from '../../services/biometric.service';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 
+import { BillService, Bill, TrackedService } from '../services/bill.service';
+import { BillListComponent } from '../bills/bill-list/bill-list.component';
+import { BillFormComponent } from '../bills/bill-form/bill-form.component';
+
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, BaseChartDirective],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, BaseChartDirective, BillListComponent, BillFormComponent],
   template: `
     <style>
       @keyframes fadeInUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
@@ -140,20 +144,30 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 
         <!-- Tab Switcher (Only for regular admins or Super Admin Security) -->
         <div class="hidden sm:flex p-1.5 bg-gray-200/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl w-full sm:max-w-md mb-8 relative gap-1 overflow-x-auto no-scrollbar whitespace-nowrap border border-gray-100 dark:border-gray-700">
-          <button *ngIf="!isSuperAdmin" (click)="activeTab = 'interest'; activeMobileMenu = 'interest'"
+          <button *ngIf="!isSuperAdmin" (click)="activeTab = 'overview'; activeMobileMenu = 'overview'"
+                  [class.tab-active]="activeTab === 'overview'"
+                  class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
+            OVERVIEW
+          </button>
+          <button *ngIf="!isSuperAdmin && showInterestTab" (click)="activeTab = 'interest'; activeMobileMenu = 'interest'"
                   [class.tab-active]="activeTab === 'interest'"
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
             LOANS
           </button>
-          <button *ngIf="!isSuperAdmin" (click)="activeTab = 'chitti'; activeMobileMenu = 'chitti'"
+          <button *ngIf="!isSuperAdmin && showChittiTab" (click)="activeTab = 'chitti'; activeMobileMenu = 'chitti'"
                   [class.tab-active]="activeTab === 'chitti'"
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
             CHITTI
           </button>
-          <button *ngIf="!isSuperAdmin" (click)="activeTab = 'customers'; activeMobileMenu = 'customers'"
+          <button *ngIf="!isSuperAdmin && showCustomersTab" (click)="activeTab = 'customers'; activeMobileMenu = 'customers'"
                   [class.tab-active]="activeTab === 'customers'"
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
             CUSTOMERS
+          </button>
+          <button *ngIf="!isSuperAdmin && showBillsTab" (click)="activeTab = 'bills'; activeMobileMenu = 'bills'"
+                  [class.tab-active]="activeTab === 'bills'"
+                  class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
+            BILLS
           </button>
           <button (click)="activeTab = 'security'; activeMobileMenu = 'security'"
                   [class.tab-active]="activeTab === 'security'"
@@ -161,6 +175,57 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
             SECURITY
           </button>
         </div>
+
+        <!-- ═══════════ ADMIN OVERVIEW VIEW ═══════════ -->
+        @if (!isSuperAdmin && activeTab === 'overview') {
+           <div class="space-y-8 card-animate">
+              <!-- Header -->
+              <div class="flex justify-between items-center mb-6">
+                 <div>
+                    <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Business Overview</h2>
+                    <p class="text-sm font-medium text-gray-500 mt-1">Aggregated statistics and metrics for your operations.</p>
+                 </div>
+                 <div class="bg-white dark:bg-gray-800 rounded-2xl p-2 shadow-sm border border-gray-100 dark:border-gray-700">
+                    <select [(ngModel)]="selectedOverviewYear" (ngModelChange)="generateOverviewChart($event)"
+                            class="bg-transparent border-none outline-none text-sm font-bold text-gray-700 dark:text-gray-300 pr-8 cursor-pointer">
+                       <option *ngFor="let y of availableOverviewYears" [ngValue]="y">{{y}}</option>
+                    </select>
+                 </div>
+              </div>
+
+              <!-- KPIs -->
+              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                 <div class="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-3xl border border-blue-100 dark:border-blue-800/50">
+                    <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Total Given Loans</p>
+                    <p class="text-xl font-black text-blue-700 dark:text-blue-300">₹{{ totalGivenLoans | number:'1.0-0' }}</p>
+                 </div>
+                 <div class="bg-emerald-50 dark:bg-emerald-900/20 p-5 rounded-3xl border border-emerald-100 dark:border-emerald-800/50">
+                    <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Total Settlements</p>
+                    <p class="text-xl font-black text-emerald-700 dark:text-emerald-300">₹{{ totalSettlement | number:'1.0-0' }}</p>
+                 </div>
+                 <div class="bg-red-50 dark:bg-red-900/20 p-5 rounded-3xl border border-red-100 dark:border-red-800/50">
+                    <p class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">Pending Principal</p>
+                    <p class="text-xl font-black text-red-700 dark:text-red-300">₹{{ totalPendingPrincipal | number:'1.0-0' }}</p>
+                 </div>
+                 <div class="bg-purple-50 dark:bg-purple-900/20 p-5 rounded-3xl border border-purple-100 dark:border-purple-800/50">
+                    <p class="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1">Interest Collected</p>
+                    <p class="text-xl font-black text-purple-700 dark:text-purple-300">₹{{ totalCollectedInterest | number:'1.0-0' }}</p>
+                 </div>
+                 <div class="bg-orange-50 dark:bg-orange-900/20 p-5 rounded-3xl border border-orange-100 dark:border-orange-800/50">
+                    <p class="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1">Pending Interest</p>
+                    <p class="text-xl font-black text-orange-700 dark:text-orange-300">₹{{ totalPendingInterest | number:'1.0-0' }}</p>
+                 </div>
+              </div>
+
+              <!-- Line Chart -->
+              <div class="bg-white dark:bg-gray-900 rounded-[2.5rem] p-6 sm:p-8 shadow-sm border border-gray-100 dark:border-gray-800">
+                 <h3 class="text-sm font-black text-gray-500 uppercase tracking-widest mb-6">Financial Trends ({{ selectedOverviewYear }})</h3>
+                 <div class="w-full h-[300px]">
+                    <canvas baseChart [data]="overviewChartData" [options]="overviewChartOptions" [type]="overviewChartType"></canvas>
+                 </div>
+              </div>
+           </div>
+        }
 
         <!-- ═══════════ SUPER ADMIN VIEW ═══════════ -->
         @if (isSuperAdmin && activeTab !== 'security') {
@@ -222,6 +287,27 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">ID Document Number</label>
                            <input type="text" formControlName="idValue" placeholder="e.g. 1234 5678 9012"
                               class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                        </div>
+                        <div class="md:col-span-2 pt-4 border-t border-gray-100 dark:border-gray-800">
+                           <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-4 px-1">Module Access (Show/Hide Tabs)</label>
+                           <div class="flex flex-wrap gap-4">
+                              <label class="flex items-center space-x-2 cursor-pointer">
+                                 <input type="checkbox" formControlName="tab_interest" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
+                                 <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Loans</span>
+                              </label>
+                              <label class="flex items-center space-x-2 cursor-pointer">
+                                 <input type="checkbox" formControlName="tab_chitti" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
+                                 <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Chitti</span>
+                              </label>
+                              <label class="flex items-center space-x-2 cursor-pointer">
+                                 <input type="checkbox" formControlName="tab_customers" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
+                                 <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Customers</span>
+                              </label>
+                              <label class="flex items-center space-x-2 cursor-pointer">
+                                 <input type="checkbox" formControlName="tab_bills" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
+                                 <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Bills</span>
+                              </label>
+                           </div>
                         </div>
                     </div>
                     <div class="flex justify-end pt-4">
@@ -296,8 +382,147 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
            </div>
         }
 
+        <!-- ═══════════ BILLS TRACKER (Admin Only) ═══════════ -->
+        @if (!isSuperAdmin && activeTab === 'bills' && showBillsTab) {
+          <div class="card-animate" style="animation-delay:0.05s">
+            
+            <!-- Tracked Services Summary -->
+            <div class="mb-12">
+               <div class="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Registered Services</h3>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Automated tracking for these numbers</p>
+                  </div>
+                  <button (click)="showServiceModal = true" class="px-4 py-2 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">
+                    Register Service
+                  </button>
+               </div>
+
+               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  @for (service of trackedServices; track service.id) {
+                    <div class="bg-indigo-50/50 dark:bg-indigo-900/20 p-4 rounded-3xl border border-indigo-100/50 dark:border-indigo-800/30 group relative">
+                       <button (click)="handleRemoveService(service.id!)" class="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+                          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                       </button>
+                       <p class="text-[9px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-1">{{ service.serviceType }}</p>
+                       <h4 class="text-sm font-black text-gray-800 dark:text-gray-200 truncate">{{ service.provider }}</h4>
+                       <p class="text-[11px] font-bold text-gray-400 mt-0.5">#{{ service.serviceNumber }}</p>
+                    </div>
+                  }
+                  @if (trackedServices.length === 0) {
+                    <div class="col-span-full py-8 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-[2rem] opacity-40">
+                       <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">No services registered for auto-sync</p>
+                    </div>
+                  }
+               </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 pt-8 border-t border-gray-100 dark:border-gray-800">
+              <div>
+                <h2 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Bill Tracker</h2>
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ bills.length }} recorded bills</p>
+              </div>
+              <div class="flex gap-3 w-full sm:w-auto">
+                <button (click)="handleSyncBills()" [disabled]="isSyncing" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-900/40 rounded-2xl hover:bg-indigo-100 transition-all text-sm">
+                  <svg class="h-4 w-4" [class.animate-spin]="isSyncing" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                  {{ isSyncing ? 'Syncing...' : 'Sync Servers' }}
+                </button>
+                <button (click)="openBillForm()" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 font-bold text-white bg-purple-600 rounded-2xl hover:shadow-lg transition-all text-sm">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                  New Bill
+                </button>
+              </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+               <div class="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Pending</p>
+                  <p class="text-2xl font-black text-amber-500">₹{{ billStats.pendingAmount | number:'1.0-0' }}</p>
+               </div>
+               <div class="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Due in 7 Days</p>
+                  <p class="text-2xl font-black text-purple-600">₹{{ billStats.upcomingAmount | number:'1.0-0' }}</p>
+               </div>
+               <div class="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Due Today</p>
+                  <p class="text-2xl font-black text-rose-500">{{ billStats.dueTodayCount }} Bills</p>
+               </div>
+               <div class="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Paid this Month</p>
+                  <p class="text-2xl font-black text-green-500">₹{{ billStats.paidThisMonthAmount | number:'1.0-0' }}</p>
+               </div>
+            </div>
+
+            @if (showBillForm) {
+              <div class="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md px-4 py-8 overflow-y-auto">
+                <div class="w-full max-w-2xl animate-in zoom-in-95 duration-300">
+                  <app-bill-form [bill]="editingBill" (save)="handleSaveBill($event)" (cancel)="closeBillForm()"></app-bill-form>
+                </div>
+              </div>
+            }
+
+            <!-- Register Service Modal -->
+            @if (showServiceModal) {
+              <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-md px-4">
+                <div class="bg-white dark:bg-gray-900 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+                  <div class="p-8">
+                     <div class="flex justify-between items-center mb-8">
+                        <div>
+                           <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Register Service</h3>
+                           <p class="text-sm text-gray-500 font-medium">Link a service number for auto-billing</p>
+                        </div>
+                        <button (click)="showServiceModal = false" class="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:rotate-90 transition-all text-gray-500">
+                           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                     </div>
+
+                     <form [formGroup]="trackedServiceForm" (ngSubmit)="handleRegisterService()" class="space-y-4">
+                        <div>
+                           <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Service Type</label>
+                           <select formControlName="serviceType" class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold appearance-none">
+                              <option value="electricity">Electricity</option>
+                              <option value="mobile">Mobile</option>
+                              <option value="water">Water</option>
+                              <option value="internet">Internet</option>
+                              <option value="other">Other</option>
+                           </select>
+                        </div>
+                        <div>
+                           <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Provider Name</label>
+                           <input type="text" formControlName="provider" placeholder="e.g. TSSPDCL, Airtel"
+                              class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold">
+                        </div>
+                        <div>
+                           <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Service Number (Unique ID)</label>
+                           <input type="text" formControlName="serviceNumber" placeholder="USCNO / Consumer ID"
+                              class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold">
+                        </div>
+                        <div class="pt-4 flex gap-3">
+                           <button type="button" (click)="showServiceModal = false" class="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 font-bold rounded-2xl">Cancel</button>
+                           <button type="submit" [disabled]="trackedServiceForm.invalid || isSaving" 
+                              class="flex-2 py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-500/20 disabled:opacity-50">
+                              {{ isSaving ? 'Registering...' : 'Link Service' }}
+                           </button>
+                        </div>
+                     </form>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <app-bill-list 
+              [bills]="bills" 
+              (filterChanged)="handleBillFilters($event)"
+              (editBill)="openBillForm($event)"
+              (deleteBill)="handleDeleteBill($event)"
+              (updateStatus)="handleUpdateBillStatus($event)">
+            </app-bill-list>
+          </div>
+        }
+
         <!-- ═══════════ INTEREST DASHBOARD (Admin Only) ═══════════ -->
-        @if (!isSuperAdmin && activeTab === 'interest') {
+        @if (!isSuperAdmin && activeTab === 'interest' && showInterestTab) {
           <div class="card-animate" style="animation-delay:0.05s">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
               <div>
@@ -414,7 +639,7 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
         }
 
         <!-- ═══════════ CHITTI DASHBOARD (Admin Only) ═══════════ -->
-        @if (!isSuperAdmin && activeTab === 'chitti') {
+        @if (!isSuperAdmin && activeTab === 'chitti' && showChittiTab) {
           <div class="card-animate" style="animation-delay:0.05s">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
               <div>
@@ -544,7 +769,7 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
         }
 
         <!-- ═══════════ CUSTOMERS DIRECTORY (Admin Only) ═══════════ -->
-        @if (!isSuperAdmin && activeTab === 'customers') {
+        @if (!isSuperAdmin && activeTab === 'customers' && showCustomersTab) {
           <div class="card-animate" style="animation-delay:0.05s">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                <div>
@@ -700,35 +925,59 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
             <div class="absolute inset-0 px-2.5 flex items-center pointer-events-none">
                <div class="relative w-full h-full flex items-center">
                   <div class="nav-indicator" 
-                       [style.left]="activeMobileMenu === 'interest' ? '16.66%' : activeMobileMenu === 'chitti' ? '50%' : '83.33%'"
-                       style="transform: translateX(-50%)">
+                       [style.left]="activeMobileMenu === 'overview' ? '10%' : activeMobileMenu === 'interest' ? '30%' : activeMobileMenu === 'chitti' ? '50%' : activeMobileMenu === 'customers' ? '70%' : '90%'"
+                       style="transform: translateX(-50%); width: 44px; height: 44px;">
                   </div>
                </div>
             </div>
 
-            <!-- Interest (Loans) -->
-            <div (click)="scrollToTop(); activeMobileMenu = 'interest'; activeTab = 'interest'" 
+            <!-- Overview -->
+            <div (click)="scrollToTop(); activeMobileMenu = 'overview'; activeTab = 'overview'" 
                  class="nav-item-box">
-               <svg class="w-7 h-7 nav-icon" [class]="activeMobileMenu === 'interest' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+               <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'overview' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
                </svg>
             </div>
+
+            <!-- Interest (Loans) -->
+            @if (showInterestTab) {
+               <div (click)="scrollToTop(); activeMobileMenu = 'interest'; activeTab = 'interest'" 
+                    class="nav-item-box">
+                  <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'interest' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+               </div>
+            }
 
             <!-- Chitties -->
-            <div (click)="scrollToTop(); activeMobileMenu = 'chitti'; activeTab = 'chitti'" 
-                 class="nav-item-box">
-               <svg class="w-7 h-7 nav-icon" [class]="activeMobileMenu === 'chitti' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-               </svg>
-            </div>
+            @if (showChittiTab) {
+               <div (click)="scrollToTop(); activeMobileMenu = 'chitti'; activeTab = 'chitti'" 
+                    class="nav-item-box">
+                  <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'chitti' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+               </div>
+            }
 
             <!-- Customers -->
-            <div (click)="scrollToTop(); activeMobileMenu = 'customers'; activeTab = 'customers'" 
-                 class="nav-item-box">
-               <svg class="w-7 h-7 nav-icon" [class]="activeMobileMenu === 'customers' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-               </svg>
-            </div>
+            @if (showCustomersTab) {
+               <div (click)="scrollToTop(); activeMobileMenu = 'customers'; activeTab = 'customers'" 
+                    class="nav-item-box">
+                  <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'customers' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                  </svg>
+               </div>
+            }
+
+            <!-- Bills -->
+            @if (showBillsTab) {
+               <div (click)="scrollToTop(); activeMobileMenu = 'bills'; activeTab = 'bills'" 
+                    class="nav-item-box">
+                  <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'bills' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+               </div>
+            }
 
          </div>
       </div>
@@ -919,16 +1168,36 @@ export class AdminDashboardComponent implements OnInit {
   private chittiService = inject(ChittiService);
   private interestService = inject(InterestService);
   private customerService = inject(CustomerService);
+  private billService = inject(BillService);
   private toast = inject(ToastService);
   public biometricService = inject(BiometricService);
 
-  activeTab: 'chitti' | 'interest' | 'customers' | 'security' = 'interest';
+  activeTab: 'chitti' | 'interest' | 'customers' | 'security' | 'bills' | 'overview' | '' = '';
   isDarkMode = false;
-  activeMobileMenu: 'chitti' | 'interest' | 'customers' | 'security' = 'interest';
+  activeMobileMenu: 'chitti' | 'interest' | 'customers' | 'security' | 'bills' | 'overview' | '' = '';
+  currentUserProfile: UserProfile | null = null;
+
+  get showInterestTab() { return this.isSuperAdmin || this.currentUserProfile?.tabConfig?.interest !== false; }
+  get showChittiTab() { return this.isSuperAdmin || this.currentUserProfile?.tabConfig?.chitti !== false; }
+  get showCustomersTab() { return this.isSuperAdmin || this.currentUserProfile?.tabConfig?.customers !== false; }
+  get showBillsTab() { return this.isSuperAdmin || this.currentUserProfile?.tabConfig?.bills !== false; }
 
   chittis: ChittiScheme[] = [];
   interests: InterestScheme[] = [];
   allCustomers: Customer[] = [];
+  bills: Bill[] = [];
+  billStats = {
+    pendingAmount: 0,
+    upcomingAmount: 0,
+    dueTodayCount: 0,
+    paidThisMonthAmount: 0
+  };
+  isSyncing = false;
+  showBillForm = false;
+  editingBill?: Bill;
+  trackedServices: TrackedService[] = [];
+  showServiceModal = false;
+  trackedServiceForm: FormGroup;
   customerSearchQuery: string = '';
   isBiometricEnabled = false;
 
@@ -1101,8 +1370,106 @@ export class AdminDashboardComponent implements OnInit {
       password: [''],
       idType: [''],
       idValue: [''],
-      address: ['']
+      address: [''],
+      tab_interest: [true],
+      tab_chitti: [true],
+      tab_customers: [true],
+      tab_bills: [true]
     });
+    this.trackedServiceForm = this.fb.group({
+      serviceType: ['electricity', Validators.required],
+      provider: ['', Validators.required],
+      serviceNumber: ['', Validators.required]
+    });
+  }
+
+  get totalGivenLoans() {
+    return this.interests.reduce((sum, loan) => sum + loan.amount, 0);
+  }
+  get totalSettlement() {
+    return this.interests.reduce((sum, loan) => {
+      const settled = (loan.settlements || []).reduce((s, st) => s + st.amount, 0);
+      return sum + settled;
+    }, 0);
+  }
+  get totalPendingPrincipal() {
+    return this.totalGivenLoans - this.totalSettlement;
+  }
+  get totalCollectedInterest() {
+    return this.interests.reduce((sum, loan) => {
+      const col = (loan.interestCollections || []).reduce((s, c) => s + c.amount, 0);
+      return sum + col;
+    }, 0);
+  }
+  get totalPendingInterest() {
+    return this.interests.reduce((sum, loan) => {
+       if (!loan.startDate) return sum;
+       const start = new Date(loan.startDate);
+       const now = new Date();
+       if (isNaN(start.getTime())) return sum;
+       
+       const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+       const cappedMonths = Math.max(0, months);
+       
+       const principalPaid = (loan.settlements || []).reduce((s, st) => s + st.amount, 0);
+       const balance = Math.max(0, loan.amount - principalPaid);
+       const expectedInterest = balance * (loan.interestRate / 100) * cappedMonths;
+       const paidInterest = (loan.interestCollections || []).reduce((s, c) => s + c.amount, 0);
+       
+       return sum + Math.max(0, expectedInterest - paidInterest);
+    }, 0);
+  }
+
+  public overviewChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { grid: { display: false } },
+      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }
+    },
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10, weight: 'bold' } } } }
+  };
+  public overviewChartType: ChartType = 'line';
+  public overviewChartData: ChartData<'line'> = { labels: [], datasets: [] };
+  
+  availableOverviewYears: number[] = Array.from({length: 10}, (_, i) => new Date().getFullYear() - i);
+  selectedOverviewYear: number = new Date().getFullYear();
+
+  generateOverviewChart(year: number = this.selectedOverviewYear) {
+    this.selectedOverviewYear = year;
+    const labels: string[] = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const givenLoans: number[] = new Array(12).fill(0);
+    const settlements: number[] = new Array(12).fill(0);
+    const interestCollected: number[] = new Array(12).fill(0);
+
+    this.interests.forEach(loan => {
+      // Given loans
+      if (loan.startDate) {
+         const sd = new Date(loan.startDate);
+         if (sd.getFullYear() === year) givenLoans[sd.getMonth()] += loan.amount;
+      }
+      
+      // Settlements
+      (loan.settlements || []).forEach(s => {
+         const sd = new Date(s.date);
+         if (sd.getFullYear() === year) settlements[sd.getMonth()] += s.amount;
+      });
+
+      // Interest Collected
+      (loan.interestCollections || []).forEach(c => {
+         const cd = new Date(c.date);
+         if (cd.getFullYear() === year) interestCollected[cd.getMonth()] += c.amount;
+      });
+    });
+
+    this.overviewChartData = {
+      labels,
+      datasets: [
+        { data: givenLoans, label: 'Given Loans', borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.4 },
+        { data: settlements, label: 'Settlements', borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.4 },
+        { data: interestCollected, label: 'Interest Collected', borderColor: '#a855f7', backgroundColor: 'rgba(168,85,247,0.1)', fill: true, tension: 0.4 }
+      ]
+    };
   }
 
   passwordMatchValidator(g: FormGroup) {
@@ -1144,12 +1511,13 @@ export class AdminDashboardComponent implements OnInit {
     if (this.adminForm.valid) {
       this.isSaving = true;
       try {
-        const { username, name, phone, password, address, idType, idValue } = this.adminForm.getRawValue();
+        const { username, name, phone, password, address, idType, idValue, tab_interest, tab_chitti, tab_customers, tab_bills } = this.adminForm.getRawValue();
         const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
+        const tabConfig = { interest: tab_interest, chitti: tab_chitti, customers: tab_customers, bills: tab_bills };
         
         if (this.isAdminEditMode && this.editingAdminUid) {
-          // Update basic info + address/ID
-          await this.authService.updateAdminInfo(this.editingAdminUid, cleanUsername, name, phone, address, idType, idValue);
+          // Update basic info + address/ID + tabConfig
+          await this.authService.updateAdminInfo(this.editingAdminUid, cleanUsername, name, phone, address, idType, idValue, tabConfig);
           
           // If password field is filled, update it
           if (password && password.trim()) {
@@ -1167,7 +1535,7 @@ export class AdminDashboardComponent implements OnInit {
           
           // Use provided password or fallback to admin123
           const finalPassword = (password && password.trim()) ? password : 'admin123';
-          await this.authService.provisionUser('admin', cleanUsername, name, phone, finalPassword, address, idType, idValue);
+          await this.authService.provisionUser('admin', cleanUsername, name, phone, finalPassword, address, idType, idValue, tabConfig);
           this.toast.success('New Admin established!');
           this.adminForm.reset();
         }
@@ -1188,7 +1556,11 @@ export class AdminDashboardComponent implements OnInit {
       phone: admin.phone,
       address: admin.address || '',
       idType: admin.idType || '',
-      idValue: admin.idValue || ''
+      idValue: admin.idValue || '',
+      tab_interest: admin.tabConfig?.interest !== false,
+      tab_chitti: admin.tabConfig?.chitti !== false,
+      tab_customers: admin.tabConfig?.customers !== false,
+      tab_bills: admin.tabConfig?.bills !== false
     });
     this.adminForm.get('username')?.disable();
     this.scrollToTop();
@@ -1221,19 +1593,191 @@ export class AdminDashboardComponent implements OnInit {
   async loadData() {
     this.authService.userProfile$.subscribe(profile => {
       if (!profile) return;
+      this.currentUserProfile = profile;
       
       const filterUid = profile.role === 'super-admin' ? undefined : profile.uid;
+      
+      if (!this.activeTab && profile.role !== 'super-admin') {
+         this.activeTab = 'overview';
+         this.activeMobileMenu = 'overview';
+      } else if (!this.activeTab) {
+         this.activeTab = 'overview';
+         this.activeMobileMenu = 'overview';
+      }
       
       this.chittiService.getChittis(filterUid).subscribe(data => this.chittis = data);
       this.interestService.getInterests(filterUid).subscribe(data => {
         this.interests = data;
+        this.generateOverviewChart();
         this.updateLoanAnalytics();
       });
       this.customerService.getAllCustomers(filterUid).subscribe(data => {
         this.allCustomers = data;
         this.updateChittiAnalytics();
       });
+      if (filterUid) {
+        this.billService.getBills(filterUid).subscribe(data => {
+          this.bills = data;
+          this.calculateBillStats();
+        });
+        this.billService.getTrackedServices(filterUid).subscribe(data => {
+          this.trackedServices = data;
+        });
+      }
     });
+  }
+
+  calculateBillStats() {
+    const now = new Date();
+    // Reset hours to compare dates correctly
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStr = today.toISOString().split('T')[0];
+    
+    const sevenDaysLater = new Date(today);
+    sevenDaysLater.setDate(today.getDate() + 7);
+    
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+
+    this.billStats = {
+      pendingAmount: 0,
+      upcomingAmount: 0,
+      dueTodayCount: 0,
+      paidThisMonthAmount: 0
+    };
+
+    this.bills.forEach(bill => {
+      const bDate = new Date(bill.dueDate);
+      const dueDate = new Date(bDate.getFullYear(), bDate.getMonth(), bDate.getDate());
+      
+      if (bill.status === 'pending') {
+        this.billStats.pendingAmount += bill.amount;
+        if (bill.dueDate === todayStr) {
+          this.billStats.dueTodayCount++;
+        }
+        if (dueDate >= today && dueDate <= sevenDaysLater) {
+          this.billStats.upcomingAmount += bill.amount;
+        }
+      } else if (bill.status === 'completed') {
+        if (dueDate.getMonth() === currentMonth && dueDate.getFullYear() === currentYear) {
+          this.billStats.paidThisMonthAmount += bill.amount;
+        }
+      }
+    });
+  }
+
+  handleBillFilters(filters: any) {
+    const profile = JSON.parse(localStorage.getItem('user_profile') || '{}');
+    if (!profile.uid) return;
+    
+    this.billService.getBillsByFilters(profile.uid, filters).subscribe(data => {
+      this.bills = data;
+      // Do not recalculate stats on filter, keep them based on total data? 
+      // Usually dashboard stats are overall, but list is filtered.
+    });
+  }
+
+  openBillForm(bill?: Bill) {
+    this.editingBill = bill;
+    this.showBillForm = true;
+  }
+
+  closeBillForm() {
+    this.showBillForm = false;
+    this.editingBill = undefined;
+  }
+
+  async handleSaveBill(billData: Partial<Bill>) {
+    const profile = await new Promise<any>(res => this.authService.userProfile$.subscribe(res));
+    if (!profile?.uid) return;
+
+    try {
+      if (this.editingBill?.id) {
+        await this.billService.updateBill(this.editingBill.id, billData);
+        this.toast.success('Bill updated successfully!');
+      } else {
+        await this.billService.addBill({ ...billData, adminUid: profile.uid });
+        this.toast.success('Bill created successfully!');
+      }
+      this.closeBillForm();
+    } catch (e) {
+      this.toast.error('Failed to save bill.');
+    }
+  }
+
+  async handleDeleteBill(bill: Bill) {
+    try {
+      await this.billService.deleteBill(bill.id!);
+      this.toast.success('Bill moved to trash.');
+    } catch (e) {
+      this.toast.error('Failed to delete bill.');
+    }
+  }
+
+  async handleUpdateBillStatus(event: {bill: Bill, status: string}) {
+    try {
+      await this.billService.updateBill(event.bill.id!, { status: event.status as any });
+      this.toast.success(`Bill marked as ${event.status}`);
+    } catch (e) {
+      this.toast.error('Failed to update status.');
+    }
+  }
+
+  handleSyncBills() {
+    if (this.trackedServices.length === 0) {
+      this.toast.error('No services registered for auto-sync.');
+      return;
+    }
+    this.isSyncing = true;
+    this.authService.userProfile$.subscribe(profile => {
+      if (!profile?.uid) return;
+      this.billService.syncBillsFromServers(profile.uid).subscribe({
+        next: (async (resPromise) => {
+          const res = await resPromise;
+          if (res.count > 0) {
+            this.toast.success(`Synced ${res.count} new bills from providers.`);
+          } else {
+            this.toast.info('All bills are already up to date.');
+          }
+          this.isSyncing = false;
+        }),
+        error: () => {
+          this.toast.error('Sync failed.');
+          this.isSyncing = false;
+        }
+      });
+    });
+  }
+
+  async handleRegisterService() {
+     if (this.trackedServiceForm.invalid) return;
+     this.isSaving = true;
+     
+     const profile = await new Promise<any>(res => this.authService.userProfile$.subscribe(res));
+     if (!profile?.uid) return;
+
+     try {
+        const data = this.trackedServiceForm.value;
+        await this.billService.registerService({ ...data, adminUid: profile.uid });
+        this.toast.success('Service number linked successfully!');
+        this.showServiceModal = false;
+        this.trackedServiceForm.reset({ serviceType: 'electricity' });
+     } catch (e) {
+        this.toast.error('Failed to link service.');
+     } finally {
+        this.isSaving = false;
+     }
+  }
+
+  async handleRemoveService(id: string) {
+     if (confirm('Stop tracking this service number?')) {
+        try {
+           await this.billService.removeTrackedService(id);
+           this.toast.success('Service tracking removed.');
+        } catch (e) {
+           this.toast.error('Failed to remove service.');
+        }
+     }
   }
 
   updateLoanAnalytics() {
