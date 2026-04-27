@@ -31,6 +31,7 @@ export interface InterestScheme {
   startDate: string;
   borrowerUsername: string;
   createdBy?: string;
+  status: 'Active' | 'Inactive';
 }
 
 @Injectable({

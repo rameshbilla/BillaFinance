@@ -535,6 +535,35 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
               </button>
             </div>
 
+            <!-- Loan Filters & Search -->
+            <div class="flex flex-col md:flex-row gap-4 mb-8">
+               <div class="flex-1 bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 p-2 flex items-center">
+                  <div class="pl-4 pr-2 text-gray-400">
+                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                  </div>
+                  <input type="text" [(ngModel)]="loanSearchQuery" placeholder="Search loans by name or borrower..."
+                         class="w-full py-3 bg-transparent border-none outline-none text-sm text-gray-900 dark:text-white font-medium">
+               </div>
+               
+               <div class="p-1.5 bg-gray-200/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl flex gap-1 border border-gray-100 dark:border-gray-700">
+                  <button (click)="loanStatusFilter = 'Active'"
+                          [class.tab-active]="loanStatusFilter === 'Active'"
+                          class="px-5 py-2 text-[10px] font-black rounded-xl transition-all duration-300 text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                     ACTIVE
+                  </button>
+                  <button (click)="loanStatusFilter = 'Inactive'"
+                          [class.tab-active]="loanStatusFilter === 'Inactive'"
+                          class="px-5 py-2 text-[10px] font-black rounded-xl transition-all duration-300 text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                     INACTIVE
+                  </button>
+                  <button (click)="loanStatusFilter = 'All'"
+                          [class.tab-active]="loanStatusFilter === 'All'"
+                          class="px-5 py-2 text-[10px] font-black rounded-xl transition-all duration-300 text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                     ALL
+                  </button>
+               </div>
+            </div>
+
             <!-- Analytics & Insights -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
               <!-- Bar Chart Card -->
@@ -602,12 +631,15 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
 
             <!-- Interest Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-              @for (loan of interests; track loan.id; let i = $index) {
+              @for (loan of getFilteredLoans(); track loan.id; let i = $index) {
                 <div class="scheme-card bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden card-animate"
                      [style.animation-delay]="(i * 0.07 + 0.2) + 's'">
-                  <div class="h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600"></div>
+                  <div class="h-1.5" [ngClass]="loan.status === 'Inactive' ? 'bg-gray-400' : 'bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600'"></div>
                   <div class="p-6">
-                    <div class="flex justify-between items-start mb-4 text-xs font-bold text-blue-600 dark:text-blue-400 capitalize">{{ loan.interestRate }}% Interest p.m.</div>
+                    <div class="flex justify-between items-start mb-4">
+                       <span class="text-xs font-bold text-blue-600 dark:text-blue-400 capitalize">{{ loan.interestRate }}% Interest p.m.</span>
+                       <span class="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter" [ngClass]="loan.status === 'Inactive' ? 'bg-gray-100 text-gray-500' : 'bg-green-50 text-green-600'">{{ loan.status || 'Active' }}</span>
+                    </div>
                     <h3 class="text-lg font-black text-gray-900 dark:text-white cursor-pointer hover:text-indigo-600 transition-colors truncate mb-1" (click)="viewInterestDetails(loan.id!)">{{ loan.name }}</h3>
                     <p class="text-xs text-gray-500 font-bold mb-4">{{ loan.borrowerName }}</p>
                     <div class="grid grid-cols-2 gap-3 mb-3">
@@ -627,6 +659,7 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
                     <div class="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-gray-700/50">
                        <button (click)="viewInterestDetails(loan.id!)" class="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">Loan Statement</button>
                        <div class="flex space-x-1">
+                          <button (click)="toggleLoanStatus(loan)" class="p-2 text-gray-400 hover:text-orange-500 transition-all" [title]="loan.status === 'Inactive' ? 'Mark Active' : 'Mark Inactive'"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></button>
                           <button (click)="editInterest(loan.id!)" class="p-2 text-gray-400 hover:text-indigo-600 transition-all"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
                           <button (click)="deleteInterest(loan.id!)" class="p-2 text-gray-400 hover:text-red-500 transition-all"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
                        </div>
@@ -635,6 +668,12 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
                 </div>
               }
             </div>
+
+            @if (getFilteredLoans().length === 0) {
+              <div class="py-20 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-[3rem] opacity-50">
+                <p class="text-gray-400 font-black uppercase tracking-widest text-xs">No loans found matching your criteria</p>
+              </div>
+            }
           </div>
         }
 
@@ -1199,6 +1238,8 @@ export class AdminDashboardComponent implements OnInit {
   showServiceModal = false;
   trackedServiceForm: FormGroup;
   customerSearchQuery: string = '';
+  loanSearchQuery: string = '';
+  loanStatusFilter: 'Active' | 'Inactive' | 'All' = 'Active';
   isBiometricEnabled = false;
 
   @ViewChild('loanChart') loanChart?: BaseChartDirective;
@@ -1418,6 +1459,29 @@ export class AdminDashboardComponent implements OnInit {
        
        return sum + Math.max(0, expectedInterest - paidInterest);
     }, 0);
+  }
+  
+  getFilteredLoans(): InterestScheme[] {
+    return this.interests.filter(loan => {
+      const matchesStatus = this.loanStatusFilter === 'All' || loan.status === this.loanStatusFilter || (!loan.status && this.loanStatusFilter === 'Active');
+      const search = this.loanSearchQuery.toLowerCase().trim();
+      const matchesSearch = !search || 
+                           loan.name.toLowerCase().includes(search) || 
+                           (loan.borrowerName && loan.borrowerName.toLowerCase().includes(search)) ||
+                           (loan.borrowerPhone && loan.borrowerPhone.includes(search));
+      return matchesStatus && matchesSearch;
+    });
+  }
+
+  async toggleLoanStatus(loan: InterestScheme) {
+    if (!loan.id) return;
+    const newStatus = loan.status === 'Inactive' ? 'Active' : 'Inactive';
+    try {
+      await this.interestService.updateInterest(loan.id, { status: newStatus });
+      this.toast.success(`Loan marked as ${newStatus}`);
+    } catch (e) {
+      this.toast.error('Failed to update loan status');
+    }
   }
 
   public overviewChartOptions: ChartConfiguration['options'] = {

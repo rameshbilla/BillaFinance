@@ -73,6 +73,16 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
                      <textarea formControlName="description" rows="3" class="block w-full rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" placeholder="Brief details..."></textarea>
                   </div>
+
+                  @if (isEditMode) {
+                     <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Loan Status</label>
+                        <select formControlName="status" class="block w-full rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                           <option value="Active">Active</option>
+                           <option value="Inactive">Inactive</option>
+                        </select>
+                     </div>
+                  }
                </div>
             </div>
 
@@ -312,7 +322,8 @@ export class AdminInterestCreateComponent implements OnInit {
     borrowerIdValue: [''],
     amount: ['', [Validators.required, Validators.min(1000)]],
     interestRate: ['', [Validators.required, Validators.min(0)]],
-    description: ['']
+    description: [''],
+    status: ['Active', Validators.required]
   });
 
   isEditMode = false;
@@ -422,6 +433,7 @@ export class AdminInterestCreateComponent implements OnInit {
             amount: scheme.amount,
             interestRate: scheme.interestRate,
             description: scheme.description,
+            status: scheme.status || 'Active'
           });
           this.currentDocUrl = scheme.borrowerIdDoc || null;
           if (scheme.borrowerUsername) {
