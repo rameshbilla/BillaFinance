@@ -4,6 +4,17 @@ import { Firestore, doc, setDoc, getDoc, docData, updateDoc } from '@angular/fir
 import { Observable, of, switchMap, BehaviorSubject, map } from 'rxjs';
 import { BiometricService } from './biometric.service';
 
+export interface UserPermissions {
+  loans: boolean;
+  chitti: boolean;
+  customers: boolean;
+  security: boolean;
+  billDashboard: boolean;
+  billList: boolean;
+  billAnalytics: boolean;
+  billReports: boolean;
+}
+
 export interface UserProfile {
   uid: string;
   email: string | null;
@@ -14,6 +25,7 @@ export interface UserProfile {
   address?: string;
   idType?: string;
   idValue?: string;
+  permissions?: UserPermissions;
 }
 
 @Injectable({
@@ -146,7 +158,7 @@ export class AuthService {
   /**
    * GENERIC USER PROVISIONING — used for both Admins and Customers
    */
-  async provisionUser(role: 'admin' | 'customer', username: string, name: string, phone: string, defaultPassword?: string, address?: string, idType?: string, idValue?: string) {
+  async provisionUser(role: 'admin' | 'customer', username: string, name: string, phone: string, defaultPassword?: string, address?: string, idType?: string, idValue?: string, permissions?: UserPermissions) {
     const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
     const colName = role === 'admin' ? 'admin_credentials' : 'customer_credentials';
     const pwd = defaultPassword || (role === 'admin' ? 'admin123' : '123456');
@@ -168,7 +180,8 @@ export class AuthService {
       username: cleanUsername,
       address,
       idType,
-      idValue
+      idValue,
+      permissions
     });
 
     await setDoc(doc(this.firestore, `users/${uid}`), profileData);
@@ -182,6 +195,7 @@ export class AuthService {
       address,
       idType,
       idValue,
+      permissions,
       updatedAt: new Date().toISOString()
     }));
 
@@ -198,7 +212,7 @@ export class AuthService {
     return result;
   }
 
-  async updateAdminInfo(uid: string, username: string, name: string, phone: string, address?: string, idType?: string, idValue?: string) {
+  async updateAdminInfo(uid: string, username: string, name: string, phone: string, address?: string, idType?: string, idValue?: string, permissions?: UserPermissions) {
     const clean = username.trim().toLowerCase().replace(/^@/, '');
 
     // Update Users Collection
@@ -209,7 +223,8 @@ export class AuthService {
       username: clean,
       address,
       idType,
-      idValue
+      idValue,
+      permissions
     }));
 
     // Update Admin Credentials
@@ -222,6 +237,7 @@ export class AuthService {
         address,
         idType,
         idValue,
+        permissions,
         updatedAt: new Date().toISOString()
       }));
     }
