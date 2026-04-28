@@ -32,29 +32,32 @@ import { ToastService } from '../../shared/toast.service';
 
       <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         @if (scheme) {
-          <div class="bg-gradient-to-br from-indigo-600 via-blue-600 to-indigo-700 rounded-[2rem] shadow-xl p-6 mb-8 text-white relative overflow-hidden transition-all">
-            <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-            <div class="relative z-10 flex justify-between items-center">
+          <div class="bg-gradient-to-br from-indigo-700 via-blue-700 to-purple-800 rounded-[2.5rem] shadow-2xl p-6 sm:p-10 mb-8 text-white relative overflow-hidden transition-all group">
+            <div class="absolute -right-16 -top-16 w-64 h-64 bg-white/10 rounded-full blur-[80px] group-hover:scale-110 transition-transform duration-700"></div>
+            <div class="absolute -left-16 -bottom-16 w-48 h-48 bg-purple-500/20 rounded-full blur-[60px]"></div>
+            
+            <div class="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
               <div>
-                <p class="text-blue-100 text-[10px] font-black uppercase tracking-[0.2em] mb-1 opacity-70">Borrower Identity</p>
-                <h2 class="text-2xl sm:text-3xl font-black leading-tight tracking-tighter">{{ scheme.borrowerName }}</h2>
-                <div class="flex items-center gap-4 mt-2">
-                  <p class="text-indigo-100 flex items-center text-sm font-medium">
-                    <svg class="w-4 h-4 mr-2 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                    </svg>
+                <div class="flex items-center gap-2 mb-2">
+                  <p class="text-blue-200 text-[10px] font-black uppercase tracking-[0.3em]">Loan Scheme</p>
+                  <span class="px-2 py-0.5 bg-white/10 rounded-md text-[8px] font-black border border-white/10 uppercase">{{ scheme.status || 'Active' }}</span>
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-black leading-none tracking-tighter mb-4">{{ scheme.borrowerName }}</h2>
+                <div class="flex flex-wrap items-center gap-4">
+                  <p class="px-4 py-2 bg-white/10 rounded-2xl backdrop-blur-md border border-white/20 text-xs font-bold flex items-center gap-2">
+                    <svg class="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
                     {{ scheme.borrowerPhone }}
                   </p>
-                  @if (scheme.interestRate) {
-                    <span class="px-3 py-1 bg-white/20 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/20">{{ scheme.interestRate }}% ROI</span>
-                  }
+                  <p class="px-4 py-2 bg-yellow-400/20 rounded-2xl backdrop-blur-md border border-yellow-400/30 text-xs font-black text-yellow-200 uppercase tracking-widest">
+                    {{ scheme.interestRate }}% ROI
+                  </p>
                 </div>
               </div>
-              <div class="hidden sm:block">
-                <div class="w-16 h-16 rounded-3xl bg-white/10 flex items-center justify-center backdrop-blur-sm border border-white/20">
-                  <svg class="w-8 h-8 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
+              
+              <div class="w-full sm:w-auto flex flex-row sm:flex-col items-center sm:items-end gap-3 pt-4 sm:pt-0 border-t sm:border-none border-white/10">
+                <div class="flex-1 sm:text-right">
+                   <p class="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1 opacity-70">Total Principal</p>
+                   <p class="text-2xl sm:text-3xl font-black tracking-tighter">₹{{ scheme.amount | number:'1.0-0' }}</p>
                 </div>
               </div>
             </div>
@@ -92,45 +95,45 @@ import { ToastService } from '../../shared/toast.service';
 
           <div class="space-y-8">
             @if (activeHistoryTab === 'overview') {
-              <div class="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-2">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm">
-                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 opacity-60">Principal Amount</p>
-                  <p class="text-2xl font-black text-gray-900 dark:text-white">&#8377;{{ scheme.amount | number:'1.0-0' }}</p>
+              <div class="grid grid-cols-2 gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                <div class="glass-card p-5 sm:p-7 rounded-[2rem]">
+                  <p class="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 opacity-60">Principal Amount</p>
+                  <p class="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tighter">&#8377;{{ scheme.amount | number:'1.0-0' }}</p>
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm text-right">
-                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 opacity-60">Installment Start</p>
-                  <p class="text-base font-black text-blue-600 dark:text-blue-400">{{ scheme.startDate || '--' }}</p>
+                <div class="glass-card p-5 sm:p-7 rounded-[2rem] text-right">
+                  <p class="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 opacity-60">Installment Start</p>
+                  <p class="text-sm sm:text-base font-black text-blue-600 dark:text-blue-400 tracking-tighter">{{ scheme.startDate || '--' }}</p>
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-[2rem] border border-green-100 dark:border-green-900/20 shadow-sm">
-                  <p class="text-[10px] font-black text-green-600 uppercase tracking-widest mb-1">Paid Principal</p>
-                  <p class="text-2xl font-black text-green-700 dark:text-green-300">&#8377;{{ totalSettled | number:'1.0-0' }}</p>
+                <div class="glass-card p-5 sm:p-7 rounded-[2rem] border-green-500/20">
+                  <p class="text-[8px] sm:text-[10px] font-black text-green-600 uppercase tracking-widest mb-1">Paid Principal</p>
+                  <p class="text-xl sm:text-2xl font-black text-green-700 dark:text-green-300 tracking-tighter">&#8377;{{ totalSettled | number:'1.0-0' }}</p>
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-[2rem] border border-red-100 dark:border-red-900/20 shadow-sm text-right">
-                  <p class="text-[10px] font-black text-red-600 uppercase tracking-widest mb-1">Balance Due</p>
-                  <p class="text-2xl font-black text-red-700 dark:text-red-400">&#8377;{{ currentBalance | number:'1.0-0' }}</p>
+                <div class="glass-card p-5 sm:p-7 rounded-[2rem] border-red-500/20 text-right">
+                  <p class="text-[8px] sm:text-[10px] font-black text-red-600 uppercase tracking-widest mb-1">Balance Due</p>
+                  <p class="text-xl sm:text-2xl font-black text-red-700 dark:text-red-400 tracking-tighter">&#8377;{{ currentBalance | number:'1.0-0' }}</p>
                 </div>
 
-                <div class="col-span-2 bg-white dark:bg-gray-800 p-6 rounded-[2rem] border border-indigo-100 dark:border-indigo-900/20 shadow-sm">
+                <div class="col-span-2 glass-card p-6 sm:p-8 rounded-[2rem] border-indigo-500/20">
                   <div class="flex items-end justify-between gap-4">
                     <div class="min-w-0">
-                      <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Total Interest Collected</p>
-                      <p class="text-2xl sm:text-3xl font-black text-indigo-700 dark:text-indigo-300 leading-none">&#8377;{{ totalInterestCollected | number:'1.0-0' }}</p>
+                      <p class="text-[9px] sm:text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Total Interest Collected</p>
+                      <p class="text-2xl sm:text-4xl font-black text-indigo-700 dark:text-indigo-300 leading-none tracking-tighter">&#8377;{{ totalInterestCollected | number:'1.0-0' }}</p>
                     </div>
-                    <p class="text-[11px] font-bold text-indigo-400 text-right">Recorded across all collections</p>
+                    <p class="text-[10px] font-bold text-indigo-400 text-right uppercase tracking-[0.1em]">Recorded across<br>all collections</p>
                   </div>
                 </div>
 
-                <div class="col-span-2 bg-gradient-to-br from-orange-500 to-red-500 p-6 rounded-[2rem] shadow-xl text-white relative overflow-hidden">
-                  <div class="absolute -right-6 -top-8 w-28 h-28 bg-white/10 rounded-full blur-2xl"></div>
+                <div class="col-span-2 bg-gradient-to-br from-orange-500 to-pink-600 p-6 sm:p-8 rounded-[2.5rem] shadow-xl shadow-orange-500/20 text-white relative overflow-hidden group">
+                  <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700"></div>
                   <div class="relative z-10 flex items-end justify-between gap-4">
                     <div class="min-w-0">
-                      <p class="text-[10px] font-black text-orange-100 uppercase tracking-widest mb-1">Overall Pending Amount</p>
-                      <p class="text-2xl sm:text-3xl font-black leading-none">&#8377;{{ totalPendingInterest | number:'1.0-0' }}</p>
+                      <p class="text-[9px] sm:text-[10px] font-black text-orange-100 uppercase tracking-widest mb-2 opacity-80">Overall Interest Due</p>
+                      <p class="text-3xl sm:text-5xl font-black leading-none tracking-tighter">&#8377;{{ totalPendingInterest | number:'1.0-0' }}</p>
                     </div>
-                    <p class="text-[11px] font-bold text-orange-100 text-right">Interest due till today</p>
+                    <p class="text-[10px] font-bold text-orange-100/80 text-right uppercase tracking-widest leading-relaxed">Calculated<br>till today</p>
                   </div>
                 </div>
               </div>
@@ -138,22 +141,33 @@ import { ToastService } from '../../shared/toast.service';
 
             @if (activeHistoryTab === 'interest') {
               <div class="animate-in fade-in slide-in-from-right-4 duration-500">
-                <div class="bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-[2rem] shadow-xl border border-indigo-100 dark:border-indigo-900/20 mb-8">
-                  <h3 class="text-xl font-black text-gray-900 dark:text-white mb-4 uppercase tracking-tighter">Collect Interest</h3>
-                  <form [formGroup]="collectionForm" (ngSubmit)="onCollectionSubmit()" class="space-y-4">
-                    <div class="grid grid-cols-2 gap-3 items-stretch">
-                      <div class="min-w-0">
-                        <label class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1.5 px-1 block">Amount to Collect</label>
-                        <input type="number" formControlName="amount" class="w-full px-4 py-3.5 bg-indigo-50 dark:bg-indigo-900/40 rounded-2xl border-none outline-none focus:ring-2 focus:ring-indigo-600 transition-all font-black text-indigo-600 dark:text-indigo-400 min-w-0" placeholder="0">
-                        <p class="text-[9px] font-bold text-indigo-400/60 mt-1 px-1">Expected: ₹{{ pendingInterest | number:'1.0-0' }}</p>
+                <div class="glass-card p-6 sm:p-8 rounded-[2.5rem] shadow-xl mb-12 animate-in zoom-in-95 duration-500">
+                  <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-inner">
+                      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                    <div>
+                      <h3 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Collect Interest</h3>
+                      <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Interest payment record</p>
+                    </div>
+                  </div>
+                  <form [formGroup]="collectionForm" (ngSubmit)="onCollectionSubmit()" class="space-y-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2 px-1 block">Collection Amount</label>
+                        <div class="relative">
+                          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400 font-bold">₹</span>
+                          <input type="number" formControlName="amount" class="w-full pl-8 pr-4 py-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-black text-indigo-700 dark:text-indigo-300" placeholder="0">
+                        </div>
+                        <p class="text-[9px] font-black text-indigo-400 mt-1.5 px-1 uppercase tracking-widest">Expected: ₹{{ pendingInterest | number:'1.0-0' }}</p>
                       </div>
-                      <div class="min-w-0">
-                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 px-1 block">Collection Date</label>
-                        <input type="date" formControlName="date" class="w-full px-4 py-3.5 bg-gray-50 dark:bg-gray-900 rounded-2xl border-none outline-none focus:ring-2 focus:ring-indigo-600 transition-all font-black text-gray-700 dark:text-gray-300 min-w-0">
+                      <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1 block">Collection Date</label>
+                        <input type="date" formControlName="date" class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-black text-gray-700 dark:text-gray-300">
                       </div>
                     </div>
-                    <button type="submit" [disabled]="collectionForm.invalid" class="w-full py-3.5 bg-indigo-600 text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all disabled:opacity-50">
-                      Save Collection
+                    <button type="submit" [disabled]="collectionForm.invalid" class="w-full py-4.5 bg-indigo-600 text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:-translate-y-1 transition-all disabled:opacity-50">
+                      Confirm Collection
                     </button>
                   </form>
                 </div>
@@ -172,15 +186,16 @@ import { ToastService } from '../../shared/toast.service';
                         </svg>
                       </div>
 
-                      <div class="bg-white dark:bg-gray-800 p-3 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-md hover:border-green-200">
-                        <div class="flex justify-between items-start gap-4">
+                      <div class="bg-white dark:bg-gray-800 p-4 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-md hover:border-green-200">
+                        <div class="flex justify-between items-center gap-4">
                           <div class="min-w-0">
-                            <p class="text-[9px] font-black text-green-500 uppercase tracking-widest mb-1">Step {{ (scheme.interestCollections || []).length - i }}</p>
-                            <p class="text-base font-black text-gray-900 dark:text-white leading-tight">{{ collection.date | date:'longDate' }}</p>
+                            <p class="text-[9px] font-black text-green-500 uppercase tracking-widest mb-1 leading-none">Interest Step {{ (scheme.interestCollections || []).length - i }}</p>
+                            <p class="text-sm font-black text-gray-900 dark:text-white leading-none mb-1">{{ collection.date | date:'longDate' }}</p>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Manual Collection</p>
                           </div>
                           <div class="text-right shrink-0">
-                            <p class="text-xl font-black text-gray-900 dark:text-white">&#8377;{{ collection.amount | number:'1.0-0' }}</p>
-                            <button (click)="deleteCollection(collection.id!)" class="text-[10px] font-black text-red-400 uppercase tracking-widest mt-2 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all">Delete</button>
+                            <p class="text-lg sm:text-xl font-black text-gray-900 dark:text-white tracking-tighter">&#8377;{{ collection.amount | number:'1.0-0' }}</p>
+                            <button (click)="deleteCollection(collection.id!)" class="text-[9px] font-black text-red-400 uppercase tracking-[0.2em] mt-1.5 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all">Remove</button>
                           </div>
                         </div>
                       </div>
@@ -193,24 +208,33 @@ import { ToastService } from '../../shared/toast.service';
             @if (activeHistoryTab === 'settlements') {
               <div class="space-y-8 relative animate-in fade-in slide-in-from-right-4 duration-500">
                 @if (currentBalance > 0) {
-                  <div class="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-[2rem] shadow-xl border border-blue-100 dark:border-blue-900/20 relative overflow-hidden animate-in zoom-in-95 duration-500">
+                  <div class="glass-card p-6 sm:p-10 rounded-[2.5rem] shadow-xl border-blue-500/20 relative overflow-hidden animate-in zoom-in-95 duration-500">
                     <div class="relative z-10">
-                      <h3 class="text-xl font-black text-gray-900 dark:text-white mb-5 flex items-center">
-                        <span class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center mr-3 text-sm shadow-lg">&#8377;</span>
-                        Make a Settlement
-                      </h3>
-                      <form [formGroup]="settlementForm" (ngSubmit)="onSettlementSubmit()" class="space-y-5">
+                      <div class="flex items-center gap-4 mb-8">
+                        <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-inner">
+                           <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                        <div>
+                          <h3 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Make a Settlement</h3>
+                          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Principal amount release</p>
+                        </div>
+                      </div>
+                      
+                      <form [formGroup]="settlementForm" (ngSubmit)="onSettlementSubmit()" class="space-y-6">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                           <div>
-                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Amount (Principal)</label>
-                            <input type="number" formControlName="amount" class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-600 transition-all font-black" placeholder="Enter amount">
+                            <label class="block text-[10px] font-black text-blue-500 uppercase tracking-widest mb-2 px-1">Amount (Principal)</label>
+                            <div class="relative">
+                               <span class="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400 font-bold">₹</span>
+                               <input type="number" formControlName="amount" class="w-full pl-8 pr-4 py-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-600 transition-all font-black text-blue-700 dark:text-blue-300" placeholder="Enter amount">
+                            </div>
                           </div>
                           <div>
-                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Payment Date</label>
-                            <input type="date" formControlName="date" class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-600 transition-all font-black text-gray-700 dark:text-gray-300">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Payment Date</label>
+                            <input type="date" formControlName="date" class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-600 transition-all font-black text-gray-700 dark:text-gray-300">
                           </div>
                         </div>
-                        <button type="submit" [disabled]="settlementForm.invalid" class="w-full py-4 bg-black text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all disabled:opacity-50">
+                        <button type="submit" [disabled]="settlementForm.invalid" class="w-full py-4.5 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all disabled:opacity-50">
                           Release Principal
                         </button>
                       </form>
@@ -231,15 +255,16 @@ import { ToastService } from '../../shared/toast.service';
                       </svg>
                     </div>
 
-                    <div class="bg-white dark:bg-gray-800 p-3 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-md hover:border-blue-200">
-                      <div class="flex justify-between items-start gap-4">
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-md hover:border-blue-200">
+                      <div class="flex justify-between items-center gap-4">
                         <div class="min-w-0">
-                          <p class="text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1">Step {{ (scheme.settlements.length || 0) - i }}</p>
-                          <p class="text-sm text-gray-400 mt-1 font-medium">{{ settlement.date | date:'longDate' }}</p>
+                          <p class="text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1 leading-none">Settlement Step {{ (scheme.settlements.length || 0) - i }}</p>
+                          <p class="text-sm font-black text-gray-900 dark:text-white leading-none mb-1">{{ settlement.date | date:'longDate' }}</p>
+                          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Principal Recorded</p>
                         </div>
                         <div class="text-right shrink-0">
-                          <p class="text-xl font-black text-gray-900 dark:text-white">&#8377;{{ settlement.amount | number:'1.0-0' }}</p>
-                          <button (click)="deleteSettlement(settlement.id!)" class="text-[10px] font-black text-red-400 uppercase tracking-widest mt-2 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all">Delete</button>
+                          <p class="text-lg sm:text-xl font-black text-gray-900 dark:text-white tracking-tighter">&#8377;{{ settlement.amount | number:'1.0-0' }}</p>
+                           <button (click)="deleteSettlement(settlement.id!)" class="text-[9px] font-black text-red-400 uppercase tracking-[0.2em] mt-1.5 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all">Remove</button>
                         </div>
                       </div>
                     </div>

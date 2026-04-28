@@ -43,6 +43,10 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
                      <input type="number" formControlName="monthlyAmount" class="block w-full rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-shadow" placeholder="5000">
                      <p class="text-[10px] text-purple-600 dark:text-purple-400 mt-1 font-medium italic">{{ amountToWords(schemeForm.get('monthlyAmount')?.value) }}</p>
                   </div>
+                  <div>
+                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Max Capacity (Members)</label>
+                     <input type="number" formControlName="capacity" class="block w-full rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-shadow" placeholder="20">
+                  </div>
                </div>
 
                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -94,6 +98,7 @@ export class AdminChitCreateComponent implements OnInit {
     name: ['', Validators.required],
     tenure: ['', [Validators.required, Validators.min(1)]],
     monthlyAmount: ['', [Validators.required, Validators.min(100)]],
+    capacity: [20, [Validators.required, Validators.min(1)]],
     startDate: ['', Validators.required],
     endDate: ['', Validators.required]
   });
@@ -140,6 +145,7 @@ export class AdminChitCreateComponent implements OnInit {
             name: scheme.name,
             tenure: scheme.tenure,
             monthlyAmount: scheme.monthlyAmount,
+            capacity: scheme.capacity || 20,
             startDate: scheme.startDate,
             endDate: scheme.endDate
           });

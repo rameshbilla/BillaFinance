@@ -30,57 +30,54 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
       
       .bottom-nav-pill {
         position: fixed;
-        bottom: 24px;
+        bottom: 32px;
         left: 50%;
         transform: translateX(-50%);
-        background: #ededed;
-        height: 72px;
-        width: 80%;
-        max-width: 300px;
-        border-radius: 9999px;
+        background: rgba(237, 237, 237, 0.85);
+        backdrop-filter: blur(20px);
+        height: 68px;
+        width: 85%;
+        max-width: 320px;
+        border-radius: 34px;
         display: flex;
-        align-items: center;
-        padding: 0 12px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        padding: 4px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         z-index: 100;
+        border: 1px solid rgba(255, 255, 255, 0.3);
       }
       .nav-item-box {
-        flex: 1;
+        flex: 1 1 0%;
+        min-width: 0;
         display: flex;
         justify-content: center;
         align-items: center;
+        height: 48px;
         position: relative;
-        height: 100%;
+        z-index: 2;
         cursor: pointer;
-      }
-      .nav-indicator {
-        position: absolute;
-        width: 52px;
-        height: 52px;
-        background: linear-gradient(135deg, #9333ea 0%, #db2777 100%);
-        border-radius: 50%;
-        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-        z-index: 5;
+        -webkit-tap-highlight-color: transparent;
       }
       .nav-icon {
         position: relative;
-        z-index: 10;
-        transition: all 0.3s ease;
+        z-index: 3;
+        transition: all 0.4s ease;
       }
       .icon-active {
         color: white !important;
-        transform: scale(1.1);
+        transform: scale(1.1) translateY(-1px);
       }
       .icon-inactive {
-        color: #71717a;
+        color: #94a3b8;
       }
-      .progress-professional {
-        background: rgba(139, 92, 246, 0.08);
-        border: 1px solid rgba(139, 92, 246, 0.04);
+      .nav-item-box:active .nav-icon {
+        transform: scale(0.9);
       }
-      .dark .progress-professional {
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.02);
+      .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.5); }
+      .dark .glass-card { background: rgba(17, 24, 39, 0.7); border: 1px solid rgba(255,255,255,0.05); }
+      .dark .bottom-nav-pill {
+        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(15, 23, 42, 0.85);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
       }
     </style>
 
@@ -112,21 +109,27 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
       </nav>
 
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
-        
         @if (!selectedChit && !selectedLoan) {
           <!-- Welcome Section -->
           <section class="fade-in-up" *ngIf="authService.userProfile$ | async as profile" style="animation-delay: 0.1s">
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
-            <div>
-              <p class="text-sm font-black text-purple-600 dark:text-purple-400 uppercase tracking-[0.2em] mb-2">Welcome Back</p>
-              <h2 class="text-4xl sm:text-5xl font-black text-gray-900 dark:text-white tracking-tighter leading-none">{{ profile.displayName }}</h2>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 mb-2">
+              <div>
+                <p class="text-[10px] sm:text-sm font-black text-purple-600 dark:text-purple-400 uppercase tracking-[0.3em] mb-2">Welcome Back</p>
+                <h2 class="text-3xl sm:text-5xl font-black text-gray-900 dark:text-white tracking-tighter leading-none">{{ profile.displayName }}</h2>
+              </div>
             </div>
-            <div class="flex flex-col items-end">
-               <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Outstanding</p>
-               <p class="text-3xl font-black text-red-600 dark:text-red-400">₹{{ totalOutstanding | number:'1.0-0' }}</p>
+            
+            <div class="grid grid-cols-2 gap-3 mt-8">
+               <div class="glass-card rounded-3xl p-5 border-purple-500/10">
+                  <p class="text-[8px] sm:text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1 leading-none">Total Outstanding</p>
+                  <p class="text-xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tighter">₹{{ totalOutstanding | number:'1.0-0' }}</p>
+               </div>
+               <div class="glass-card rounded-3xl p-5 border-blue-500/10 text-right">
+                  <p class="text-[8px] sm:text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 leading-none">Active Products</p>
+                  <p class="text-xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tighter">{{ customerChitties.length + activeLoans.length }}</p>
+               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
         <!-- OVERALL ACTIVITY CHART -->
         <section *ngIf="(customerChitties.length > 0 || activeLoans.length > 0) && overallChartData.datasets.length > 0" class="fade-in-up mb-10" style="animation-delay: 0.15s">
@@ -146,60 +149,56 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
              </div>
           </div>
         </section>
-
         <!-- CHITTI SCHEMES (Scrollable Section) -->
         <section *ngIf="customerChitties.length > 0" class="fade-in-up" style="animation-delay: 0.2s">
           <div class="flex items-center gap-3 mb-6">
-             <div class="h-8 w-1.5 bg-purple-600 rounded-full"></div>
-             <h3 class="text-xl font-bold text-gray-900 dark:text-white">Your Chitti Records</h3>
+             <div class="h-6 w-1.5 bg-purple-600 rounded-full"></div>
+             <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Chitti Accounts</h3>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             @for (item of customerChitties; track item.scheme.id) {
-              <div class="glass-card rounded-[2.5rem] p-8 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-500 group relative overflow-hidden">
+              <div class="glass-card rounded-[2.5rem] p-6 sm:p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 group relative overflow-hidden">
                 <div class="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
+                
                 <div class="flex justify-between items-start mb-6">
-                  <div>
-                    <h4 class="text-xl font-black text-gray-900 dark:text-white mb-1">{{ item.scheme.name }}</h4>
-                    <div class="flex items-center gap-2">
-                      <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 text-[10px] font-black uppercase tracking-widest rounded-full">Monthly Chitti</span>
-                      <button (click)="openIdentityProfile('chit', item)" class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-purple-600 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-1">
-                        Profile
-                      </button>
+                  <div class="min-w-0">
+                    <h4 class="text-xl font-black text-gray-900 dark:text-white mb-2 truncate">{{ item.scheme.name }}</h4>
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[8px] font-black uppercase tracking-widest rounded-md">Chit Fund</span>
+                      <button (click)="openIdentityProfile('chit', item)" class="px-2 py-0.5 bg-gray-100/80 dark:bg-gray-800/80 text-gray-500 text-[8px] font-black uppercase tracking-widest rounded-md">ID Proof</button>
                     </div>
                   </div>
-                  <div class="text-right">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Balance</p>
-                    <p class="text-lg font-black text-red-600">₹{{ getChitPending(item.scheme, item.customer) | number:'1.0-0' }}</p>
+                  <div class="text-right shrink-0">
+                    <p class="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1">Pending</p>
+                    <p class="text-xl font-black text-red-600 tracking-tighter leading-none">₹{{ getChitPending(item.scheme, item.customer) | number:'1.0-0' }}</p>
                   </div>
                 </div>
                 
-                <div class="grid grid-cols-2 gap-4 mb-8">
-                  <div class="space-y-1">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase">Paid</p>
-                    <p class="text-base font-black text-gray-900 dark:text-white">₹{{ getChitPaid(item.customer) | number:'1.0-0' }}</p>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                  <div class="bg-gray-50/50 dark:bg-gray-900/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-800">
+                    <p class="text-[8px] font-black text-gray-400 uppercase mb-1">Paid Status</p>
+                    <p class="text-sm font-black text-gray-900 dark:text-white tracking-tighter">₹{{ getChitPaid(item.customer) | number:'1.0-0' }}</p>
                   </div>
-                  <div class="space-y-1 text-right">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase">EMI</p>
-                    <p class="text-base font-black text-gray-900 dark:text-white">₹{{ item.scheme.monthlyAmount | number:'1.0-0' }}</p>
+                  <div class="bg-gray-50/50 dark:bg-gray-900/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-800">
+                    <p class="text-[8px] font-black text-gray-400 uppercase mb-1 text-right">Tenure Remaining</p>
+                    <p class="text-sm font-black text-gray-900 dark:text-white tracking-tighter text-right">{{ item.scheme.tenure - (getChitPaid(item.customer) / item.scheme.monthlyAmount) | number:'1.0-0' }} Mo</p>
                   </div>
                 </div>
 
-                <div class="space-y-3 mb-8">
+                <div class="space-y-3 mb-6 px-1">
                   <div class="flex justify-between items-end">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Installments</p>
-                    <p class="text-xs font-black text-purple-600 dark:text-purple-400">
-                      {{ (getChitPaid(item.customer) / item.scheme.monthlyAmount) | number:'1.0-0' }} / {{ item.scheme.tenure }} Months
+                    <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Progress ({{ (getChitPaid(item.customer) / item.scheme.monthlyAmount) | number:'1.0-0' }}/{{ item.scheme.tenure }})</p>
+                    <p class="text-[10px] font-black text-purple-600 dark:text-purple-400 tracking-tighter">
+                      {{ (getChitPaid(item.customer) / (item.scheme.monthlyAmount * item.scheme.tenure)) * 100 | number:'1.0-0' }}%
                     </p>
                   </div>
-                  <div class="w-full progress-professional h-1.5 rounded-full overflow-hidden">
-                    <div class="bg-gradient-to-r from-purple-600 to-indigo-600 h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(124,58,237,0.3)]" 
+                  <div class="w-full bg-gray-100 dark:bg-gray-800 h-1 rounded-full overflow-hidden">
+                    <div class="bg-gradient-to-r from-purple-600 to-indigo-600 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(124,58,237,0.2)]" 
                          [style.width.%]="(getChitPaid(item.customer) / (item.scheme.monthlyAmount * item.scheme.tenure)) * 100"></div>
                   </div>
                 </div>
 
-                <div class="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-gray-700/50">
-                   <button (click)="openChitHistory(item)" class="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">View Statement</button>
-                </div>
+                <button (click)="openChitHistory(item)" class="w-full py-3.5 bg-black dark:bg-white text-white dark:text-black text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:scale-[1.02] transition-all shadow-lg active:scale-95">Statement</button>
               </div>
             }
           </div>
@@ -208,60 +207,53 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
         <!-- ACTIVE LOANS (Scrollable Section) -->
         <section *ngIf="activeLoans.length > 0" class="fade-in-up" style="animation-delay: 0.3s">
           <div class="flex items-center gap-3 mb-6">
-             <div class="h-8 w-1.5 bg-blue-600 rounded-full"></div>
-             <h3 class="text-xl font-bold text-gray-900 dark:text-white">Active Loan Accounts</h3>
+             <div class="h-6 w-1.5 bg-blue-600 rounded-full"></div>
+             <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Loan Accounts</h3>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             @for (loan of activeLoans; track loan.id) {
-              <div class="glass-card rounded-[2.5rem] p-8 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-500 overflow-hidden relative group">
+              <div class="glass-card rounded-[2.5rem] p-6 sm:p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 overflow-hidden relative group">
                 <div class="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
+                
                 <div class="flex justify-between items-start mb-6">
-                  <div>
-                    <h4 class="text-xl font-black text-gray-900 dark:text-white mb-1">{{ loan.name }}</h4>
-                    <div class="flex items-center gap-2">
-                       <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-[10px] font-black uppercase tracking-widest rounded-full">{{ loan.interestRate }}% Interest p.m.</span>
-                       <button (click)="openIdentityProfile('loan', loan)" class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-1">
-                         Profile
-                       </button>
+                  <div class="min-w-0">
+                    <h4 class="text-xl font-black text-gray-900 dark:text-white mb-2 truncate">{{ loan.name }}</h4>
+                    <div class="flex flex-wrap items-center gap-2">
+                       <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[8px] font-black uppercase tracking-widest rounded-md">{{ loan.interestRate }}% ROI</span>
+                       <button (click)="openIdentityProfile('loan', loan)" class="px-2 py-0.5 bg-gray-100/80 dark:bg-gray-800/80 text-gray-500 text-[8px] font-black uppercase tracking-widest rounded-md">ID Proof</button>
                     </div>
                   </div>
-                  <div class="text-right">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Outstanding</p>
-                    <p class="text-lg font-black text-red-600">₹{{ getBalance(loan) + getPendingInterest(loan) | number:'1.0-0' }}</p>
+                  <div class="text-right shrink-0">
+                    <p class="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1">Outstanding</p>
+                    <p class="text-xl font-black text-red-600 tracking-tighter leading-none">₹{{ getBalance(loan) + getPendingInterest(loan) | number:'1.0-0' }}</p>
                   </div>
                 </div>
 
-                <div class="grid grid-cols-3 gap-2 mb-8">
-                  <div class="space-y-1">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase truncate">Principal</p>
-                    <p class="text-base font-black text-gray-900 dark:text-white truncate">₹{{ getBalance(loan) | number:'1.0-0' }}</p>
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                  <div class="bg-gray-50/50 dark:bg-gray-900/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-800">
+                    <p class="text-[8px] font-black text-gray-400 uppercase mb-0.5">Principal</p>
+                    <p class="text-base font-black text-gray-900 dark:text-white tracking-tighter">₹{{ getBalance(loan) | number:'1.0-0' }}</p>
                   </div>
-                  <div class="space-y-1 text-center">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase truncate">Pending Int.</p>
-                    <p class="text-base font-black text-orange-500 truncate">₹{{ getPendingInterest(loan) | number:'1.0-0' }}</p>
-                  </div>
-                  <div class="space-y-1 text-right">
-                    <p class="text-[10px] font-bold text-blue-400 uppercase truncate">Monthly Int.</p>
-                    <p class="text-base font-black text-blue-600 truncate">₹{{ getMonthlyInterest(loan) | number:'1.0-0' }}</p>
+                  <div class="bg-orange-50/50 dark:bg-orange-900/10 p-3 rounded-2xl border border-orange-100 dark:border-orange-900/20">
+                    <p class="text-[8px] font-black text-orange-400 uppercase mb-0.5 text-right">Interest Due</p>
+                    <p class="text-base font-black text-orange-600 tracking-tighter text-right">₹{{ getPendingInterest(loan) | number:'1.0-0' }}</p>
                   </div>
                 </div>
 
-                <div class="space-y-3 mb-8">
+                <div class="space-y-3 mb-6 px-1">
                   <div class="flex justify-between items-end">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Next Due: <span class="text-indigo-600 dark:text-indigo-400">{{ getNextPayableDate(loan) | date:'MMM dd, yyyy' }}</span></p>
-                    <p class="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase">
-                      Repayment: {{ (getLoanPaid(loan) / loan.amount * 100) | number:'1.0-0' }}%
+                    <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none">Principal Paid: <span class="text-green-600">₹{{ getLoanPaid(loan) | number:'1.0-0' }}</span></p>
+                    <p class="text-[10px] font-black text-blue-600 dark:text-blue-400 tracking-tighter">
+                      {{ (getLoanPaid(loan) / loan.amount * 100) | number:'1.0-0' }}% Released
                     </p>
                   </div>
-                  <div class="w-full progress-professional h-1.5 rounded-full overflow-hidden">
-                    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(37,99,235,0.3)]" 
+                  <div class="w-full bg-gray-100 dark:bg-gray-800 h-1 rounded-full overflow-hidden">
+                    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(37,99,235,0.2)]" 
                          [style.width.%]="(getLoanPaid(loan) / loan.amount) * 100"></div>
                   </div>
                 </div>
 
-                <div class="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-gray-700/50">
-                   <button (click)="openLoanHistory(loan)" class="px-6 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-md transition-all">Loan Statement</button>
-                </div>
+                <button (click)="openLoanHistory(loan)" class="w-full py-3.5 bg-black dark:bg-white text-white dark:text-black text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:scale-[1.02] transition-all shadow-lg active:scale-95">Loan Statement</button>
               </div>
             }
           </div>
@@ -388,14 +380,12 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
       <div class="fixed bottom-6 left-0 right-0 z-[100] sm:hidden flex justify-center pointer-events-none">
          <div class="bottom-nav-pill pointer-events-auto relative">
             
-            <!-- Sliding Indicator Layer -->
-            <div class="absolute inset-0 px-3 flex items-center pointer-events-none">
-               <div class="relative w-full h-full flex items-center">
-                  <div class="nav-indicator" 
-                       [style.left]="activeMobileMenu === 'home' ? '25%' : '75%'"
-                       style="transform: translateX(-50%)">
-                  </div>
+            <div class="absolute inset-1 flex pointer-events-none z-0">
+               <div [style.flex-grow]="activeMobileMenu === 'home' ? 0 : 1" class="transition-all duration-500 ease-in-out"></div>
+               <div class="flex-none flex items-center justify-center" style="width: 50%">
+                  <div class="h-full aspect-square bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-full shadow-lg shadow-purple-500/30 transition-all duration-500"></div>
                </div>
+               <div [style.flex-grow]="activeMobileMenu === 'home' ? 1 : 0" class="transition-all duration-500 ease-in-out"></div>
             </div>
 
             <!-- Home -->
@@ -419,9 +409,9 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 
       <!-- Password Update Modal -->
       @if (activeTab === 'security') {
-        <div class="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md px-4">
-            <div class="bg-white dark:bg-gray-900 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in slide-in-from-bottom sm:zoom-in-95 duration-500">
-               <div class="p-8">
+        <div class="fixed inset-0 z-[110] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md px-0 sm:px-4">
+            <div class="bg-white dark:bg-gray-900 w-full max-w-xl rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl mobile-animate-slide duration-500">
+               <div class="p-8 sm:p-10">
                   <div class="flex justify-between items-center mb-8">
                      <div>
                         <h3 class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter uppercase">Security</h3>
@@ -478,9 +468,9 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 
       <!-- Identity Popup Modal -->
       @if (showIdentityPopup && identityPayload) {
-        <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-md px-4">
-            <div class="bg-white dark:bg-gray-900 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 border border-gray-100 dark:border-gray-800">
-               <div class="p-8">
+        <div class="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md px-0 sm:px-4">
+            <div class="bg-white dark:bg-gray-900 w-full max-w-xl rounded-t-[3rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl mobile-animate-slide duration-300 border border-gray-100 dark:border-gray-800">
+               <div class="p-8 sm:p-12">
                   <div class="flex justify-between items-center mb-6">
                      <div>
                         <h3 class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter uppercase">Profile details</h3>

@@ -10,6 +10,7 @@ export interface ChittiScheme {
   startDate: string;
   endDate: string;
   totalValue: number;
+  capacity: number;
   createdBy?: string;
 }
 

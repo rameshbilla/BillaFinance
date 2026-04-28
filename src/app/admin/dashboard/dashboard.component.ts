@@ -38,66 +38,54 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
       
       .bottom-nav-pill {
         position: fixed;
-        bottom: 24px;
+        bottom: 32px;
         left: 50%;
         transform: translateX(-50%);
-        background: #ededed;
-        height: 72px;
-        width: 90%;
-        max-width: 400px;
-        border-radius: 9999px;
+        background: rgba(237, 237, 237, 0.85);
+        backdrop-filter: blur(20px);
+        height: 60px;
+        width: 92%;
+        max-width: 480px;
+        border-radius: 34px;
         display: flex;
-        padding: 6px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        padding: 4px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         z-index: 100;
+        border: 1px solid rgba(255, 255, 255, 0.3);
       }
       .nav-item-box {
-        flex: 1;
+        flex: 1 1 0%;
+        min-width: 0;
         display: flex;
         justify-content: center;
         align-items: center;
+        height: 48px;
         position: relative;
         z-index: 2;
         cursor: pointer;
-      }
-      .nav-indicator {
-        position: absolute;
-        width: 52px;
-        height: 52px;
-        background: linear-gradient(135deg, #9333ea 0%, #db2777 100%);
-        border-radius: 50%;
-        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-        z-index: 1;
+        -webkit-tap-highlight-color: transparent;
       }
       .nav-icon {
         position: relative;
         z-index: 3;
-        transition: all 0.3s ease;
+        transition: all 0.4s ease;
       }
       .icon-active {
         color: white !important;
-        transform: scale(1.1);
+        transform: scale(1.1) translateY(-1px);
       }
       .icon-inactive {
-        color: #71717a;
+        color: #94a3b8;
       }
-      .progress-professional {
-        background: rgba(139, 92, 246, 0.08); /* Professional subtle purple */
-        border: 1px solid rgba(139, 92, 246, 0.04);
+      .nav-item-box:active .nav-icon {
+        transform: scale(0.9);
       }
-      .dark .progress-professional {
-        background: rgba(255, 255, 255, 0.04); /* Deep professional dark */
-        border: 1px solid rgba(255, 255, 255, 0.02);
-      }
-      .glass-card { background: rgb(214 214 214 / 20%); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.4); }
-      .dark .glass-card { background: rgb(214 214 214 / 20%); border: 1px solid rgba(255,255,255,0.08); }
-      .dark .progress-professional {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.03);
-      }
+      .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.5); }
+      .dark .glass-card { background: rgba(17, 24, 39, 0.7); border: 1px solid rgba(255,255,255,0.05); }
       .dark .bottom-nav-pill {
         border: 1px solid rgba(255,255,255,0.1);
-        background: #0a0a0a;
+        background: rgba(15, 23, 42, 0.85);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
       }
     </style>
 
@@ -194,26 +182,26 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
               </div>
 
               <!-- KPIs -->
-              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                 <div class="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-3xl border border-blue-100 dark:border-blue-800/50">
-                    <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Total Given Loans</p>
-                    <p class="text-xl font-black text-blue-700 dark:text-blue-300">₹{{ totalGivenLoans | number:'1.0-0' }}</p>
+              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+                 <div class="bg-blue-50 dark:bg-blue-900/20 p-4 sm:p-5 rounded-3xl border border-blue-100 dark:border-blue-800/50">
+                    <p class="text-[8px] sm:text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 leading-none">Total Given Loans</p>
+                    <p class="text-lg sm:text-xl font-black text-blue-700 dark:text-blue-300 tracking-tighter">₹{{ totalGivenLoans | number:'1.0-0' }}</p>
                  </div>
-                 <div class="bg-emerald-50 dark:bg-emerald-900/20 p-5 rounded-3xl border border-emerald-100 dark:border-emerald-800/50">
-                    <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Total Settlements</p>
-                    <p class="text-xl font-black text-emerald-700 dark:text-emerald-300">₹{{ totalSettlement | number:'1.0-0' }}</p>
+                 <div class="bg-emerald-50 dark:bg-emerald-900/20 p-4 sm:p-5 rounded-3xl border border-emerald-100 dark:border-emerald-800/50">
+                    <p class="text-[8px] sm:text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1 leading-none">Total Settlements</p>
+                    <p class="text-lg sm:text-xl font-black text-emerald-700 dark:text-emerald-300 tracking-tighter">₹{{ totalSettlement | number:'1.0-0' }}</p>
                  </div>
-                 <div class="bg-red-50 dark:bg-red-900/20 p-5 rounded-3xl border border-red-100 dark:border-red-800/50">
-                    <p class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">Pending Principal</p>
-                    <p class="text-xl font-black text-red-700 dark:text-red-300">₹{{ totalPendingPrincipal | number:'1.0-0' }}</p>
+                 <div class="bg-red-50 dark:bg-red-900/20 p-4 sm:p-5 rounded-3xl border border-red-100 dark:border-red-800/50">
+                    <p class="text-[8px] sm:text-[10px] font-black text-red-500 uppercase tracking-widest mb-1 leading-none">Pending Principal</p>
+                    <p class="text-lg sm:text-xl font-black text-red-700 dark:text-red-300 tracking-tighter">₹{{ totalPendingPrincipal | number:'1.0-0' }}</p>
                  </div>
-                 <div class="bg-purple-50 dark:bg-purple-900/20 p-5 rounded-3xl border border-purple-100 dark:border-purple-800/50">
-                    <p class="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1">Interest Collected</p>
-                    <p class="text-xl font-black text-purple-700 dark:text-purple-300">₹{{ totalCollectedInterest | number:'1.0-0' }}</p>
+                 <div class="bg-purple-50 dark:bg-purple-900/20 p-4 sm:p-5 rounded-3xl border border-purple-100 dark:border-purple-800/50">
+                    <p class="text-[8px] sm:text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1 leading-none">Interest Collected</p>
+                    <p class="text-lg sm:text-xl font-black text-purple-700 dark:text-purple-300 tracking-tighter">₹{{ totalCollectedInterest | number:'1.0-0' }}</p>
                  </div>
-                 <div class="bg-orange-50 dark:bg-orange-900/20 p-5 rounded-3xl border border-orange-100 dark:border-orange-800/50">
-                    <p class="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1">Pending Interest</p>
-                    <p class="text-xl font-black text-orange-700 dark:text-orange-300">₹{{ totalPendingInterest | number:'1.0-0' }}</p>
+                 <div class="bg-orange-50 dark:bg-orange-900/20 p-4 sm:p-5 rounded-3xl border border-orange-100 dark:border-orange-800/50">
+                    <p class="text-[8px] sm:text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1 leading-none">Pending Interest</p>
+                    <p class="text-lg sm:text-xl font-black text-orange-700 dark:text-orange-300 tracking-tighter">₹{{ totalPendingInterest | number:'1.0-0' }}</p>
                  </div>
               </div>
 
@@ -524,41 +512,41 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
         <!-- ═══════════ INTEREST DASHBOARD (Admin Only) ═══════════ -->
         @if (!isSuperAdmin && activeTab === 'interest' && showInterestTab) {
           <div class="card-animate" style="animation-delay:0.05s">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
               <div>
-                <h2 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Interest Management</h2>
-                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ interests.length }} active loan schemes</p>
+                <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Interest Management</h2>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">{{ interests.length }} active loan schemes</p>
               </div>
-              <button (click)="goToCreateInterest()" class="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 font-bold text-white bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all">
+              <button (click)="goToCreateInterest()" class="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-purple-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:-translate-y-1 transition-all">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                 New Loan
               </button>
             </div>
 
             <!-- Loan Filters & Search -->
-            <div class="flex flex-col md:flex-row gap-4 mb-8">
-               <div class="flex-1 bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 p-2 flex items-center">
+            <div class="flex flex-col md:flex-row gap-4 mb-10">
+               <div class="flex-1 glass-card rounded-[1.5rem] p-1.5 flex items-center shadow-sm">
                   <div class="pl-4 pr-2 text-gray-400">
                      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                   </div>
-                  <input type="text" [(ngModel)]="loanSearchQuery" placeholder="Search loans by name or borrower..."
-                         class="w-full py-3 bg-transparent border-none outline-none text-sm text-gray-900 dark:text-white font-medium">
+                  <input type="text" [(ngModel)]="loanSearchQuery" placeholder="Search borrowers..."
+                         class="w-full py-3 bg-transparent border-none outline-none text-sm text-gray-900 dark:text-white font-bold placeholder:text-gray-400">
                </div>
                
-               <div class="p-1.5 bg-gray-200/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl flex gap-1 border border-gray-100 dark:border-gray-700">
+               <div class="p-1.5 bg-gray-200/50 dark:bg-gray-800/50 backdrop-blur-md rounded-2xl flex gap-1 border border-gray-100 dark:border-gray-800 shadow-inner">
                   <button (click)="loanStatusFilter = 'Active'"
                           [class.tab-active]="loanStatusFilter === 'Active'"
-                          class="px-5 py-2 text-[10px] font-black rounded-xl transition-all duration-300 text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                          class="flex-1 sm:flex-none px-6 py-2.5 text-[9px] font-black rounded-xl transition-all duration-300 text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">
                      ACTIVE
                   </button>
                   <button (click)="loanStatusFilter = 'Inactive'"
                           [class.tab-active]="loanStatusFilter === 'Inactive'"
-                          class="px-5 py-2 text-[10px] font-black rounded-xl transition-all duration-300 text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                          class="flex-1 sm:flex-none px-6 py-2.5 text-[9px] font-black rounded-xl transition-all duration-300 text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">
                      INACTIVE
                   </button>
                   <button (click)="loanStatusFilter = 'All'"
                           [class.tab-active]="loanStatusFilter === 'All'"
-                          class="px-5 py-2 text-[10px] font-black rounded-xl transition-all duration-300 text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                          class="flex-1 sm:flex-none px-6 py-2.5 text-[9px] font-black rounded-xl transition-all duration-300 text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">
                      ALL
                   </button>
                </div>
@@ -960,14 +948,12 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
       <div class="fixed bottom-6 left-0 right-0 z-[100] sm:hidden flex justify-center pointer-events-none">
          <div class="bottom-nav-pill pointer-events-auto relative">
             
-            <!-- Sliding Indicator Layer -->
-            <div class="absolute inset-0 px-2.5 flex items-center pointer-events-none">
-               <div class="relative w-full h-full flex items-center">
-                  <div class="nav-indicator" 
-                       [style.left]="activeMobileMenu === 'overview' ? '10%' : activeMobileMenu === 'interest' ? '30%' : activeMobileMenu === 'chitti' ? '50%' : activeMobileMenu === 'customers' ? '70%' : '90%'"
-                       style="transform: translateX(-50%); width: 44px; height: 44px;">
-                  </div>
+            <div class="absolute inset-1 flex pointer-events-none z-0">
+               <div [style.flex-grow]="visibleMobileTabs.indexOf(activeMobileMenu)" class="transition-all duration-500 ease-in-out"></div>
+               <div class="flex-none flex items-center justify-center" style="width: calc(100% / {{ visibleMobileTabs.length }})">
+                  <div class="h-full aspect-square bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-full shadow-lg shadow-purple-500/30 transition-all duration-500"></div>
                </div>
+               <div [style.flex-grow]="visibleMobileTabs.length - 1 - visibleMobileTabs.indexOf(activeMobileMenu)" class="transition-all duration-500 ease-in-out"></div>
             </div>
 
             <!-- Overview -->
@@ -1018,13 +1004,19 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
                </div>
             }
 
+            <div (click)="scrollToTop(); activeMobileMenu = 'security'; activeTab = 'security'" 
+                 class="nav-item-box">
+               <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'security' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+               </svg>
+            </div>
          </div>
       </div>
 
       <!-- Multiple Accounts Modal -->
       @if (showAccountsModal) {
-          <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-md px-4">
-             <div class="bg-white dark:bg-gray-900 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+          <div class="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md px-0 sm:px-4">
+             <div class="bg-white dark:bg-gray-900 w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl mobile-animate-slide duration-300">
                 <div class="p-8">
                    <div class="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
                       <div>
@@ -1060,8 +1052,8 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
 
       <!-- Add/Edit Customer Modal -->
       @if (showCustomerModal) {
-         <div class="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md px-4">
-            <div class="bg-white dark:bg-gray-900 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+         <div class="fixed inset-0 z-[110] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md px-0 sm:px-4">
+            <div class="bg-white dark:bg-gray-900 w-full max-w-xl rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl mobile-animate-slide duration-300">
                <div class="p-8">
                   <div class="flex justify-between items-center mb-8">
                      <div>
@@ -1255,19 +1247,19 @@ export class AdminDashboardComponent implements OnInit {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
-      x: { 
+      x: {
         grid: { display: false },
-        ticks: { 
+        ticks: {
           font: { size: 9, weight: 'bold' },
           maxRotation: 45,
           minRotation: 0,
           autoSkip: true
         }
       },
-      y: { 
-        beginAtZero: true, 
+      y: {
+        beginAtZero: true,
         grid: { color: 'rgba(0,0,0,0.05)' },
-        ticks: { 
+        ticks: {
           font: { size: 9 },
           callback: (value) => `₹${Number(value).toLocaleString()}`
         }
@@ -1292,12 +1284,12 @@ export class AdminDashboardComponent implements OnInit {
   public barChartData: ChartData<'bar'> = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     datasets: [
-      { 
-        data: Array(12).fill(0), 
+      {
+        data: Array(12).fill(0),
         label: 'Interest',
         backgroundColor: (context) => {
           const chart = context.chart;
-          const {ctx, chartArea} = chart;
+          const { ctx, chartArea } = chart;
           if (!chartArea) return 'rgba(99, 102, 241, 0.8)';
           const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
           gradient.addColorStop(0, '#6366f1');
@@ -1320,12 +1312,12 @@ export class AdminDashboardComponent implements OnInit {
   public chittiBarChartData: ChartData<'bar'> = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     datasets: [
-      { 
-        data: Array(12).fill(0), 
+      {
+        data: Array(12).fill(0),
         label: 'Collections',
         backgroundColor: (context) => {
           const chart = context.chart;
-          const {ctx, chartArea} = chart;
+          const { ctx, chartArea } = chart;
           if (!chartArea) return 'rgba(236, 72, 153, 0.8)';
           const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
           gradient.addColorStop(0, '#ec4899');
@@ -1348,40 +1340,40 @@ export class AdminDashboardComponent implements OnInit {
   existingMode = false;
   pickerSearch = '';
   isSuperAdmin = false;
-  
+
   showAccountsModal = false;
   selectedCustomerForAccounts: Customer | null = null;
   customerAccountsList: any[] = [];
-  
+
   // Login Provisioning Check states
   isCheckingUsername = false;
   usernameStatus: 'none' | 'available' | 'taken' = 'none';
   private usernameTimeout: any;
 
   onUsernameInput() {
-     const username = this.customerForm.get('username')?.value;
-     if (!username || this.isEditModal) {
-        this.usernameStatus = 'none';
-        return;
-     }
+    const username = this.customerForm.get('username')?.value;
+    if (!username || this.isEditModal) {
+      this.usernameStatus = 'none';
+      return;
+    }
 
-     clearTimeout(this.usernameTimeout);
-     this.usernameTimeout = setTimeout(() => {
-        this.checkUsername(username);
-     }, 600);
+    clearTimeout(this.usernameTimeout);
+    this.usernameTimeout = setTimeout(() => {
+      this.checkUsername(username);
+    }, 600);
   }
 
   async checkUsername(username: string) {
-     this.isCheckingUsername = true;
-     try {
-        const clean = username.trim().toLowerCase().replace(/^@/, '');
-        const exists = await this.authService.checkUserExists(clean);
-        this.usernameStatus = exists ? 'taken' : 'available';
-     } catch (e) {
-        this.usernameStatus = 'none';
-     } finally {
-        this.isCheckingUsername = false;
-     }
+    this.isCheckingUsername = true;
+    try {
+      const clean = username.trim().toLowerCase().replace(/^@/, '');
+      const exists = await this.authService.checkUserExists(clean);
+      this.usernameStatus = exists ? 'taken' : 'available';
+    } catch (e) {
+      this.usernameStatus = 'none';
+    } finally {
+      this.isCheckingUsername = false;
+    }
   }
 
   passwordForm: FormGroup;
@@ -1444,33 +1436,53 @@ export class AdminDashboardComponent implements OnInit {
   }
   get totalPendingInterest() {
     return this.interests.reduce((sum, loan) => {
-       if (!loan.startDate) return sum;
-       const start = new Date(loan.startDate);
-       const now = new Date();
-       if (isNaN(start.getTime())) return sum;
-       
-       const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
-       const cappedMonths = Math.max(0, months);
-       
-       const principalPaid = (loan.settlements || []).reduce((s, st) => s + st.amount, 0);
-       const balance = Math.max(0, loan.amount - principalPaid);
-       const expectedInterest = balance * (loan.interestRate / 100) * cappedMonths;
-       const paidInterest = (loan.interestCollections || []).reduce((s, c) => s + c.amount, 0);
-       
-       return sum + Math.max(0, expectedInterest - paidInterest);
+      if (!loan.startDate) return sum;
+      const start = new Date(loan.startDate);
+      const now = new Date();
+      if (isNaN(start.getTime())) return sum;
+
+      const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+      const cappedMonths = Math.max(0, months);
+
+      const principalPaid = (loan.settlements || []).reduce((s, st) => s + st.amount, 0);
+      const balance = Math.max(0, loan.amount - principalPaid);
+      const expectedInterest = balance * (loan.interestRate / 100) * cappedMonths;
+      const paidInterest = (loan.interestCollections || []).reduce((s, c) => s + c.amount, 0);
+
+      return sum + Math.max(0, expectedInterest - paidInterest);
     }, 0);
   }
-  
+
   getFilteredLoans(): InterestScheme[] {
     return this.interests.filter(loan => {
       const matchesStatus = this.loanStatusFilter === 'All' || loan.status === this.loanStatusFilter || (!loan.status && this.loanStatusFilter === 'Active');
       const search = this.loanSearchQuery.toLowerCase().trim();
-      const matchesSearch = !search || 
-                           loan.name.toLowerCase().includes(search) || 
-                           (loan.borrowerName && loan.borrowerName.toLowerCase().includes(search)) ||
-                           (loan.borrowerPhone && loan.borrowerPhone.includes(search));
+      const matchesSearch = !search ||
+        loan.name.toLowerCase().includes(search) ||
+        (loan.borrowerName && loan.borrowerName.toLowerCase().includes(search)) ||
+        (loan.borrowerPhone && loan.borrowerPhone.includes(search));
       return matchesStatus && matchesSearch;
     });
+  }
+
+  get visibleMobileTabs() {
+    const all = ['overview', 'interest', 'chitti', 'customers', 'bills', 'security'];
+    return all.filter(t => {
+      if (t === 'overview' || t === 'security') return true;
+      if (t === 'interest') return this.showInterestTab;
+      if (t === 'chitti') return this.showChittiTab;
+      if (t === 'customers') return this.showCustomersTab;
+      if (t === 'bills') return this.showBillsTab;
+      return false;
+    });
+  }
+
+  getIndicatorLeft(): number {
+    const tabs = this.visibleMobileTabs;
+    const idx = tabs.indexOf(this.activeMobileMenu as any);
+    if (idx === -1) return 0;
+    const count = tabs.length;
+    return (idx * (100 / count)) + (100 / (count * 2));
   }
 
   async toggleLoanStatus(loan: InterestScheme) {
@@ -1495,8 +1507,8 @@ export class AdminDashboardComponent implements OnInit {
   };
   public overviewChartType: ChartType = 'line';
   public overviewChartData: ChartData<'line'> = { labels: [], datasets: [] };
-  
-  availableOverviewYears: number[] = Array.from({length: 10}, (_, i) => new Date().getFullYear() - i);
+
+  availableOverviewYears: number[] = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
   selectedOverviewYear: number = new Date().getFullYear();
 
   generateOverviewChart(year: number = this.selectedOverviewYear) {
@@ -1509,20 +1521,20 @@ export class AdminDashboardComponent implements OnInit {
     this.interests.forEach(loan => {
       // Given loans
       if (loan.startDate) {
-         const sd = new Date(loan.startDate);
-         if (sd.getFullYear() === year) givenLoans[sd.getMonth()] += loan.amount;
+        const sd = new Date(loan.startDate);
+        if (sd.getFullYear() === year) givenLoans[sd.getMonth()] += loan.amount;
       }
-      
+
       // Settlements
       (loan.settlements || []).forEach(s => {
-         const sd = new Date(s.date);
-         if (sd.getFullYear() === year) settlements[sd.getMonth()] += s.amount;
+        const sd = new Date(s.date);
+        if (sd.getFullYear() === year) settlements[sd.getMonth()] += s.amount;
       });
 
       // Interest Collected
       (loan.interestCollections || []).forEach(c => {
-         const cd = new Date(c.date);
-         if (cd.getFullYear() === year) interestCollected[cd.getMonth()] += c.amount;
+        const cd = new Date(c.date);
+        if (cd.getFullYear() === year) interestCollected[cd.getMonth()] += c.amount;
       });
     });
 
@@ -1564,10 +1576,10 @@ export class AdminDashboardComponent implements OnInit {
 
   async togglePasswordReveal(username: string) {
     if (this.revealedPasswords[username]) {
-       delete this.revealedPasswords[username];
+      delete this.revealedPasswords[username];
     } else {
-       const pwd = await this.authService.getAdminPassword(username);
-       this.revealedPasswords[username] = pwd || '---';
+      const pwd = await this.authService.getAdminPassword(username);
+      this.revealedPasswords[username] = pwd || '---';
     }
   }
 
@@ -1578,16 +1590,16 @@ export class AdminDashboardComponent implements OnInit {
         const { username, name, phone, password, address, idType, idValue, tab_interest, tab_chitti, tab_customers, tab_bills } = this.adminForm.getRawValue();
         const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
         const tabConfig = { interest: tab_interest, chitti: tab_chitti, customers: tab_customers, bills: tab_bills };
-        
+
         if (this.isAdminEditMode && this.editingAdminUid) {
           // Update basic info + address/ID + tabConfig
           await this.authService.updateAdminInfo(this.editingAdminUid, cleanUsername, name, phone, address, idType, idValue, tabConfig);
-          
+
           // If password field is filled, update it
           if (password && password.trim()) {
             await this.authService.changePassword(cleanUsername, password, 'admin');
           }
-          
+
           this.toast.success('Admin account updated correctly!');
           this.cancelAdminEdit();
         } else {
@@ -1596,7 +1608,7 @@ export class AdminDashboardComponent implements OnInit {
             this.toast.error('Username or Identity already exists.');
             return;
           }
-          
+
           // Use provided password or fallback to admin123
           const finalPassword = (password && password.trim()) ? password : 'admin123';
           await this.authService.provisionUser('admin', cleanUsername, name, phone, finalPassword, address, idType, idValue, tabConfig);
@@ -1644,13 +1656,13 @@ export class AdminDashboardComponent implements OnInit {
 
   async removeAdminMember(admin: UserProfile) {
     if (confirm(`Revoke all admin privileges for @${admin.username}?`)) {
-       try {
-          await deleteDoc(doc(this.firestore, `users/${admin.uid}`));
-          await deleteDoc(doc(this.firestore, `admin_credentials/${admin.username}`));
-          this.toast.success('Admin privileges revoked.');
-       } catch (e) {
-          this.toast.error('Failed to revoke privileges.');
-       }
+      try {
+        await deleteDoc(doc(this.firestore, `users/${admin.uid}`));
+        await deleteDoc(doc(this.firestore, `admin_credentials/${admin.username}`));
+        this.toast.success('Admin privileges revoked.');
+      } catch (e) {
+        this.toast.error('Failed to revoke privileges.');
+      }
     }
   }
 
@@ -1658,17 +1670,17 @@ export class AdminDashboardComponent implements OnInit {
     this.authService.userProfile$.subscribe(profile => {
       if (!profile) return;
       this.currentUserProfile = profile;
-      
+
       const filterUid = profile.role === 'super-admin' ? undefined : profile.uid;
-      
+
       if (!this.activeTab && profile.role !== 'super-admin') {
-         this.activeTab = 'overview';
-         this.activeMobileMenu = 'overview';
+        this.activeTab = 'overview';
+        this.activeMobileMenu = 'overview';
       } else if (!this.activeTab) {
-         this.activeTab = 'overview';
-         this.activeMobileMenu = 'overview';
+        this.activeTab = 'overview';
+        this.activeMobileMenu = 'overview';
       }
-      
+
       this.chittiService.getChittis(filterUid).subscribe(data => this.chittis = data);
       this.interestService.getInterests(filterUid).subscribe(data => {
         this.interests = data;
@@ -1696,10 +1708,10 @@ export class AdminDashboardComponent implements OnInit {
     // Reset hours to compare dates correctly
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const todayStr = today.toISOString().split('T')[0];
-    
+
     const sevenDaysLater = new Date(today);
     sevenDaysLater.setDate(today.getDate() + 7);
-    
+
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
 
@@ -1713,7 +1725,7 @@ export class AdminDashboardComponent implements OnInit {
     this.bills.forEach(bill => {
       const bDate = new Date(bill.dueDate);
       const dueDate = new Date(bDate.getFullYear(), bDate.getMonth(), bDate.getDate());
-      
+
       if (bill.status === 'pending') {
         this.billStats.pendingAmount += bill.amount;
         if (bill.dueDate === todayStr) {
@@ -1733,7 +1745,7 @@ export class AdminDashboardComponent implements OnInit {
   handleBillFilters(filters: any) {
     const profile = JSON.parse(localStorage.getItem('user_profile') || '{}');
     if (!profile.uid) return;
-    
+
     this.billService.getBillsByFilters(profile.uid, filters).subscribe(data => {
       this.bills = data;
       // Do not recalculate stats on filter, keep them based on total data? 
@@ -1778,7 +1790,7 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
-  async handleUpdateBillStatus(event: {bill: Bill, status: string}) {
+  async handleUpdateBillStatus(event: { bill: Bill, status: string }) {
     try {
       await this.billService.updateBill(event.bill.id!, { status: event.status as any });
       this.toast.success(`Bill marked as ${event.status}`);
@@ -1814,34 +1826,34 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   async handleRegisterService() {
-     if (this.trackedServiceForm.invalid) return;
-     this.isSaving = true;
-     
-     const profile = await new Promise<any>(res => this.authService.userProfile$.subscribe(res));
-     if (!profile?.uid) return;
+    if (this.trackedServiceForm.invalid) return;
+    this.isSaving = true;
 
-     try {
-        const data = this.trackedServiceForm.value;
-        await this.billService.registerService({ ...data, adminUid: profile.uid });
-        this.toast.success('Service number linked successfully!');
-        this.showServiceModal = false;
-        this.trackedServiceForm.reset({ serviceType: 'electricity' });
-     } catch (e) {
-        this.toast.error('Failed to link service.');
-     } finally {
-        this.isSaving = false;
-     }
+    const profile = await new Promise<any>(res => this.authService.userProfile$.subscribe(res));
+    if (!profile?.uid) return;
+
+    try {
+      const data = this.trackedServiceForm.value;
+      await this.billService.registerService({ ...data, adminUid: profile.uid });
+      this.toast.success('Service number linked successfully!');
+      this.showServiceModal = false;
+      this.trackedServiceForm.reset({ serviceType: 'electricity' });
+    } catch (e) {
+      this.toast.error('Failed to link service.');
+    } finally {
+      this.isSaving = false;
+    }
   }
 
   async handleRemoveService(id: string) {
-     if (confirm('Stop tracking this service number?')) {
-        try {
-           await this.billService.removeTrackedService(id);
-           this.toast.success('Service tracking removed.');
-        } catch (e) {
-           this.toast.error('Failed to remove service.');
-        }
-     }
+    if (confirm('Stop tracking this service number?')) {
+      try {
+        await this.billService.removeTrackedService(id);
+        this.toast.success('Service tracking removed.');
+      } catch (e) {
+        this.toast.error('Failed to remove service.');
+      }
+    }
   }
 
   updateLoanAnalytics() {
@@ -1856,7 +1868,7 @@ export class AdminDashboardComponent implements OnInit {
       (interest.interestCollections || []).forEach(c => {
         const cDate = new Date(c.date);
         if (isNaN(cDate.getTime())) return;
-        
+
         const year = cDate.getFullYear();
         const month = cDate.getMonth();
         yearsSet.add(year);
@@ -1873,7 +1885,7 @@ export class AdminDashboardComponent implements OnInit {
     });
 
     this.availableYears = Array.from(yearsSet).sort((a, b) => b - a);
-    
+
     // Explicitly update chart data to trigger change detection
     this.barChartData = {
       ...this.barChartData,
@@ -1882,7 +1894,7 @@ export class AdminDashboardComponent implements OnInit {
         data: monthlyData
       }]
     };
-    
+
     this.filteredTotalInterest = total;
     this.loanChart?.update();
   }
@@ -1900,7 +1912,7 @@ export class AdminDashboardComponent implements OnInit {
         (cust.payments || []).forEach(p => {
           const pDate = new Date(p.date);
           if (isNaN(pDate.getTime())) return;
-          
+
           const year = pDate.getFullYear();
           const month = pDate.getMonth();
           yearsSet.add(year);
@@ -1917,7 +1929,7 @@ export class AdminDashboardComponent implements OnInit {
     });
 
     this.chittiAvailableYears = Array.from(yearsSet).sort((a, b) => b - a);
-    
+
     this.chittiBarChartData = {
       ...this.chittiBarChartData,
       datasets: [{
@@ -1925,7 +1937,7 @@ export class AdminDashboardComponent implements OnInit {
         data: monthlyData
       }]
     };
-    
+
     this.filteredTotalChitti = total;
     this.chittiChart?.update();
   }
@@ -2030,11 +2042,11 @@ export class AdminDashboardComponent implements OnInit {
       const scheme = this.chittis.find(s => s.id === c.schemeId);
       if (scheme) {
         accounts.push({
-           type: 'chitti',
-           id: scheme.id,
-           name: scheme.name,
-           amount: scheme.totalValue,
-           info: `Chit - ${scheme.tenure} Months`
+          type: 'chitti',
+          id: scheme.id,
+          name: scheme.name,
+          amount: scheme.totalValue,
+          info: `Chit - ${scheme.tenure} Months`
         });
       }
     });
@@ -2042,26 +2054,26 @@ export class AdminDashboardComponent implements OnInit {
     // Gather Interest Loans
     const loans = this.interests.filter(i => i.borrowerPhone === cust.phone);
     loans.forEach(loan => {
-       accounts.push({
-           type: 'interest',
-           id: loan.id,
-           name: loan.name,
-           amount: loan.amount,
-           info: `Loan - ${loan.interestRate}% Interest p.m.`
-       });
+      accounts.push({
+        type: 'interest',
+        id: loan.id,
+        name: loan.name,
+        amount: loan.amount,
+        info: `Loan - ${loan.interestRate}% Interest p.m.`
+      });
     });
 
     if (accounts.length === 0) {
-       this.toast.error('No active loan or chitti accounts found for this customer.');
+      this.toast.error('No active loan or chitti accounts found for this customer.');
     } else if (accounts.length === 1) {
-       // Direct navigation
-       if (accounts[0].type === 'chitti') this.viewChitDetails(accounts[0].id);
-       else this.viewInterestDetails(accounts[0].id);
+      // Direct navigation
+      if (accounts[0].type === 'chitti') this.viewChitDetails(accounts[0].id);
+      else this.viewInterestDetails(accounts[0].id);
     } else {
-       // Multiple - show modal
-       this.customerAccountsList = accounts;
-       this.selectedCustomerForAccounts = cust;
-       this.showAccountsModal = true;
+      // Multiple - show modal
+      this.customerAccountsList = accounts;
+      this.selectedCustomerForAccounts = cust;
+      this.showAccountsModal = true;
     }
   }
 
@@ -2110,8 +2122,8 @@ export class AdminDashboardComponent implements OnInit {
   get filteredPickerCustomers() {
     if (!this.allCustomers) return [];
     const q = this.pickerSearch.toLowerCase();
-    return this.allCustomers.filter(c => 
-      (c.name?.toLowerCase().includes(q)) || 
+    return this.allCustomers.filter(c =>
+      (c.name?.toLowerCase().includes(q)) ||
       (c.phone?.includes(q))
     );
   }
@@ -2132,32 +2144,32 @@ export class AdminDashboardComponent implements OnInit {
       try {
         const val = this.customerForm.value;
         const profile = await new Promise<any>(res => this.authService.userProfile$.subscribe(res));
-        
+
         if (this.isEditModal && this.editingCustomer?.id) {
-           await this.customerService.updateCustomer(this.editingCustomer.id, val);
-           
-           // Optionally update provision if username changed, but basic info is enough for now
-           if (val.username) {
-             await this.authService.provisionCustomer(val.username, val.name, val.phone);
-           }
-           this.toast.success('Customer updated!');
+          await this.customerService.updateCustomer(this.editingCustomer.id, val);
+
+          // Optionally update provision if username changed, but basic info is enough for now
+          if (val.username) {
+            await this.authService.provisionCustomer(val.username, val.name, val.phone);
+          }
+          this.toast.success('Customer updated!');
         } else {
-           try {
-             // 1. Provision Login
-             const alreadyExists = await this.authService.checkUserExists(val.username);
-             if (!alreadyExists) {
-               await this.authService.provisionCustomer(val.username, val.name, val.phone);
-             }
-             
-             // 2. Save Customer profile
-             const newCustomer = { ...val, createdBy: profile?.uid };
-             await this.customerService.addCustomer(newCustomer);
-             this.toast.success('Customer created & login provisioned!');
-           } catch (e: any) {
-             console.error('Registration failed', e);
-             this.toast.error(e.message || 'Could not provision login account. Username might be taken.');
-             return;
-           }
+          try {
+            // 1. Provision Login
+            const alreadyExists = await this.authService.checkUserExists(val.username);
+            if (!alreadyExists) {
+              await this.authService.provisionCustomer(val.username, val.name, val.phone);
+            }
+
+            // 2. Save Customer profile
+            const newCustomer = { ...val, createdBy: profile?.uid };
+            await this.customerService.addCustomer(newCustomer);
+            this.toast.success('Customer created & login provisioned!');
+          } catch (e: any) {
+            console.error('Registration failed', e);
+            this.toast.error(e.message || 'Could not provision login account. Username might be taken.');
+            return;
+          }
         }
         this.closeCustomerModal();
         this.loadData();
@@ -2263,16 +2275,16 @@ export class AdminDashboardComponent implements OnInit {
 
   async backfillOwnership() {
     const target = this.migrationUsername.trim();
-    const promptMsg = target 
-      ? `This will assign all current unowned data to the user "@${target}". Proceed?` 
+    const promptMsg = target
+      ? `This will assign all current unowned data to the user "@${target}". Proceed?`
       : 'This will assign all current unowned data to YOUR account. Proceed?';
-      
+
     if (!confirm(promptMsg)) return;
-    
+
     this.isSaving = true;
     try {
       let targetUid: string | null = null;
-      
+
       if (target) {
         targetUid = await this.authService.getUidByUsername(target);
         if (!targetUid) {
@@ -2288,30 +2300,30 @@ export class AdminDashboardComponent implements OnInit {
         this.toast.error('Could not determine target account.');
         return;
       }
-      
+
       const adminUid = targetUid;
-      
+
       // Update Customers
       for (const cust of this.allCustomers) {
         if (!cust.createdBy) {
           await this.customerService.updateCustomer(cust.id!, { createdBy: adminUid });
         }
       }
-      
+
       // Update Chittis
       for (const chit of this.chittis) {
         if (!chit.createdBy) {
           await this.chittiService.updateChitti(chit.id!, { createdBy: adminUid });
         }
       }
-      
+
       // Update Interests
       for (const interest of this.interests) {
         if (!interest.createdBy) {
           await this.interestService.updateInterest(interest.id!, { createdBy: adminUid });
         }
       }
-      
+
       this.toast.success('Ownership migration completed successfully!');
       this.migrationUsername = '';
       this.loadData();
@@ -2324,20 +2336,20 @@ export class AdminDashboardComponent implements OnInit {
 
   async updatePassword() {
     if (this.passwordForm.valid) {
-       this.isSaving = true;
-       try {
-          const profile = await new Promise<any>(res => this.authService.userProfile$.subscribe(res));
-          if (profile?.username) {
-             await this.authService.changePassword(profile.username, this.passwordForm.value.newPassword, 'admin');
-             this.toast.success('Admin password updated successfully!');
-             this.passwordForm.reset();
-             this.activeTab = 'chitti';
-          }
-       } catch (e) {
-          this.toast.error('Failed to update password.');
-       } finally {
-          this.isSaving = false;
-       }
+      this.isSaving = true;
+      try {
+        const profile = await new Promise<any>(res => this.authService.userProfile$.subscribe(res));
+        if (profile?.username) {
+          await this.authService.changePassword(profile.username, this.passwordForm.value.newPassword, 'admin');
+          this.toast.success('Admin password updated successfully!');
+          this.passwordForm.reset();
+          this.activeTab = 'chitti';
+        }
+      } catch (e) {
+        this.toast.error('Failed to update password.');
+      } finally {
+        this.isSaving = false;
+      }
     }
   }
 }

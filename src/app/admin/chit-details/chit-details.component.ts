@@ -14,30 +14,48 @@ import { AuthService } from '../../services/auth.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
   template: `
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300 overflow-x-hidden">
-      <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700 shadow-sm px-4 sm:px-6 lg:px-8 py-4">
-        <div class="flex items-center space-x-4">
-           <button (click)="goBack()" class="text-gray-500 hover:text-purple-600 transition-colors">
-              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-           </button>
-           <h1 class="text-xl font-bold text-gray-900 dark:text-white">Chit Scheme Details</h1>
+    <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-950 transition-colors duration-500 pb-20 sm:pb-0">
+      <nav class="sticky top-0 z-50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex justify-between h-20 items-center">
+            <div class="flex items-center gap-4">
+              <button (click)="goBack()" class="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-2xl text-gray-500 hover:text-purple-600 transition-all active:scale-95">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" /></svg>
+              </button>
+              <div>
+                <h1 class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter uppercase leading-none">{{ scheme?.name || 'Loading...' }}</h1>
+                <p class="text-[10px] font-black text-purple-600 uppercase tracking-widest mt-1">Chitti Scheme details</p>
+              </div>
+            </div>
+            <button (click)="openAddCustomerModal()" class="hidden sm:flex items-center gap-2 px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+              Enrol Member
+            </button>
+          </div>
         </div>
       </nav>
 
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
         @if (scheme) {
-          <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-8 flex flex-col md:flex-row justify-between md:items-center space-y-4 md:space-y-0">
-            <div>
-              <h2 class="text-2xl font-bold text-gray-900 dark:text-white">{{ scheme.name }}</h2>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ scheme.startDate }} to {{ scheme.endDate }} • {{ scheme.tenure }} Months • ₹{{ scheme.monthlyAmount }} / month</p>
+          <!-- Stats Summary Grid -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+            <div class="glass-card p-6 rounded-[2.5rem] border-purple-500/10">
+              <p class="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1 leading-none">Total Value</p>
+              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter">₹{{ scheme.totalValue | number:'1.0-0' }}</p>
             </div>
-            <div class="text-left md:text-right">
-              <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Value</p>
-              <p class="text-3xl font-extrabold text-purple-600 dark:text-purple-400">₹{{ scheme.totalValue }}</p>
+            <div class="glass-card p-6 rounded-[2.5rem] border-blue-500/10">
+              <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 leading-none">Monthly EMI</p>
+              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter">₹{{ scheme.monthlyAmount | number:'1.0-0' }}</p>
+            </div>
+            <div class="glass-card p-6 rounded-[2.5rem] border-pink-500/10">
+              <p class="text-[10px] font-black text-pink-500 uppercase tracking-widest mb-1 leading-none">Members</p>
+              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter">{{ customers.length }} / {{ scheme.capacity }}</p>
+            </div>
+            <div class="glass-card p-6 rounded-[2.5rem] border-green-500/10">
+              <p class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1 leading-none">Tenure</p>
+              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter">{{ scheme.tenure }} Mo</p>
             </div>
           </div>
-        }
 
         <!-- Scheme-Specific Monthly Snapshot -->
         <div class="grid grid-cols-2 gap-3 sm:gap-6 mb-8">
@@ -61,112 +79,92 @@ import { AuthService } from '../../services/auth.service';
            </div>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-          <div class="px-4 sm:px-6 py-5 border-b border-gray-100 dark:border-gray-700 flex flex-col lg:flex-row justify-between lg:items-center bg-gray-50/50 dark:bg-gray-800/50 gap-6">
-            <div class="flex flex-col md:flex-row items-start md:items-center gap-4 flex-1 w-full">
-              <h3 class="text-lg font-black text-gray-900 dark:text-white shrink-0">Enrolled Customers</h3>
-              
-              <!-- Search & Filters -->
-              <div class="flex flex-1 w-full max-w-2xl gap-2">
-                <div class="relative flex-1">
-                  <input type="text" [(ngModel)]="customerSearchQuery" placeholder="Search customer..." 
-                         class="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 transition-all">
-                  <svg class="absolute left-3 top-3 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                </div>
-                <select [(ngModel)]="statusFilter" 
-                        class="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-500 min-w-[120px]">
-                   <option value="all">All Status</option>
-                   <option value="Active">Active</option>
-                   <option value="Inactive">Inactive</option>
-                </select>
-              </div>
-            </div>
-            <button (click)="openAddCustomerModal()" class="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-3 font-bold text-white bg-purple-600 rounded-xl hover:bg-purple-700 transition-all text-sm uppercase tracking-wide shadow-md hover:shadow-lg">
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-              Add New
-            </button>
+          <!-- Enrolled Customers List -->
+          <div class="flex items-center gap-3 mb-6">
+             <div class="h-6 w-1.5 bg-purple-600 rounded-full"></div>
+             <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Enrolled Members</h3>
           </div>
 
-          <div class="hidden md:block overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-              <thead>
-                <tr class="bg-gray-50 dark:bg-gray-800/80 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-200 dark:border-gray-700">
-                  <th class="px-6 py-4 font-medium">Username</th>
-                  <th class="px-6 py-4 font-medium">Name</th>
-                  <th class="px-6 py-4 font-medium">Contact</th>
-                  <th class="px-6 py-4 font-medium">Joined Date</th>
-                  <th class="px-6 py-4 font-medium">Paid Balance</th>
-                  <th class="px-6 py-4 font-medium text-pink-600">Pending</th>
-                  <th class="px-6 py-4 font-medium text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-sm">
-                @for (customer of filteredCustomers; track customer.id) {
-                  <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors">
-                    <td class="px-6 py-4"><span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-md font-mono text-xs text-purple-600 dark:text-purple-400">{{ customer.username }}</span></td>
-                    <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">{{ customer.name }}</td>
-                    <td class="px-6 py-4 text-gray-500 dark:text-gray-400">{{ customer.phone }}<br><span class="text-xs">{{ customer.email }}</span></td>
-                    <td class="px-6 py-4 text-gray-500 dark:text-gray-400">{{ customer.joinedDate }}</td>
-                    <td class="px-6 py-4 font-semibold text-green-600">₹{{ getPaidAmount(customer) | number:'1.0-0' }}</td>
-                    <td class="px-6 py-4 font-bold text-pink-600">₹{{ getPendingAmount(customer) | number:'1.0-0' }}</td>
-                    <td class="px-6 py-4 text-right space-x-3 text-sm font-medium">
-                      <button (click)="openEditCustomerModal(customer)" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">Edit</button>
-                      <button (click)="deleteCustomer(customer.id!)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Delete</button>
-                    </td>
-                  </tr>
-                }
-                @if (customers.length === 0) {
-                  <tr>
-                    <td colspan="7" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400 text-sm">No customers enrolled yet.</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Mobile Cards View -->
-          <div class="md:hidden divide-y divide-gray-100 dark:divide-gray-700">
-             @for (customer of filteredCustomers; track customer.id) {
-                <div class="px-6 py-4 space-y-3">
-                   <div class="flex justify-between items-start">
-                      <div>
-                         <div class="flex items-center space-x-2">
-                           <p class="font-bold text-gray-900 dark:text-white">{{ customer.name }}</p>
-                           <span class="text-[10px] bg-purple-50 dark:bg-purple-900/20 text-purple-600 px-1.5 py-0.5 rounded">&#64;{{ customer.username }}</span>
-                         </div>
-                         <p class="text-xs text-gray-500 mt-0.5">{{ customer.phone }}</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @for (cust of filteredCustomers; track cust.id) {
+              <div class="glass-card rounded-[2.5rem] p-6 sm:p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 group relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
+                
+                <div class="flex justify-between items-start mb-6">
+                   <div class="min-w-0">
+                      <div class="flex items-center gap-2 mb-1.5">
+                        <h4 class="text-xl font-black text-gray-900 dark:text-white truncate">{{ cust.name }}</h4>
+                        <span class="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[8px] font-black uppercase tracking-widest rounded-md">&#64;{{ cust.username }}</span>
                       </div>
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium" 
-                            [ngClass]="{'bg-green-100 text-green-800': customer.status === 'Active', 'bg-red-100 text-red-800': customer.status === 'Inactive'}">
-                        {{ customer.status }}
+                      <p class="text-xs font-bold text-gray-400 flex items-center gap-2">
+                        <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.948V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                        {{ cust.phone }}
+                      </p>
+                   </div>
+                   <div class="text-right shrink-0">
+                      <p class="text-[8px] font-black text-purple-600 uppercase tracking-widest leading-none mb-1">Status</p>
+                      <span class="px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest" 
+                            [ngClass]="cust.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
+                        {{ cust.status }}
                       </span>
                    </div>
-                    <div class="flex justify-between items-center text-xs text-gray-500">
-                      <span>Joined: {{ customer.joinedDate }}</span>
-                      <span>Paid: <span class="text-green-600 font-bold">₹{{ getPaidAmount(customer) }}</span></span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                   <div class="bg-gray-50/50 dark:bg-gray-900/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-800">
+                      <p class="text-[8px] font-black text-gray-400 uppercase mb-1">Paid Status</p>
+                      <p class="text-sm font-black text-green-600 tracking-tighter">₹{{ getPaidAmount(cust) | number:'1.0-0' }}</p>
                    </div>
-                    <div class="flex justify-between items-center text-xs">
-                      <span class="text-pink-600 font-bold">Pending: ₹{{ getPendingAmount(customer) }}</span>
-                      <div class="flex space-x-4">
-                         <button (click)="openEditCustomerModal(customer)" class="text-indigo-600 font-bold uppercase tracking-wider">Edit / Pay</button>
-                         <button (click)="deleteCustomer(customer.id!)" class="text-red-600 font-bold uppercase tracking-wider">Delete</button>
-                      </div>
+                   <div class="bg-pink-50/50 dark:bg-pink-900/10 p-3 rounded-2xl border border-pink-100 dark:border-pink-900/20">
+                      <p class="text-[8px] font-black text-pink-400 uppercase mb-1 text-right">Pending Due</p>
+                      <p class="text-sm font-black text-pink-600 tracking-tighter text-right">₹{{ getPendingAmount(cust) | number:'1.0-0' }}</p>
                    </div>
                 </div>
-             }
-             @if (customers.length === 0) {
-                <div class="px-6 py-10 text-center text-gray-500 dark:text-gray-400 text-sm">
-                   No customers enrolled yet.
+
+                <div class="space-y-3 mb-6 px-1">
+                   <div class="flex justify-between items-end">
+                      <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none">Progress: {{ getPaidAmount(cust)/scheme.monthlyAmount | number:'1.0-0' }}/{{ scheme.tenure }} Mo</p>
+                      <p class="text-[10px] font-black text-purple-600 dark:text-purple-400 tracking-tighter">
+                         {{ (getPaidAmount(cust) / (scheme.monthlyAmount * scheme.tenure)) * 100 | number:'1.0-0' }}%
+                      </p>
+                   </div>
+                   <div class="w-full bg-gray-100 dark:bg-gray-800 h-1.5 rounded-full overflow-hidden">
+                      <div class="bg-gradient-to-r from-purple-600 to-indigo-600 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(124,58,237,0.3)]" 
+                           [style.width.%]="(getPaidAmount(cust) / (scheme.monthlyAmount * scheme.tenure)) * 100"></div>
+                   </div>
                 </div>
-             }
+
+                <div class="flex gap-3 mt-4">
+                   <button (click)="openEditCustomerModal(cust)" class="flex-1 py-3.5 bg-black dark:bg-white text-white dark:text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg active:scale-95 transition-all">Payments & Edit</button>
+                   <button (click)="deleteCustomer(cust.id!)" class="px-4 py-3.5 bg-red-50 dark:bg-red-900/10 text-red-600 rounded-2xl hover:bg-red-600 hover:text-white transition-all active:scale-95">
+                      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                   </button>
+                </div>
+              </div>
+            }
           </div>
-        </div>
+          
+          <!-- Floating Action Button for Mobile -->
+          <button (click)="openAddCustomerModal()" class="fixed bottom-8 right-6 sm:hidden w-16 h-16 bg-gradient-to-tr from-purple-600 to-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center animate-bounce duration-[3000ms] z-[100] active:scale-90 transition-transform">
+             <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          </button>
+
+          @if (customers.length === 0) {
+            <div class="py-20 text-center">
+              <div class="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900 dark:text-white">No members enrolled</h3>
+              <p class="text-gray-500 mt-2">Start adding customers to this chit scheme.</p>
+            </div>
+          }
+        }
       </main>
 
       <!-- Customer Modal -->
       @if (showModal) {
-        <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-          <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-200 dark:border-gray-700 transform transition-all">
+        <div class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md px-0 sm:px-4">
+          <div class="bg-white dark:bg-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden border border-gray-200 dark:border-gray-700 mobile-animate-slide group">
             <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
               <h3 class="text-lg font-bold text-gray-900 dark:text-white">{{ isEditModal ? 'Edit Customer' : 'Add Customer' }}</h3>
               <button (click)="closeModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
