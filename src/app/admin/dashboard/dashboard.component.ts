@@ -11,7 +11,10 @@ import { Firestore, collection, collectionData, query, where, deleteDoc, doc } f
 import { Observable } from 'rxjs';
 import { BiometricService } from '../../services/biometric.service';
 import { BaseChartDirective } from 'ng2-charts';
-import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
+import { ChartConfiguration, ChartData, ChartType, Chart } from 'chart.js';
+import zoomPlugin from 'chartjs-plugin-zoom';
+
+Chart.register(zoomPlugin);
 
 import { BillService, Bill, TrackedService } from '../services/bill.service';
 import { BillListComponent } from '../bills/bill-list/bill-list.component';
@@ -39,19 +42,19 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
       .bottom-nav-pill {
         position: fixed;
         bottom: 32px;
-        left: 50%;
+        left: 43%;
         transform: translateX(-50%);
-        background: rgba(237, 237, 237, 0.85);
+        background: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(20px);
-        height: 60px;
-        width: 92%;
-        max-width: 480px;
-        border-radius: 34px;
+        -webkit-backdrop-filter: blur(20px);
         display: flex;
-        padding: 4px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        align-items: center;
+        padding: 2px 0px;
+        border-radius: 9999px;
+        box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.2);
         z-index: 100;
-        border: 1px solid rgba(255, 255, 255, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        width: min(400px, 90vw);
       }
       .nav-item-box {
         flex: 1 1 0%;
@@ -75,7 +78,13 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
         transform: scale(1.1) translateY(-1px);
       }
       .icon-inactive {
-        color: #94a3b8;
+        color: #505d6f;
+        opacity: 0.6;
+        transition: all 0.3s ease;
+      }
+      .dark .icon-inactive {
+        color: rgba(255, 255, 255, 0.5);
+        opacity: 0.4;
       }
       .nav-item-box:active .nav-icon {
         transform: scale(0.9);
@@ -83,19 +92,19 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
       .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.5); }
       .dark .glass-card { background: rgba(17, 24, 39, 0.7); border: 1px solid rgba(255,255,255,0.05); }
       .dark .bottom-nav-pill {
-        border: 1px solid rgba(255,255,255,0.1);
-        background: rgba(15, 23, 42, 0.85);
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+        background: rgba(15, 23, 42, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
       }
     </style>
 
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-500 pb-32 sm:pb-0 overflow-x-hidden relative">
+    <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-950 transition-colors duration-500 pb-32 sm:pb-0 overflow-x-hidden">
       <!-- Decorative Background Glows (Subtle) -->
       <div class="absolute top-0 left-0 w-96 h-96 bg-purple-500/5 rounded-full filter blur-[100px] pointer-events-none"></div>
       <div class="absolute bottom-0 right-0 w-96 h-96 bg-pink-500/5 rounded-full filter blur-[100px] pointer-events-none"></div>
 
       <!-- Top Navigation -->
-      <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl sticky top-0 z-50 border-b border-gray-200/60 dark:border-gray-700/60 shadow-sm transition-all duration-300">
+      <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl sticky top-0 z-50 border-b border-gray-200/60 dark:border-gray-700/60 shadow-sm transition-all duration-300 animate-fade-down">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between h-16 items-center">
             <div class="flex items-center space-x-3">
@@ -128,7 +137,7 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
         </div>
       </nav>
 
-      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10 animate-fade-up delay-100">
 
         <!-- Tab Switcher (Only for regular admins or Super Admin Security) -->
         <div class="hidden sm:flex p-1.5 bg-gray-200/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl w-full sm:max-w-md mb-8 relative gap-1 overflow-x-auto no-scrollbar whitespace-nowrap border border-gray-100 dark:border-gray-700">
@@ -181,37 +190,40 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
                  </div>
               </div>
 
-              <!-- KPIs -->
-              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-                 <div class="bg-blue-50 dark:bg-blue-900/20 p-4 sm:p-5 rounded-3xl border border-blue-100 dark:border-blue-800/50">
-                    <p class="text-[8px] sm:text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 leading-none">Total Given Loans</p>
-                    <p class="text-lg sm:text-xl font-black text-blue-700 dark:text-blue-300 tracking-tighter">₹{{ totalGivenLoans | number:'1.0-0' }}</p>
-                 </div>
-                 <div class="bg-emerald-50 dark:bg-emerald-900/20 p-4 sm:p-5 rounded-3xl border border-emerald-100 dark:border-emerald-800/50">
-                    <p class="text-[8px] sm:text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1 leading-none">Total Settlements</p>
-                    <p class="text-lg sm:text-xl font-black text-emerald-700 dark:text-emerald-300 tracking-tighter">₹{{ totalSettlement | number:'1.0-0' }}</p>
-                 </div>
-                 <div class="bg-red-50 dark:bg-red-900/20 p-4 sm:p-5 rounded-3xl border border-red-100 dark:border-red-800/50">
-                    <p class="text-[8px] sm:text-[10px] font-black text-red-500 uppercase tracking-widest mb-1 leading-none">Pending Principal</p>
-                    <p class="text-lg sm:text-xl font-black text-red-700 dark:text-red-300 tracking-tighter">₹{{ totalPendingPrincipal | number:'1.0-0' }}</p>
-                 </div>
-                 <div class="bg-purple-50 dark:bg-purple-900/20 p-4 sm:p-5 rounded-3xl border border-purple-100 dark:border-purple-800/50">
-                    <p class="text-[8px] sm:text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1 leading-none">Interest Collected</p>
-                    <p class="text-lg sm:text-xl font-black text-purple-700 dark:text-purple-300 tracking-tighter">₹{{ totalCollectedInterest | number:'1.0-0' }}</p>
-                 </div>
-                 <div class="bg-orange-50 dark:bg-orange-900/20 p-4 sm:p-5 rounded-3xl border border-orange-100 dark:border-orange-800/50">
-                    <p class="text-[8px] sm:text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1 leading-none">Pending Interest</p>
-                    <p class="text-lg sm:text-xl font-black text-orange-700 dark:text-orange-300 tracking-tighter">₹{{ totalPendingInterest | number:'1.0-0' }}</p>
-                 </div>
-              </div>
+               <!-- Line Chart -->
+               <div class="bg-white dark:bg-gray-900 rounded-[1.5rem] p-2 sm:p-2 shadow-sm border border-gray-100 dark:border-gray-800">
+                  <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-sm font-black text-gray-500 uppercase tracking-widest">Financial Trends ({{ selectedOverviewYear }})</h3>
+                    <p class="text-[10px] font-bold text-indigo-500/60 uppercase tracking-widest italic">Scroll to Zoom · Drag to Pan</p>
+                  </div>
+                  <div class="w-full h-[300px]">
+                     <canvas baseChart [data]="overviewChartData" [options]="overviewChartOptions" [type]="overviewChartType"></canvas>
+                  </div>
+               </div>
 
-              <!-- Line Chart -->
-              <div class="bg-white dark:bg-gray-900 rounded-[2.5rem] p-6 sm:p-8 shadow-sm border border-gray-100 dark:border-gray-800">
-                 <h3 class="text-sm font-black text-gray-500 uppercase tracking-widest mb-6">Financial Trends ({{ selectedOverviewYear }})</h3>
-                 <div class="w-full h-[300px]">
-                    <canvas baseChart [data]="overviewChartData" [options]="overviewChartOptions" [type]="overviewChartType"></canvas>
-                 </div>
-              </div>
+               <!-- KPIs -->
+               <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+                  <div class="bg-blue-50 dark:bg-blue-900/20 p-4 sm:p-5 rounded-3xl border border-blue-100 dark:border-blue-800/50">
+                     <p class="text-[8px] sm:text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 leading-none">Total Given Loans</p>
+                     <p class="text-lg sm:text-xl font-black text-blue-700 dark:text-blue-300 tracking-tighter">₹{{ totalGivenLoans | number:'1.0-0' }}</p>
+                  </div>
+                  <div class="bg-emerald-50 dark:bg-emerald-900/20 p-4 sm:p-5 rounded-3xl border border-emerald-100 dark:border-emerald-800/50">
+                     <p class="text-[8px] sm:text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1 leading-none">Total Settlements</p>
+                     <p class="text-lg sm:text-xl font-black text-emerald-700 dark:text-emerald-300 tracking-tighter">₹{{ totalSettlement | number:'1.0-0' }}</p>
+                  </div>
+                  <div class="bg-red-50 dark:bg-red-900/20 p-4 sm:p-5 rounded-3xl border border-red-100 dark:border-red-800/50">
+                     <p class="text-[8px] sm:text-[10px] font-black text-red-500 uppercase tracking-widest mb-1 leading-none">Pending Principal</p>
+                     <p class="text-lg sm:text-xl font-black text-red-700 dark:text-red-300 tracking-tighter">₹{{ totalPendingPrincipal | number:'1.0-0' }}</p>
+                  </div>
+                  <div class="bg-purple-50 dark:bg-purple-900/20 p-4 sm:p-5 rounded-3xl border border-purple-100 dark:border-purple-800/50">
+                     <p class="text-[8px] sm:text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1 leading-none">Interest Collected</p>
+                     <p class="text-lg sm:text-xl font-black text-purple-700 dark:text-purple-300 tracking-tighter">₹{{ totalCollectedInterest | number:'1.0-0' }}</p>
+                  </div>
+                  <div class="bg-orange-50 dark:bg-orange-900/20 p-4 sm:p-5 rounded-3xl border border-orange-100 dark:border-orange-800/50">
+                     <p class="text-[8px] sm:text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1 leading-none">Pending Interest</p>
+                     <p class="text-lg sm:text-xl font-black text-orange-700 dark:text-orange-300 tracking-tighter">₹{{ totalPendingInterest | number:'1.0-0' }}</p>
+                  </div>
+               </div>
            </div>
         }
 
@@ -511,49 +523,53 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
 
         <!-- ═══════════ INTEREST DASHBOARD (Admin Only) ═══════════ -->
         @if (!isSuperAdmin && activeTab === 'interest' && showInterestTab) {
-          <div class="card-animate" style="animation-delay:0.05s">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+          <div class="card-animate flex flex-col" style="animation-delay:0.05s">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 order-1">
               <div>
                 <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Interest Management</h2>
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">{{ interests.length }} active loan schemes</p>
               </div>
-              <button (click)="goToCreateInterest()" class="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-purple-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:-translate-y-1 transition-all">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                New Loan
-              </button>
             </div>
 
-            <!-- Loan Filters & Search -->
-            <div class="flex flex-col md:flex-row gap-4 mb-10">
-               <div class="flex-1 glass-card rounded-[1.5rem] p-1.5 flex items-center shadow-sm">
+            <!-- Action Row -->
+            <div class="mb-8 order-4">
+               <button (click)="goToCreateInterest()" class="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-purple-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:-translate-y-1 transition-all">
+                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                 New Loan
+               </button>
+            </div>
+
+            <!-- Loan Filters & Search (Moved after Analytics on mobile) -->
+            <div class="flex flex-col md:flex-row gap-4 mb-10 order-3 lg:order-2">
+               <div class="flex-1 bg-white dark:bg-gray-800/50 backdrop-blur-md rounded-2xl p-1.5 flex items-center shadow-sm border border-gray-100 dark:border-gray-700/50">
                   <div class="pl-4 pr-2 text-gray-400">
                      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                   </div>
                   <input type="text" [(ngModel)]="loanSearchQuery" placeholder="Search borrowers..."
-                         class="w-full py-3 bg-transparent border-none outline-none text-sm text-gray-900 dark:text-white font-bold placeholder:text-gray-400">
+                         class="w-full py-3 bg-transparent border-none outline-none text-sm text-gray-900 dark:text-white font-black placeholder:text-gray-400">
                </div>
                
-               <div class="p-1.5 bg-gray-200/50 dark:bg-gray-800/50 backdrop-blur-md rounded-2xl flex gap-1 border border-gray-100 dark:border-gray-800 shadow-inner">
+               <div class="p-1.5 bg-gray-200/50 dark:bg-gray-800/50 backdrop-blur-md rounded-2xl flex gap-1 border border-gray-100 dark:border-gray-700/50 shadow-inner">
                   <button (click)="loanStatusFilter = 'Active'"
                           [class.tab-active]="loanStatusFilter === 'Active'"
-                          class="flex-1 sm:flex-none px-6 py-2.5 text-[9px] font-black rounded-xl transition-all duration-300 text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">
+                          class="flex-1 sm:flex-none px-6 py-2.5 text-[9px] font-black rounded-xl transition-all duration-300 text-gray-500 dark:text-gray-300 uppercase tracking-[0.2em]">
                      ACTIVE
                   </button>
                   <button (click)="loanStatusFilter = 'Inactive'"
                           [class.tab-active]="loanStatusFilter === 'Inactive'"
-                          class="flex-1 sm:flex-none px-6 py-2.5 text-[9px] font-black rounded-xl transition-all duration-300 text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">
+                          class="flex-1 sm:flex-none px-6 py-2.5 text-[9px] font-black rounded-xl transition-all duration-300 text-gray-500 dark:text-gray-300 uppercase tracking-[0.2em]">
                      INACTIVE
                   </button>
                   <button (click)="loanStatusFilter = 'All'"
                           [class.tab-active]="loanStatusFilter === 'All'"
-                          class="flex-1 sm:flex-none px-6 py-2.5 text-[9px] font-black rounded-xl transition-all duration-300 text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">
+                          class="flex-1 sm:flex-none px-6 py-2.5 text-[9px] font-black rounded-xl transition-all duration-300 text-gray-500 dark:text-gray-300 uppercase tracking-[0.2em]">
                      ALL
                   </button>
                </div>
             </div>
 
             <!-- Analytics & Insights -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 order-2 lg:order-3">
               <!-- Bar Chart Card -->
               <div class="lg:col-span-2 bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700 h-[280px] sm:h-[320px] relative overflow-hidden card-animate">
                 <div class="flex justify-between items-center mb-6">
@@ -618,61 +634,100 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
             </div>
 
             <!-- Interest Cards -->
+            <div class="order-5">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
               @for (loan of getFilteredLoans(); track loan.id; let i = $index) {
                 <div class="scheme-card bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden card-animate"
-                     [style.animation-delay]="(i * 0.07 + 0.2) + 's'">
-                  <div class="h-1.5" [ngClass]="loan.status === 'Inactive' ? 'bg-gray-400' : 'bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600'"></div>
-                  <div class="p-6">
-                    <div class="flex justify-between items-start mb-4">
-                       <span class="text-xs font-bold text-blue-600 dark:text-blue-400 capitalize">{{ loan.interestRate }}% Interest p.m.</span>
-                       <span class="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter" [ngClass]="loan.status === 'Inactive' ? 'bg-gray-100 text-gray-500' : 'bg-green-50 text-green-600'">{{ loan.status || 'Active' }}</span>
-                    </div>
-                    <h3 class="text-lg font-black text-gray-900 dark:text-white cursor-pointer hover:text-indigo-600 transition-colors truncate mb-1" (click)="viewInterestDetails(loan.id!)">{{ loan.name }}</h3>
-                    <p class="text-xs text-gray-500 font-bold mb-4">{{ loan.borrowerName }}</p>
-                    <div class="grid grid-cols-2 gap-3 mb-3">
-                      <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-100/50 dark:border-gray-700/50">
-                        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Principal</p>
-                        <p class="text-sm font-black text-gray-900 dark:text-white">₹{{ loan.amount | number:'1.0-0' }}</p>
+                     [style.animation-delay]="(i * 0.07 + 0.2) + 's'"
+                     (click)="toggleLoanExpansion(loan.id!)">
+                  
+                  <!-- Collapsed Mobile View -->
+                  <div class="sm:hidden p-5 flex justify-between items-center transition-all" *ngIf="!expandedLoans[loan.id!]">
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 mb-1">
+                        <span class="w-1.5 h-1.5 rounded-full" [ngClass]="loan.status === 'Inactive' ? 'bg-gray-400' : 'bg-indigo-500'"></span>
+                        <h3 class="text-sm font-black text-gray-900 dark:text-white truncate">{{ loan.name }}</h3>
                       </div>
-                      <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl text-right border border-gray-100/50 dark:border-gray-700/50">
-                        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Monthly Int.</p>
-                        <p class="text-sm font-black text-indigo-600">₹{{ (loan.amount * loan.interestRate / 100) | number:'1.0-0' }}</p>
+                      <p class="text-[10px] text-gray-400 font-bold ml-3.5">
+                        {{ loan.borrowerName }} · 
+                        <span class="text-indigo-500 font-black uppercase">{{ (getLastInterestDate(loan) | date:'dd MMM') || 'No Collection' }}</span>
+                      </p>
+                    </div>
+                    <div class="text-right ml-4">
+                      <p class="text-xs font-black text-gray-900 dark:text-white">₹{{ loan.amount | number:'1.0-0' }}</p>
+                      <p class="text-[9px] font-black text-indigo-500">{{ loan.interestRate }}% Int.</p>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-300 ml-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                  </div>
+
+                  <!-- Full Card View (Always on Desktop, Expandable on Mobile) -->
+                  <div [class.hidden]="!expandedLoans[loan.id!]" class="sm:block transition-all duration-300">
+                    <div class="h-1.5" [ngClass]="loan.status === 'Inactive' ? 'bg-gray-400' : 'bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600'"></div>
+                    <div class="p-6">
+                      <div class="flex justify-between items-start mb-4">
+                         <span class="text-xs font-bold text-blue-600 dark:text-blue-400 capitalize">{{ loan.interestRate }}% Interest p.m.</span>
+                         <div class="flex items-center gap-2">
+                           <span class="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter" [ngClass]="loan.status === 'Inactive' ? 'bg-gray-100 text-gray-500' : 'bg-green-50 text-green-600'">{{ loan.status || 'Active' }}</span>
+                           <svg class="w-4 h-4 text-gray-400 sm:hidden rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                         </div>
                       </div>
-                    </div>
-                    <div class="mb-4 bg-indigo-50/30 dark:bg-indigo-900/10 p-3 rounded-2xl flex justify-between items-center border border-indigo-100/30 dark:border-indigo-900/20">
-                       <p class="text-[9px] font-black text-indigo-500 uppercase tracking-widest italic opacity-70">Overall Interest</p>
-                       <p class="text-sm font-black text-indigo-600 dark:text-indigo-400">₹{{ getTotalLoanInterest(loan) | number:'1.0-0' }}</p>
-                    </div>
-                    <div class="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-gray-700/50">
-                       <button (click)="viewInterestDetails(loan.id!)" class="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">Loan Statement</button>
-                       <div class="flex space-x-1">
-                          <button (click)="toggleLoanStatus(loan)" class="p-2 text-gray-400 hover:text-orange-500 transition-all" [title]="loan.status === 'Inactive' ? 'Mark Active' : 'Mark Inactive'"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></button>
-                          <button (click)="editInterest(loan.id!)" class="p-2 text-gray-400 hover:text-indigo-600 transition-all"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
-                          <button (click)="deleteInterest(loan.id!)" class="p-2 text-gray-400 hover:text-red-500 transition-all"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
-                       </div>
+                      <div class="flex justify-between items-start mb-4">
+                         <h3 class="text-lg font-black text-gray-900 dark:text-white cursor-pointer hover:text-indigo-600 transition-colors truncate flex-1" (click)="$event.stopPropagation(); viewInterestDetails(loan.id!)">{{ loan.name }}</h3>
+                         <div class="text-right">
+                           <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Last Collection</p>
+                           <p class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase">{{ (getLastInterestDate(loan) | date:'dd MMM yyyy') || 'None' }}</p>
+                         </div>
+                      </div>
+                      <p class="text-xs text-gray-500 font-bold mb-4">{{ loan.borrowerName }}</p>
+                      <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-100/50 dark:border-gray-700/50">
+                          <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Principal</p>
+                          <p class="text-sm font-black text-gray-900 dark:text-white">₹{{ loan.amount | number:'1.0-0' }}</p>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl text-right border border-gray-100/50 dark:border-gray-700/50">
+                          <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Monthly Int.</p>
+                          <p class="text-sm font-black text-indigo-600">₹{{ (loan.amount * loan.interestRate / 100) | number:'1.0-0' }}</p>
+                        </div>
+                      </div>
+                      <div class="mb-4 bg-indigo-50/30 dark:bg-indigo-900/10 p-3 rounded-2xl flex justify-between items-center border border-indigo-100/30 dark:border-indigo-900/20">
+                         <p class="text-[9px] font-black text-indigo-500 uppercase tracking-widest italic opacity-70">Overall Interest</p>
+                         <p class="text-sm font-black text-indigo-600 dark:text-indigo-400">₹{{ getTotalLoanInterest(loan) | number:'1.0-0' }}</p>
+                      </div>
+                      <div class="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-gray-700/50">
+                         <button (click)="$event.stopPropagation(); viewInterestDetails(loan.id!)" class="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">Loan Statement</button>
+                         <div class="flex space-x-1">
+                            <button (click)="$event.stopPropagation(); toggleLoanStatus(loan)" class="p-2 text-gray-400 hover:text-orange-500 transition-all" [title]="loan.status === 'Inactive' ? 'Mark Active' : 'Mark Inactive'"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></button>
+                            <button (click)="$event.stopPropagation(); editInterest(loan.id!)" class="p-2 text-gray-400 hover:text-indigo-600 transition-all"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                            <button (click)="$event.stopPropagation(); deleteInterest(loan.id!)" class="p-2 text-gray-400 hover:text-red-500 transition-all"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                         </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               }
             </div>
 
-            @if (getFilteredLoans().length === 0) {
-              <div class="py-20 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-[3rem] opacity-50">
-                <p class="text-gray-400 font-black uppercase tracking-widest text-xs">No loans found matching your criteria</p>
-              </div>
-            }
+              @if (getFilteredLoans().length === 0) {
+                <div class="py-20 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-[3rem] opacity-50">
+                  <p class="text-gray-400 font-black uppercase tracking-widest text-xs">No loans found matching your criteria</p>
+                </div>
+              }
+            </div>
           </div>
         }
 
         <!-- ═══════════ CHITTI DASHBOARD (Admin Only) ═══════════ -->
         @if (!isSuperAdmin && activeTab === 'chitti' && showChittiTab) {
-          <div class="card-animate" style="animation-delay:0.05s">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div class="card-animate flex flex-col" style="animation-delay:0.05s">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 order-1">
               <div>
                 <h2 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Chitti Management</h2>
                 <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ chittis.length }} active schemes</p>
               </div>
+            </div>
+
+            <!-- Action Row -->
+            <div class="mb-8 order-4">
               <button (click)="goToCreateChit()" class="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl hover:shadow-lg hover:shadow-purple-500/30 hover:-translate-y-0.5 transition-all">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                 New Scheme
@@ -680,7 +735,7 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
             </div>
 
             <!-- Analytics & Insights -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 order-2 lg:order-3">
               <!-- Bar Chart Card -->
               <div class="lg:col-span-2 bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700 h-[280px] sm:h-[320px] relative overflow-hidden card-animate">
                 <div class="flex justify-between items-center mb-6">
@@ -745,7 +800,7 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
             </div>
 
             <!-- Chitti Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+            <div class="order-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
               @for (chit of chittis; track chit.id; let i = $index) {
                 <div class="scheme-card bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden card-animate"
                      [style.animation-delay]="(i * 0.07 + 0.2) + 's'">
@@ -905,7 +960,12 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
                        <div class="flex items-center justify-between p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-800">
                           <div class="flex items-center gap-4">
                              <div class="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm">
-                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0112 3c1.268 0 2.39.234 3.41.659m-4.74 12.57c-1.285-.378-2.56-1.1-3.33-2.14m7.41 1.53A9.914 9.914 0 0021 12c0-5.523-4.477-10-10-10a10.003 10.003 0 00-6.73 2.6c1.176.4 2.223 1.096 3.033 1.983m0 0l2.224 2.224"/></svg>
+                                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                  <path d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0112 3c1.268 0 2.39.234 3.41.659m-4.74 12.57c-1.285-.378-2.56-1.1-3.33-2.14m7.41 1.53A9.914 9.914 0 0021 12c0-5.523-4.477-10-10-10a10.003 10.003 0 00-6.73 2.6c1.176.4 2.223 1.096 3.033 1.983m0 0l2.224 2.224"/>
+                                  <path d="M12 18v.01" />
+                                  <path d="M9 15v.01" />
+                                  <path d="M15 15v.01" />
+                                </svg>
                              </div>
                              <div>
                                 <p class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest">Fingerprint Login</p>
@@ -951,7 +1011,7 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
             <div class="absolute inset-1 flex pointer-events-none z-0">
                <div [style.flex-grow]="visibleMobileTabs.indexOf(activeMobileMenu)" class="transition-all duration-500 ease-in-out"></div>
                <div class="flex-none flex items-center justify-center" style="width: calc(100% / {{ visibleMobileTabs.length }})">
-                  <div class="h-full aspect-square bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-full shadow-lg shadow-purple-500/30 transition-all duration-500"></div>
+                  <div class="h-full aspect-square bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-full shadow-lg shadow-purple-500/40 dark:shadow-purple-500/60 transition-all duration-500"></div>
                </div>
                <div [style.flex-grow]="visibleMobileTabs.length - 1 - visibleMobileTabs.indexOf(activeMobileMenu)" class="transition-all duration-500 ease-in-out"></div>
             </div>
@@ -1233,6 +1293,13 @@ export class AdminDashboardComponent implements OnInit {
   loanSearchQuery: string = '';
   loanStatusFilter: 'Active' | 'Inactive' | 'All' = 'Active';
   isBiometricEnabled = false;
+  expandedLoans: { [id: string]: boolean } = {};
+
+  toggleLoanExpansion(id: string) {
+    if (window.innerWidth < 640) {
+      this.expandedLoans[id] = !this.expandedLoans[id];
+    }
+  }
 
   @ViewChild('loanChart') loanChart?: BaseChartDirective;
   @ViewChild('chittiChart') chittiChart?: BaseChartDirective;
@@ -1434,34 +1501,113 @@ export class AdminDashboardComponent implements OnInit {
       return sum + col;
     }, 0);
   }
+  getMonthsElapsed(startDate: string): number {
+    if (!startDate) return 0;
+    const start = new Date(startDate);
+    const now = new Date();
+    if (isNaN(start.getTime())) return 0;
+
+    let months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+
+    if (now.getDate() < start.getDate()) {
+      months--;
+    }
+
+    return Math.max(0, months);
+  }
+
+  getMonthsPaid(loan: InterestScheme): number {
+    const principalPaid = (loan.settlements || []).reduce((s, st) => s + st.amount, 0);
+    const balance = Math.max(0, loan.amount - principalPaid);
+    if (balance <= 0) return 999;
+
+    const monthlyInterest = balance * (loan.interestRate / 100);
+    if (monthlyInterest <= 0) return 999;
+
+    const totalInterestPaid = (loan.interestCollections || []).reduce((s, c) => s + c.amount, 0);
+    return totalInterestPaid / monthlyInterest;
+  }
+
+  isDueSoon(loan: InterestScheme): boolean {
+    if (!loan.startDate) return false;
+    const nextDue = this.getNextInterestDate(loan);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffTime = nextDue.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays >= 0 && diffDays <= 10;
+  }
+
+  getPendingInterestForLoan(loan: InterestScheme): number {
+    if (!loan.startDate) return 0;
+    const months = this.getMonthsElapsed(loan.startDate);
+    const principalPaid = (loan.settlements || []).reduce((s, st) => s + st.amount, 0);
+    const balance = Math.max(0, loan.amount - principalPaid);
+    const expectedInterest = balance * (loan.interestRate / 100) * months;
+    const paidInterest = (loan.interestCollections || []).reduce((s, c) => s + c.amount, 0);
+    return Math.max(0, expectedInterest - paidInterest);
+  }
+
   get totalPendingInterest() {
-    return this.interests.reduce((sum, loan) => {
-      if (!loan.startDate) return sum;
-      const start = new Date(loan.startDate);
-      const now = new Date();
-      if (isNaN(start.getTime())) return sum;
+    return this.interests.reduce((sum, loan) => sum + this.getPendingInterestForLoan(loan), 0);
+  }
 
-      const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
-      const cappedMonths = Math.max(0, months);
+  getNextInterestDate(loan: InterestScheme): Date {
+    if (!loan.startDate) return new Date(2100, 0, 1); // Far future if no date
+    const start = new Date(loan.startDate);
+    const day = start.getDate();
+    const now = new Date();
 
-      const principalPaid = (loan.settlements || []).reduce((s, st) => s + st.amount, 0);
-      const balance = Math.max(0, loan.amount - principalPaid);
-      const expectedInterest = balance * (loan.interestRate / 100) * cappedMonths;
-      const paidInterest = (loan.interestCollections || []).reduce((s, c) => s + c.amount, 0);
+    // Attempt to set current month with start day
+    let next = new Date(now.getFullYear(), now.getMonth(), day);
 
-      return sum + Math.max(0, expectedInterest - paidInterest);
-    }, 0);
+    // If that date has already passed in the current month, the "upcoming" one is next month
+    if (next < new Date(now.getFullYear(), now.getMonth(), now.getDate())) {
+      next.setMonth(next.getMonth() + 1);
+    }
+    return next;
+  }
+
+  getLastInterestDate(loan: InterestScheme): string | null {
+    if (!loan.interestCollections || loan.interestCollections.length === 0) return null;
+    const sorted = [...loan.interestCollections].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return sorted[0].date;
   }
 
   getFilteredLoans(): InterestScheme[] {
-    return this.interests.filter(loan => {
-      const matchesStatus = this.loanStatusFilter === 'All' || loan.status === this.loanStatusFilter || (!loan.status && this.loanStatusFilter === 'Active');
+    const filtered = this.interests.filter(loan => {
+      // Basic status match
+      let matchesStatus = this.loanStatusFilter === 'All' || loan.status === this.loanStatusFilter || (!loan.status && this.loanStatusFilter === 'Active');
+
+      // Anniversary Gap Logic for "Active" tab: 
+      // Show if overdue OR due within 10 days (unless already paid for the upcoming period)
+      if (this.loanStatusFilter === 'Active' && matchesStatus) {
+        const monthsElapsed = this.getMonthsElapsed(loan.startDate);
+        const monthsPaid = this.getMonthsPaid(loan);
+        const dueSoon = this.isDueSoon(loan);
+
+        // Effective target is months already passed + the upcoming one if in the 10-day window
+        const effectiveDueTarget = monthsElapsed + (dueSoon ? 1 : 0);
+
+        if (monthsPaid >= effectiveDueTarget) {
+          matchesStatus = false;
+        }
+      }
+
       const search = this.loanSearchQuery.toLowerCase().trim();
       const matchesSearch = !search ||
         loan.name.toLowerCase().includes(search) ||
         (loan.borrowerName && loan.borrowerName.toLowerCase().includes(search)) ||
         (loan.borrowerPhone && loan.borrowerPhone.includes(search));
       return matchesStatus && matchesSearch;
+    });
+
+    // Sort by Upcoming Interest Date (Next Due)
+    return filtered.sort((a, b) => {
+      const dateA = this.getNextInterestDate(a);
+      const dateB = this.getNextInterestDate(b);
+      return dateA.getTime() - dateB.getTime();
     });
   }
 
@@ -1503,7 +1649,24 @@ export class AdminDashboardComponent implements OnInit {
       x: { grid: { display: false } },
       y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }
     },
-    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10, weight: 'bold' } } } }
+    plugins: {
+      legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10, weight: 'bold' } } },
+      zoom: {
+        pan: {
+          enabled: true,
+          mode: 'x',
+        },
+        zoom: {
+          wheel: {
+            enabled: true,
+          },
+          pinch: {
+            enabled: true
+          },
+          mode: 'x',
+        }
+      }
+    }
   };
   public overviewChartType: ChartType = 'line';
   public overviewChartData: ChartData<'line'> = { labels: [], datasets: [] };

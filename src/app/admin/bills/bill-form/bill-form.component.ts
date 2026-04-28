@@ -8,7 +8,7 @@ import { Bill } from '../../services/bill.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-xl border border-gray-100 dark:border-gray-800 p-8">
+    <div class="bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-xl border border-gray-100 dark:border-gray-800 p-8 animate-scale-in">
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{{ isEdit ? 'Update' : 'Create' }} Bill</h2>
         <button (click)="cancel.emit()" class="p-2 text-gray-400 hover:text-red-500 transition-colors">

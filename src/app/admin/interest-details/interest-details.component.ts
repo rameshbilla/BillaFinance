@@ -19,7 +19,7 @@ import { ToastService } from '../../shared/toast.service';
         .stepper-dot { position: absolute; left: 1rem; top: 0.25rem; transform: translateX(-50%); }
       </style>
 
-      <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700 shadow-sm px-4 sm:px-6 lg:px-8 py-3">
+      <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700 shadow-sm px-4 sm:px-6 lg:px-8 py-3 animate-fade-down">
         <div class="flex items-center space-x-4">
           <button (click)="goBack()" class="text-gray-500 hover:text-purple-600 transition-colors">
             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -30,7 +30,7 @@ import { ToastService } from '../../shared/toast.service';
         </div>
       </nav>
 
-      <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-up delay-100">
         @if (scheme) {
           <div class="bg-gradient-to-br from-indigo-700 via-blue-700 to-purple-800 rounded-[2.5rem] shadow-2xl p-6 sm:p-10 mb-8 text-white relative overflow-hidden transition-all group">
             <div class="absolute -right-16 -top-16 w-64 h-64 bg-white/10 rounded-full blur-[80px] group-hover:scale-110 transition-transform duration-700"></div>

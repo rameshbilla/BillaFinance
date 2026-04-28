@@ -15,7 +15,7 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
   imports: [CommonModule, ReactiveFormsModule],
   template: `
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700 shadow-sm px-4 sm:px-6 lg:px-8 py-4">
+      <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700 shadow-sm px-4 sm:px-6 lg:px-8 py-4 animate-fade-down">
         <div class="flex items-center space-x-4">
            <button (click)="goBack()" class="text-gray-500 hover:text-purple-600 transition-colors">
               <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -24,7 +24,7 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
         </div>
       </nav>
 
-      <main class="max-w-4xl mx-auto px-4 py-8">
+      <main class="max-w-4xl mx-auto px-4 py-8 animate-fade-up delay-100">
          <form [formGroup]="schemeForm" (ngSubmit)="onSubmit()" class="space-y-8">
             
             <!-- Scheme Financials Section -->

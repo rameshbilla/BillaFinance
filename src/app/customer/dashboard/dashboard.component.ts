@@ -31,7 +31,7 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
       .bottom-nav-pill {
         position: fixed;
         bottom: 32px;
-        left: 50%;
+        left: 43%;
         transform: translateX(-50%);
         background: rgba(237, 237, 237, 0.85);
         backdrop-filter: blur(20px);
@@ -67,7 +67,7 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
         transform: scale(1.1) translateY(-1px);
       }
       .icon-inactive {
-        color: #94a3b8;
+        color: #505d6f;
       }
       .nav-item-box:active .nav-icon {
         transform: scale(0.9);
@@ -83,7 +83,7 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 
     <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-950 transition-colors duration-500 pb-32 sm:pb-0 overflow-x-hidden">
       <!-- Premium Header -->
-      <nav class="sticky top-0 z-50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50">
+      <nav class="sticky top-0 z-50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 animate-fade-down">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between h-20 items-center">
             <div class="flex items-center gap-3">
@@ -108,7 +108,7 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
         </div>
       </nav>
 
-      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 animate-fade-up delay-100">
         @if (!selectedChit && !selectedLoan) {
           <!-- Welcome Section -->
           <section class="fade-in-up" *ngIf="authService.userProfile$ | async as profile" style="animation-delay: 0.1s">
@@ -229,14 +229,30 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
                   </div>
                 </div>
 
+                <!-- Interest Status Row -->
+                <div class="flex items-center justify-between mb-4 px-1">
+                   <div class="flex items-center gap-1.5">
+                      <div class="w-1.5 h-1.5 rounded-full" [class]="getPendingInterest(loan) > 0 ? 'bg-red-500 animate-pulse' : 'bg-green-500'"></div>
+                      <p class="text-[9px] font-black uppercase tracking-widest text-gray-500">
+                        {{ getPendingInterest(loan) > 0 ? 'Interest Pending' : 'Interest Clear' }}
+                      </p>
+                   </div>
+                   <div class="text-right">
+                      <p class="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Next Due</p>
+                      <p class="text-[10px] font-black text-gray-700 dark:text-gray-300">{{ getNextInterestDate(loan) | date:'dd MMM' }}</p>
+                   </div>
+                </div>
+
                 <div class="grid grid-cols-2 gap-3 mb-6">
                   <div class="bg-gray-50/50 dark:bg-gray-900/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-800">
                     <p class="text-[8px] font-black text-gray-400 uppercase mb-0.5">Principal</p>
                     <p class="text-base font-black text-gray-900 dark:text-white tracking-tighter">₹{{ getBalance(loan) | number:'1.0-0' }}</p>
+                    <p class="text-[7px] text-gray-400 font-bold mt-1 uppercase">ROI: {{ loan.interestRate }}%</p>
                   </div>
                   <div class="bg-orange-50/50 dark:bg-orange-900/10 p-3 rounded-2xl border border-orange-100 dark:border-orange-900/20">
                     <p class="text-[8px] font-black text-orange-400 uppercase mb-0.5 text-right">Interest Due</p>
                     <p class="text-base font-black text-orange-600 tracking-tighter text-right">₹{{ getPendingInterest(loan) | number:'1.0-0' }}</p>
+                    <p class="text-[7px] text-orange-400 font-bold mt-1 text-right uppercase">Last Paid: {{ getLastInterestDate(loan) | date:'dd MMM' }}</p>
                   </div>
                 </div>
 
@@ -446,9 +462,14 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
                      <div class="mt-8 pt-8 border-t border-gray-100 dark:border-gray-800">
                         <div class="flex items-center justify-between p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-800">
                            <div class="flex items-center gap-4">
-                              <div class="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center text-purple-600 shadow-sm">
-                                 <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0112 3c1.268 0 2.39.234 3.41.659m-4.74 12.57c-1.285-.378-2.56-1.1-3.33-2.14m7.41 1.53A9.914 9.914 0 0021 12c0-5.523-4.477-10-10-10a10.003 10.003 0 00-6.73 2.6c1.176.4 2.223 1.096 3.033 1.983m0 0l2.224 2.224"/></svg>
-                              </div>
+                               <div class="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center text-purple-600 shadow-sm">
+                                  <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0112 3c1.268 0 2.39.234 3.41.659m-4.74 12.57c-1.285-.378-2.56-1.1-3.33-2.14m7.41 1.53A9.914 9.914 0 0021 12c0-5.523-4.477-10-10-10a10.003 10.003 0 00-6.73 2.6c1.176.4 2.223 1.096 3.033 1.983m0 0l2.224 2.224"/>
+                                    <path d="M12 18v.01" />
+                                    <path d="M9 15v.01" />
+                                    <path d="M15 15v.01" />
+                                  </svg>
+                               </div>
                               <div>
                                  <p class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest leading-none">Biometric Login</p>
                                  <p class="text-[10px] text-gray-400 font-bold mt-1">Unlock with fingerprint/Face ID</p>
@@ -566,7 +587,7 @@ export class CustomerDashboardComponent implements OnInit {
   activeTab: 'home' | 'security' = 'home';
   isBiometricEnabled = false;
 
-  availableYears: number[] = Array.from({length: 10}, (_, i) => new Date().getFullYear() - i);
+  availableYears: number[] = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
   selectedYearOverall: number = new Date().getFullYear();
   selectedYearStatement: number = new Date().getFullYear();
 
@@ -625,7 +646,7 @@ export class CustomerDashboardComponent implements OnInit {
 
   get totalOutstanding(): number {
     let chitPending = this.customerChitties.reduce((sum, item) => sum + this.getChitPending(item.scheme, item.customer), 0);
-    let loanPending = this.activeLoans.reduce((sum, loan) => sum + this.getBalance(loan), 0);
+    let loanPending = this.activeLoans.reduce((sum, loan) => sum + this.getBalance(loan) + this.getPendingInterest(loan), 0);
     return chitPending + loanPending;
   }
 
@@ -645,8 +666,8 @@ export class CustomerDashboardComponent implements OnInit {
           mine.forEach(cust => {
             this.chittiService.getChittiById(cust.schemeId).subscribe(scheme => {
               if (scheme) {
-                 this.customerChitties.push({ scheme, customer: cust });
-                 this.generateOverallChart();
+                this.customerChitties.push({ scheme, customer: cust });
+                this.generateOverallChart();
               }
             });
           });
@@ -654,7 +675,8 @@ export class CustomerDashboardComponent implements OnInit {
 
         // Load Loans for this customer
         this.interestService.getInterests().subscribe(allLoans => {
-          this.activeLoans = allLoans.filter(l => l.borrowerPhone === profile.phone);
+          this.activeLoans = allLoans.filter(l => l.borrowerPhone === profile.phone)
+            .sort((a, b) => this.getNextInterestDate(a).getTime() - this.getNextInterestDate(b).getTime());
           this.generateOverallChart();
         });
       }
@@ -669,7 +691,7 @@ export class CustomerDashboardComponent implements OnInit {
     const now = new Date();
     const dateStr = customer.joinedDate || scheme.startDate;
     if (!dateStr) return 0;
-    
+
     const joined = new Date(dateStr);
     if (isNaN(joined.getTime())) return 0;
 
@@ -696,21 +718,45 @@ export class CustomerDashboardComponent implements OnInit {
     return (loan.interestCollections || []).reduce((sum, c) => sum + c.amount, 0);
   }
 
-  getPendingInterest(loan: InterestScheme): number {
-    if (!loan.startDate) return 0;
-    const start = new Date(loan.startDate);
+  getMonthsElapsed(startDate: string): number {
+    if (!startDate) return 0;
+    const start = new Date(startDate);
     const now = new Date();
     if (isNaN(start.getTime())) return 0;
-    
-    // Approximate months diff (full months)
-    const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
-    const cappedMonths = Math.max(0, months);
-    
+
+    let months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+    if (now.getDate() < start.getDate()) {
+      months--;
+    }
+    return Math.max(0, months);
+  }
+
+  getPendingInterest(loan: InterestScheme): number {
+    if (!loan.startDate) return 0;
+    const months = this.getMonthsElapsed(loan.startDate);
     const balance = this.getBalance(loan);
-    const expectedInterest = balance * (loan.interestRate / 100) * cappedMonths;
+    const expectedInterest = balance * (loan.interestRate / 100) * months;
     const paidInterest = this.getLoanInterestPaid(loan);
-    
+
     return Math.max(0, expectedInterest - paidInterest);
+  }
+
+  getNextInterestDate(loan: InterestScheme): Date {
+    if (!loan.startDate) return new Date();
+    const start = new Date(loan.startDate);
+    const now = new Date();
+    let nextDate = new Date(now.getFullYear(), now.getMonth(), start.getDate());
+
+    if (nextDate.getTime() < now.getTime()) {
+      nextDate = new Date(now.getFullYear(), now.getMonth() + 1, start.getDate());
+    }
+    return nextDate;
+  }
+
+  getLastInterestDate(loan: InterestScheme): Date | null {
+    if (!loan.interestCollections || loan.interestCollections.length === 0) return null;
+    const sorted = [...loan.interestCollections].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return new Date(sorted[0].date);
   }
 
   getNextPayableDate(loan: InterestScheme): Date | null {
@@ -718,14 +764,14 @@ export class CustomerDashboardComponent implements OnInit {
     const start = new Date(loan.startDate);
     const now = new Date();
     if (isNaN(start.getTime())) return null;
-    
+
     let nextDate = new Date(now.getFullYear(), now.getMonth(), start.getDate());
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
+
     if (today.getTime() > nextDate.getTime()) {
       nextDate = new Date(now.getFullYear(), now.getMonth() + 1, start.getDate());
     }
-    
+
     return nextDate;
   }
 
@@ -742,20 +788,20 @@ export class CustomerDashboardComponent implements OnInit {
     return [...list].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
 
-  openChitHistory(item: { scheme: ChittiScheme, customer: Customer }) { 
-     this.selectedChit = item; 
-     this.selectedYearStatement = new Date().getFullYear();
-     this.generateChitChart(item);
+  openChitHistory(item: { scheme: ChittiScheme, customer: Customer }) {
+    this.selectedChit = item;
+    this.selectedYearStatement = new Date().getFullYear();
+    this.generateChitChart(item);
   }
-  openLoanHistory(loan: InterestScheme) { 
-     this.selectedLoan = loan;
-     this.selectedYearStatement = new Date().getFullYear();
-     this.generateLoanChart(loan);
+  openLoanHistory(loan: InterestScheme) {
+    this.selectedLoan = loan;
+    this.selectedYearStatement = new Date().getFullYear();
+    this.generateLoanChart(loan);
   }
 
   onStatementYearChange(year: number) {
-     if (this.selectedChit) this.generateChitChart(this.selectedChit, year);
-     if (this.selectedLoan) this.generateLoanChart(this.selectedLoan, year);
+    if (this.selectedChit) this.generateChitChart(this.selectedChit, year);
+    if (this.selectedLoan) this.generateLoanChart(this.selectedLoan, year);
   }
 
   public chartOptions: ChartConfiguration['options'] = {
@@ -763,19 +809,19 @@ export class CustomerDashboardComponent implements OnInit {
     maintainAspectRatio: false,
     scales: {
       x: { grid: { display: false }, ticks: { font: { size: 9, weight: 'bold' } }, stacked: true },
-      y: { 
-         beginAtZero: true, 
-         stacked: true,
-         grid: { color: 'rgba(0,0,0,0.05)' },
-         ticks: { font: { size: 9 }, callback: (val) => '₹' + Number(val).toLocaleString() }
+      y: {
+        beginAtZero: true,
+        stacked: true,
+        grid: { color: 'rgba(0,0,0,0.05)' },
+        ticks: { font: { size: 9 }, callback: (val) => '₹' + Number(val).toLocaleString() }
       }
     },
     plugins: {
       legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10, weight: 'bold' } } },
       tooltip: {
-         backgroundColor: '#1f2937', titleFont: { size: 12, weight: 'bold' },
-         bodyFont: { size: 13, weight: 'bold' }, padding: 12, cornerRadius: 8,
-         callbacks: { label: (ctx) => ` ₹${(ctx.parsed.y || 0).toLocaleString()}` }
+        backgroundColor: '#1f2937', titleFont: { size: 12, weight: 'bold' },
+        bodyFont: { size: 13, weight: 'bold' }, padding: 12, cornerRadius: 8,
+        callbacks: { label: (ctx) => ` ₹${(ctx.parsed.y || 0).toLocaleString()}` }
       }
     }
   };
@@ -841,7 +887,7 @@ export class CustomerDashboardComponent implements OnInit {
     const labels: string[] = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const principalData: number[] = new Array(12).fill(0);
     const interestData: number[] = new Array(12).fill(0);
-    
+
     (loan.settlements || []).forEach(s => {
       const sd = new Date(s.date);
       if (sd.getFullYear() === year) principalData[sd.getMonth()] += s.amount;

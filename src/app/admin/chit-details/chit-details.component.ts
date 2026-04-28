@@ -15,7 +15,7 @@ import { AuthService } from '../../services/auth.service';
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
   template: `
     <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-950 transition-colors duration-500 pb-20 sm:pb-0">
-      <nav class="sticky top-0 z-50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50">
+      <nav class="sticky top-0 z-50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 animate-fade-down">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between h-20 items-center">
             <div class="flex items-center gap-4">
@@ -35,7 +35,7 @@ import { AuthService } from '../../services/auth.service';
         </div>
       </nav>
 
-      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-up delay-100">
         @if (scheme) {
           <!-- Stats Summary Grid -->
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
@@ -85,9 +85,9 @@ import { AuthService } from '../../services/auth.service';
              <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Enrolled Members</h3>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-up delay-200">
             @for (cust of filteredCustomers; track cust.id) {
-              <div class="glass-card rounded-[2.5rem] p-6 sm:p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 group relative overflow-hidden">
+              <div class="glass-card rounded-[2.5rem] p-6 sm:p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 group relative overflow-hidden animate-scale-in">
                 <div class="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
                 
                 <div class="flex justify-between items-start mb-6">

@@ -13,7 +13,7 @@ import { Observable } from 'rxjs';
   template: `
     <div class="min-h-screen bg-slate-50 dark:bg-gray-950 transition-colors duration-500 pb-20">
       <!-- Header -->
-      <nav class="sticky top-0 z-50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
+      <nav class="sticky top-0 z-50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 animate-fade-down">
         <div class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
           <div class="flex items-center gap-3">
              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg">
@@ -30,7 +30,7 @@ import { Observable } from 'rxjs';
         </div>
       </nav>
 
-      <main class="max-w-4xl mx-auto px-4 py-8 space-y-8">
+      <main class="max-w-4xl mx-auto px-4 py-8 space-y-8 animate-fade-up delay-100">
          
          <!-- Create Admin Form -->
          <section class="bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-xl border border-gray-100 dark:border-gray-800 p-8">

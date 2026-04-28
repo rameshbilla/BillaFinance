@@ -42,9 +42,9 @@ import { Bill } from '../../services/bill.service';
       </div>
 
       <!-- Bill Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-up delay-200">
         @for (bill of bills; track bill.id) {
-          <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden group hover:shadow-md transition-all">
+          <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden group hover:shadow-md transition-all hover:-translate-y-1 duration-300">
             <div class="h-1.5" [ngClass]="{
               'bg-amber-400': bill.status === 'pending',
               'bg-green-500': bill.status === 'completed',
