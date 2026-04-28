@@ -31,7 +31,7 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
       .bottom-nav-pill {
         position: fixed;
         bottom: 32px;
-        left: 43%;
+        left: 50%;
         transform: translateX(-50%);
         background: rgba(237, 237, 237, 0.85);
         backdrop-filter: blur(20px);

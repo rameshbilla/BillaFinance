@@ -42,7 +42,7 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
       .bottom-nav-pill {
         position: fixed;
         bottom: 32px;
-        left: 43%;
+        left: 50%;
         transform: translateX(-50%);
         background: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(20px);
