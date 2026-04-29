@@ -1,15 +1,18 @@
-import { Component, OnInit } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, OnInit, inject } from '@angular/core';
+import { RouterOutlet, ChildrenOutletContexts } from '@angular/router';
 import { ToastComponent } from './shared/toast.component';
+import { slideInAnimation } from './shared/animations';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet, ToastComponent],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss'
+  styleUrl: './app.component.scss',
+  animations: [slideInAnimation]
 })
 export class AppComponent implements OnInit {
+  private contexts = inject(ChildrenOutletContexts);
   title = 'finance-app';
   isDarkMode = false;
 
@@ -31,5 +34,9 @@ export class AppComponent implements OnInit {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
     }
+  }
+
+  getRouteAnimationData() {
+    return this.contexts.getContext('primary')?.route?.snapshot?.data?.['animation'];
   }
 }

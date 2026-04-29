@@ -57,7 +57,10 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
         box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.2);
         z-index: 100;
         border: 1px solid rgba(255, 255, 255, 0.4);
-        width: min(400px, 90vw);
+        width: auto;
+        min-width: min(320px, 95vw);
+        max-width: 95vw;
+        padding: 4px 12px;
       }
       .nav-item-box {
         flex: 1 1 0%;
