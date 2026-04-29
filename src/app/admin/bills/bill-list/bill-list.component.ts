@@ -14,7 +14,7 @@ import { Bill } from '../../services/bill.service';
         <div class="flex-1 min-w-[150px]">
           <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 px-1">Status</label>
           <select [(ngModel)]="filters.status" (change)="onFilterChange()"
-                  class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 rounded-xl border-none outline-none focus:ring-2 focus:ring-purple-500 text-sm font-bold text-gray-700 dark:text-gray-300 appearance-none">
+                  class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 rounded-xl border-none outline-none focus:ring-2 focus:ring-purple-500 text-sm font-bold text-gray-900 dark:text-white appearance-none">
             <option value="">All Status</option>
             <option value="pending">Pending</option>
             <option value="completed">Completed</option>
@@ -24,7 +24,7 @@ import { Bill } from '../../services/bill.service';
         <div class="flex-1 min-w-[150px]">
           <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 px-1">Service Type</label>
           <select [(ngModel)]="filters.serviceType" (change)="onFilterChange()"
-                  class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 rounded-xl border-none outline-none focus:ring-2 focus:ring-purple-500 text-sm font-bold text-gray-700 dark:text-gray-300 appearance-none">
+                  class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 rounded-xl border-none outline-none focus:ring-2 focus:ring-purple-500 text-sm font-bold text-gray-900 dark:text-white appearance-none">
             <option value="">All Services</option>
             <option value="electricity">Electricity</option>
             <option value="mobile">Mobile</option>

@@ -19,6 +19,7 @@ Chart.register(zoomPlugin);
 import { BillService, Bill, TrackedService } from '../services/bill.service';
 import { BillListComponent } from '../bills/bill-list/bill-list.component';
 import { BillFormComponent } from '../bills/bill-form/bill-form.component';
+import { RentalService, RentalHouse, RentalBill } from '../services/rental.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -166,6 +167,11 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
             BILLS
           </button>
+          <button *ngIf="!isSuperAdmin && showRentalsTab" (click)="activeTab = 'rentals'; activeMobileMenu = 'rentals'"
+                  [class.tab-active]="activeTab === 'rentals'"
+                  class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
+            RENTALS
+          </button>
           <button (click)="activeTab = 'security'; activeMobileMenu = 'security'"
                   [class.tab-active]="activeTab === 'security'"
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
@@ -306,6 +312,10 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
                               <label class="flex items-center space-x-2 cursor-pointer">
                                  <input type="checkbox" formControlName="tab_bills" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
                                  <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Bills</span>
+                              </label>
+                              <label class="flex items-center space-x-2 cursor-pointer">
+                                 <input type="checkbox" formControlName="tab_rentals" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
+                                 <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Rentals</span>
                               </label>
                            </div>
                         </div>
@@ -911,6 +921,365 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
             }
           </div>
         }
+        <!-- ═══════════ RENTALS MANAGEMENT (Admin Only) ═══════════ -->
+        @if (!isSuperAdmin && activeTab === 'rentals' && showRentalsTab) {
+          <div class="card-animate space-y-8" style="animation-delay:0.05s">
+            
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+              <div>
+                <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">House Management</h2>
+                <p class="text-sm font-medium text-gray-500 mt-1">{{ houses.length }} registered properties</p>
+              </div>
+              <button (click)="openRentalHouseForm()" class="w-full sm:w-auto px-6 py-3 bg-gray-900 dark:bg-white dark:text-gray-900 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:opacity-90 transition-all">
+                 Register New Property
+              </button>
+            </div>
+
+            <!-- Rental Analytics Chart -->
+            <div class="bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm mb-8">
+               <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8">
+                  <div class="flex items-center gap-4">
+                     <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                     </div>
+                     <div>
+                        <h3 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Rent Collection Analytics</h3>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">Monthly revenue breakdown for {{ rentalSelectedYear }}</p>
+                     </div>
+                  </div>
+                  
+                  <div class="flex items-center gap-3 bg-gray-50 dark:bg-gray-900 p-1.5 rounded-2xl border border-gray-100 dark:border-gray-800">
+                     <select [(ngModel)]="rentalSelectedYear" (change)="updateRentalAnalytics()" class="bg-transparent border-none outline-none text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-widest px-4 py-2 appearance-none cursor-pointer">
+                        @for (year of rentalAvailableYears; track year) {
+                           <option [value]="year">{{ year }}</option>
+                        }
+                     </select>
+                     <div class="h-8 w-[2px] bg-gray-200 dark:bg-gray-800"></div>
+                     <div class="px-4 py-2">
+                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Yearly Total</p>
+                        <p class="text-sm font-black text-indigo-600">₹{{ filteredTotalRent | number:'1.0-0' }}</p>
+                     </div>
+                  </div>
+               </div>
+
+               <div class="h-[250px] relative">
+                  <canvas baseChart #rentalChart="base-chart"
+                     [data]="rentalBarChartData"
+                     [options]="barChartOptions"
+                     [type]="barChartType">
+                  </canvas>
+               </div>
+            </div>
+
+            <!-- House Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+               @for (house of houses; track house.id) {
+                 <div class="bg-white dark:bg-gray-800 p-6 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
+                      [class.ring-2]="activeHouseId === house.id" [class.ring-indigo-500]="activeHouseId === house.id">
+                    
+                    <div class="absolute top-0 right-0 p-4 flex gap-2">
+                       @if (isRentIncreaseDue(house)) {
+                          <span class="text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-tighter bg-amber-50 text-amber-600 border border-amber-100 animate-pulse">
+                             Increase Due
+                          </span>
+                       }
+                       <span class="text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-tighter"
+                             [ngClass]="house.status === 'Occupied' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'">
+                          {{ house.status }}
+                       </span>
+                    </div>
+
+                    <h3 class="text-xl font-black text-gray-900 dark:text-white mb-2">{{ house.houseName }}</h3>
+                    <div class="space-y-4 mb-6">
+                       <div class="flex items-center justify-between pb-3 border-b border-gray-50 dark:border-gray-800/50">
+                          <div class="flex items-center gap-2">
+                             <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                             <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Rent Collected</span>
+                          </div>
+                          <span class="text-xs font-black text-gray-900 dark:text-white">₹{{ getHouseStats(house).collected | number:'1.0-0' }}</span>
+                       </div>
+                       
+                       <div class="flex items-center justify-between pb-3 border-b border-gray-50 dark:border-gray-800/50">
+                          <div class="flex items-center gap-2">
+                             <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                             <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Occupancy</span>
+                          </div>
+                          <span class="text-xs font-black text-gray-900 dark:text-white">{{ getHouseStats(house).months }} Mons</span>
+                       </div>
+
+                       <div class="flex items-center justify-between">
+                          <div class="flex items-center gap-2">
+                             <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                             <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Pending</span>
+                          </div>
+                          <span class="text-xs font-black text-red-600">₹{{ getHouseStats(house).pending | number:'1.0-0' }}</span>
+                       </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                       <button (click)="viewHouseBills(house.id!)" class="flex-1 py-4 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 transition-all">Billing History</button>
+                       <div class="flex gap-2">
+                          <button (click)="openRentalHouseForm(house)" class="w-10 h-10 flex items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-400 hover:text-indigo-600 rounded-xl transition-all"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                          <button (click)="deleteRentalHouse(house.id!)" class="w-10 h-10 flex items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-400 hover:text-red-500 rounded-xl transition-all"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                       </div>
+                    </div>
+                 </div>
+               }
+               @if (houses.length === 0) {
+                 <div class="col-span-full py-20 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-[3rem] opacity-50">
+                    <p class="text-gray-400 font-black uppercase tracking-widest text-xs">No rental properties registered</p>
+                 </div>
+               }
+            </div>
+
+            <!-- Billing Details Table (Matching User Image) -->
+            @if (getActiveHouse(); as activeHouse) {
+               <div class="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-xl overflow-hidden animate-fade-up">
+                  <div class="p-8 border-b border-gray-50 dark:border-gray-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                     <div>
+                        <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Billing Ledger: {{ activeHouse.houseName }}</h3>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Monthly breakdown and utility consumption</p>
+                     </div>
+                     <button (click)="openMonthlyBillForm()" class="px-5 py-2.5 bg-gray-900 dark:bg-white dark:text-gray-900 text-white text-[9px] font-bold uppercase tracking-widest rounded-lg hover:opacity-90 transition-all">Add Monthly Record</button>
+                  </div>
+                  
+                  <div class="overflow-x-auto no-scrollbar -mx-4 sm:mx-0">
+                     <table class="w-full text-left border-collapse min-w-[800px]">
+                        <thead>
+                           <tr class="bg-gray-50 dark:bg-gray-800/50 text-gray-400 uppercase text-[9px] font-black tracking-widest border-b border-gray-100 dark:border-gray-800">
+                              <th class="p-4">Bill Date</th>
+                              <th class="p-4">Rent</th>
+                              <th class="p-4">Electric</th>
+                              <th class="p-4">Water</th>
+                              <th class="p-4">Total</th>
+                              <th class="p-4">Status</th>
+                              <th class="p-4 text-center">Action</th>
+                           </tr>
+                        </thead>
+                        <tbody class="text-xs font-bold text-gray-700 dark:text-gray-300">
+                           @for (bill of activeHouse.bills; track $index; let idx = $index) {
+                              <tr class="border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
+                                 <td class="p-4 font-bold text-gray-500">{{ bill.billDate | date:'MMM dd, yyyy' }}</td>
+                                 <td class="p-4">₹{{ bill.rentAmount | number:'1.0-0' }}</td>
+                                 <td class="p-4">₹{{ bill.electricBill | number:'1.0-0' }}</td>
+                                 <td class="p-4">₹{{ bill.waterBill | number:'1.0-0' }}</td>
+                                  <td class="p-4 font-black text-gray-900 dark:text-white">₹{{ bill.total | number:'1.0-0' }}</td>
+                                  <td class="p-4">
+                                     <span class="px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest"
+                                        [class]="bill.status === 'Paid' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'">
+                                        {{ bill.status || 'Pending' }}
+                                     </span>
+                                  </td>
+                                 <td class="p-4">
+                                    <div class="flex gap-1">
+                                       <button (click)="openMonthlyBillForm(bill, idx)" class="p-1.5 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                                       <button (click)="deleteMonthlyBill(idx)" class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                                    </div>
+                                 </td>
+                              </tr>
+                           }
+                           @if (!activeHouse.bills || activeHouse.bills.length === 0) {
+                              <tr>
+                                 <td colspan="7" class="p-12 text-center text-gray-400 italic">No monthly records found for this property. Click "Add Monthly Record" to begin.</td>
+                              </tr>
+                           }
+                        </tbody>
+                     </table>
+                  </div>
+               </div>
+            }
+
+          </div>
+        }
+
+        <!-- Rental House Registration Modal -->
+        @if (showRentalHouseForm) {
+          <div class="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-md px-4 overflow-hidden">
+             <div class="bg-white dark:bg-gray-900 w-full max-w-2xl max-h-[90vh] rounded-[2.5rem] flex flex-col shadow-2xl animate-in zoom-in-95 duration-300">
+                <!-- Header (Fixed) -->
+                <div class="p-8 pb-4 border-b border-gray-50 dark:border-gray-800 shrink-0">
+                   <div class="flex justify-between items-center">
+                      <div>
+                         <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{{ isRentalEditMode ? 'Update' : 'Register' }} Property</h3>
+                         <p class="text-sm text-gray-500 font-medium">Define house details and meter numbers</p>
+                      </div>
+                      <button (click)="showRentalHouseForm = false" class="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:rotate-90 transition-all text-gray-500">
+                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                   </div>
+                </div>
+
+                <!-- Body (Scrollable) -->
+                <div class="p-8 pt-6 overflow-y-auto flex-1 no-scrollbar">
+                   <form [formGroup]="rentalHouseForm" (ngSubmit)="saveRentalHouse()" class="space-y-6">
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <div class="md:col-span-2">
+                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">House Name / ID</label>
+                            <input type="text" formControlName="houseName" placeholder="e.g. Dream Villa - Ground Floor"
+                               class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold"
+                               [class.ring-2]="rentalHouseForm.get('houseName')?.invalid && rentalHouseForm.get('houseName')?.touched"
+                               [class.ring-red-500]="rentalHouseForm.get('houseName')?.invalid && rentalHouseForm.get('houseName')?.touched">
+                            <p *ngIf="rentalHouseForm.get('houseName')?.invalid && rentalHouseForm.get('houseName')?.touched" class="text-[9px] text-red-500 mt-1 px-1 font-bold uppercase">House name is required</p>
+                         </div>
+                         <div>
+                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Renter Name</label>
+                            <input type="text" formControlName="renterName"
+                               class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold"
+                               [class.ring-2]="rentalHouseForm.get('renterName')?.invalid && rentalHouseForm.get('renterName')?.touched"
+                               [class.ring-red-500]="rentalHouseForm.get('renterName')?.invalid && rentalHouseForm.get('renterName')?.touched">
+                            <p *ngIf="rentalHouseForm.get('renterName')?.invalid && rentalHouseForm.get('renterName')?.touched" class="text-[9px] text-red-500 mt-1 px-1 font-bold uppercase">Renter name is required</p>
+                         </div>
+                         <div>
+                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Renter Phone</label>
+                            <input type="tel" formControlName="renterPhone" placeholder="10-digit number"
+                               class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold"
+                               [class.ring-2]="rentalHouseForm.get('renterPhone')?.invalid && rentalHouseForm.get('renterPhone')?.touched"
+                               [class.ring-red-500]="rentalHouseForm.get('renterPhone')?.invalid && rentalHouseForm.get('renterPhone')?.touched">
+                            <p *ngIf="rentalHouseForm.get('renterPhone')?.invalid && rentalHouseForm.get('renterPhone')?.touched" class="text-[9px] text-red-500 mt-1 px-1 font-bold uppercase">Valid 10-digit phone required</p>
+                            <p *ngIf="!rentalHouseForm.get('renterPhone')?.touched" class="text-[8px] text-gray-400 mt-1 px-1 font-bold">e.g. 9876543210</p>
+                         </div>
+                         <div>
+                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Advance Amount (₹)</label>
+                            <input type="number" formControlName="advanceAmount"
+                               class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold">
+                         </div>
+                         <div>
+                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Advance Months</label>
+                            <input type="number" formControlName="advanceMonths"
+                               class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold">
+                         </div>
+                         <div>
+                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Move-in Date</label>
+                            <input type="date" formControlName="arrivedDate"
+                               class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold [color-scheme:light] dark:[color-scheme:dark]">
+                         </div>
+                         <div>
+                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Monthly Rent (₹)</label>
+                            <input type="number" formControlName="monthlyRent"
+                               class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold">
+                         </div>
+                         <div>
+                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Occupancy Status</label>
+                            <select formControlName="status" class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold appearance-none">
+                               <option value="Occupied">Occupied</option>
+                               <option value="Vacant">Vacant</option>
+                            </select>
+                         </div>
+                      </div>
+
+                      <div class="pt-6 border-t border-gray-50 dark:border-gray-800">
+                         <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Meter / Service Numbers (Optional)</p>
+                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                            <div>
+                               <label class="block font-bold text-gray-400 mb-1 px-1">Electric Meter No</label>
+                               <input type="text" formControlName="electricMeterNo" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none text-gray-900 dark:text-white font-bold">
+                            </div>
+                            <div>
+                               <label class="block font-bold text-gray-400 mb-1 px-1">Water Service No</label>
+                               <input type="text" formControlName="waterBillNo" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none text-gray-900 dark:text-white font-bold">
+                            </div>
+                            <div class="sm:col-span-2">
+                               <label class="block font-bold text-gray-400 mb-1 px-1">Rent Last Increased On (Optional)</label>
+                               <input type="date" formControlName="lastRentIncreaseDate" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none text-gray-900 dark:text-white font-bold [color-scheme:light] dark:[color-scheme:dark]">
+                               <p class="text-[9px] text-gray-400 mt-1 px-1 uppercase tracking-widest font-bold">System will alert you after 1 year of this date or move-in date.</p>
+                            </div>
+                         </div>
+                      </div>
+
+                      <div class="pt-6 flex flex-col sm:flex-row gap-3">
+                         <button type="button" (click)="showRentalHouseForm = false" 
+                            class="w-full py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 font-black rounded-2xl uppercase text-[10px] tracking-widest hover:bg-gray-200 transition-all">
+                            Cancel
+                         </button>
+                         <button type="submit" [disabled]="rentalHouseForm.invalid || isSaving" 
+                            class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-indigo-500/25 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-indigo-700 transition-all">
+                            {{ isSaving ? 'Saving...' : (isRentalEditMode ? 'Update Details' : 'Finalize Registration') }}
+                         </button>
+                      </div>
+                      <p *ngIf="rentalHouseForm.invalid && rentalHouseForm.touched" class="text-[9px] font-bold text-red-500 text-center mt-2 uppercase tracking-widest">
+                         Please fill all required fields correctly
+                      </p>
+                      
+                      <!-- Debug Info -->
+                      <div *ngIf="rentalHouseForm.invalid && rentalHouseForm.touched" class="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-2xl border border-red-100 dark:border-red-800/50">
+                        <p class="text-[8px] font-black text-red-500 uppercase tracking-widest mb-2">Debugging Info (Invalid Fields):</p>
+                        <ul class="text-[8px] text-red-400 font-bold space-y-1">
+                          <li *ngIf="rentalHouseForm.get('houseName')?.invalid">• House Name is missing</li>
+                          <li *ngIf="rentalHouseForm.get('renterName')?.invalid">• Renter Name is missing</li>
+                          <li *ngIf="rentalHouseForm.get('renterPhone')?.invalid">• Renter Phone must be exactly 10 digits</li>
+                        </ul>
+                      </div>
+                   </form>
+                </div>
+             </div>
+          </div>
+        }
+
+        <!-- Monthly Bill Form Modal -->
+        @if (showMonthlyBillForm) {
+          <div class="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-md px-4 overflow-hidden">
+             <div class="bg-white dark:bg-gray-900 w-full max-w-lg max-h-[90vh] rounded-[2.5rem] flex flex-col shadow-2xl animate-in zoom-in-95 duration-300">
+                <!-- Header (Fixed) -->
+                <div class="p-8 pb-4 border-b border-gray-50 dark:border-gray-800 shrink-0">
+                   <div class="flex justify-between items-center">
+                      <div>
+                         <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{{ editingBillIndex !== null ? 'Edit' : 'New' }} Monthly Bill</h3>
+                         <p class="text-sm text-gray-500 font-medium">Record utility costs for the selected period</p>
+                      </div>
+                      <button (click)="showMonthlyBillForm = false" class="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500">
+                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                   </div>
+                </div>
+
+                <!-- Body (Scrollable) -->
+                <div class="p-8 pt-6 overflow-y-auto flex-1 no-scrollbar">
+                   <form [formGroup]="monthlyBillForm" (ngSubmit)="saveMonthlyBill()" class="space-y-4">
+                      <div class="grid grid-cols-2 gap-4">
+                         <div class="col-span-2">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 px-1">Bill Date</label>
+                            <input type="date" formControlName="billDate" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none font-bold text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]">
+                         </div>
+                         <div class="col-span-2">
+                            <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 px-1">Rent Amount</label>
+                            <input type="number" formControlName="rentAmount" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none font-bold text-indigo-600">
+                         </div>
+                         <div>
+                            <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 px-1">Electric Bill</label>
+                            <input type="number" formControlName="electricBill" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none font-bold text-gray-900 dark:text-white">
+                         </div>
+                         <div>
+                            <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 px-1">Water Bill</label>
+                            <input type="number" formControlName="waterBill" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none font-bold text-gray-900 dark:text-white">
+                         </div>
+                         <div class="col-span-2">
+                            <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 px-1">Payment Status</label>
+                            <select formControlName="status" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none font-bold appearance-none text-gray-900 dark:text-white">
+                               <option value="Pending">Pending</option>
+                               <option value="Paid">Paid</option>
+                            </select>
+                         </div>
+                      </div>
+
+                      <div class="pt-6 flex flex-col sm:flex-row gap-3">
+                         <button type="button" (click)="showMonthlyBillForm = false" 
+                            class="w-full py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 font-black rounded-2xl uppercase text-[10px] tracking-widest hover:bg-gray-200 transition-all">
+                            Cancel
+                         </button>
+                         <button type="submit" [disabled]="monthlyBillForm.invalid || isSaving" 
+                            class="w-full py-4 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-purple-500/25 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-purple-700 transition-all">
+                            {{ isSaving ? 'Processing...' : (editingBillIndex !== null ? 'Update Record' : 'Save Record') }}
+                         </button>
+                      </div>
+                      <p *ngIf="monthlyBillForm.invalid && monthlyBillForm.touched" class="text-[9px] font-bold text-red-500 text-center mt-2 uppercase tracking-widest">
+                         Please fill all required fields correctly
+                      </p>
+                   </form>
+                </div>
+             </div>
+          </div>
+        }
+
         <!-- ═══════════ SECURITY & PASSWORD ═══════════ -->
         @if (activeTab === 'security') {
            <div class="max-w-md mx-auto card-animate">
@@ -1064,6 +1433,16 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
                </div>
             }
 
+            <!-- Rentals -->
+            @if (showRentalsTab) {
+               <div (click)="scrollToTop(); activeMobileMenu = 'rentals'; activeTab = 'rentals'" 
+                    class="nav-item-box">
+                  <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'rentals' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+               </div>
+            }
+
             <div (click)="scrollToTop(); activeMobileMenu = 'security'; activeTab = 'security'" 
                  class="nav-item-box">
                <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'security' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1090,7 +1469,7 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
                    
                    <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                       @for (acc of customerAccountsList; track acc.id) {
-                         <div (click)="acc.type === 'chitti' ? viewChitDetails(acc.id) : viewInterestDetails(acc.id); showAccountsModal = false;"
+                         <div (click)="handleAccountSelection(acc); showAccountsModal = false;"
                               class="p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-800 hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer transition-all group flex justify-between items-center">
                             <div>
                                <p class="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest">{{ acc.info }}</p>
@@ -1140,7 +1519,7 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
                   @if (existingMode && !isEditModal) {
                     <!-- Existing Customer Picker -->
                     <div class="space-y-4 max-h-[50vh] flex flex-col">
-                       <input type="text" [(ngModel)]="pickerSearch" placeholder="Search by name or phone..." class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 transition-all">
+                       <input type="text" [(ngModel)]="pickerSearch" placeholder="Search by name or phone..." class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white font-bold">
                        <div class="overflow-y-auto flex-1 space-y-2 custom-scrollbar pr-1">
                           @for (p of filteredPickerCustomers; track p.phone) {
                              <div (click)="selectFromPicker(p)" class="p-4 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-purple-200 hover:bg-purple-50 dark:hover:bg-purple-900/10 cursor-pointer transition-all">
@@ -1207,6 +1586,7 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
                              <select formControlName="schemeType" class="w-full px-4 py-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white text-sm appearance-none">
                                 <option value="chitti">Chitti</option>
                                 <option value="interest">Interest (Loan)</option>
+                                <option value="rent">Rent</option>
                              </select>
                           </div>
                           <div>
@@ -1215,8 +1595,10 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
                                 <option value="" disabled>Select Scheme</option>
                                 @if (customerForm.get('schemeType')?.value === 'chitti') {
                                    @for (s of chittis; track s.id) { <option [value]="s.id">{{ s.name }}</option> }
-                                } @else {
+                                } @else if (customerForm.get('schemeType')?.value === 'interest') {
                                    @for (s of interests; track s.id) { <option [value]="s.id">{{ s.name }}</option> }
+                                } @else if (customerForm.get('schemeType')?.value === 'rent') {
+                                   @for (h of houses; track h.id) { <option [value]="h.id">{{ h.houseName }}</option> }
                                 }
                              </select>
                           </div>
@@ -1226,7 +1608,7 @@ import { BillFormComponent } from '../bills/bill-form/bill-form.component';
                           <div>
                              <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Joined Date</label>
                              <input type="date" formControlName="joinedDate"
-                                class="w-full px-5 py-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white text-sm">
+                                class="w-full px-5 py-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white text-sm [color-scheme:light] dark:[color-scheme:dark]">
                           </div>
                           <div>
                              <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Status</label>
@@ -1260,18 +1642,20 @@ export class AdminDashboardComponent implements OnInit {
   private interestService = inject(InterestService);
   private customerService = inject(CustomerService);
   private billService = inject(BillService);
+  private rentalService = inject(RentalService);
   private toast = inject(ToastService);
   public biometricService = inject(BiometricService);
 
-  activeTab: 'chitti' | 'interest' | 'customers' | 'security' | 'bills' | 'overview' | '' = '';
+  activeTab: 'chitti' | 'interest' | 'customers' | 'security' | 'bills' | 'overview' | 'rentals' | '' = '';
   isDarkMode = false;
-  activeMobileMenu: 'chitti' | 'interest' | 'customers' | 'security' | 'bills' | 'overview' | '' = '';
+  activeMobileMenu: 'chitti' | 'interest' | 'customers' | 'security' | 'bills' | 'overview' | 'rentals' | '' = '';
   currentUserProfile: UserProfile | null = null;
 
   get showInterestTab() { return this.isSuperAdmin || this.currentUserProfile?.tabConfig?.interest !== false; }
   get showChittiTab() { return this.isSuperAdmin || this.currentUserProfile?.tabConfig?.chitti !== false; }
   get showCustomersTab() { return this.isSuperAdmin || this.currentUserProfile?.tabConfig?.customers !== false; }
   get showBillsTab() { return this.isSuperAdmin || this.currentUserProfile?.tabConfig?.bills !== false; }
+  get showRentalsTab() { return this.isSuperAdmin || this.currentUserProfile?.tabConfig?.rentals === true; }
 
   chittis: ChittiScheme[] = [];
   interests: InterestScheme[] = [];
@@ -1294,6 +1678,44 @@ export class AdminDashboardComponent implements OnInit {
   loanStatusFilter: 'Active' | 'Inactive' | 'All' = 'Active';
   isBiometricEnabled = false;
   expandedLoans: { [id: string]: boolean } = {};
+  
+  // Rentals State
+  houses: RentalHouse[] = [];
+  showRentalHouseForm = false;
+  rentalHouseForm: FormGroup;
+  isRentalEditMode = false;
+  editingRentalId: string | null = null;
+  activeHouseId: string | null = null;
+  showMonthlyBillForm = false;
+  monthlyBillForm: FormGroup;
+  editingBillIndex: number | null = null;
+
+  getHouseStats(house: RentalHouse) {
+    const bills = house.bills || [];
+    const collected = bills.filter(b => b.status === 'Paid').reduce((sum, b) => sum + (b.rentAmount || 0), 0);
+    const pending = bills.filter(b => b.status === 'Pending').reduce((sum, b) => sum + (b.total || 0), 0);
+    const months = bills.length;
+    return { collected, pending, months };
+  }
+
+  isRentIncreaseDue(house: RentalHouse): boolean {
+    if (!house.arrivedDate || house.status !== 'Occupied') return false;
+    
+    // Check if 1 year has passed since arrivedDate OR lastRentIncreaseDate
+    const referenceDateStr = house.lastRentIncreaseDate || house.arrivedDate;
+    const refDate = new Date(referenceDateStr);
+    const today = new Date();
+    
+    // Simple year check
+    let yearsPassed = today.getFullYear() - refDate.getFullYear();
+    const monthDiff = today.getMonth() - refDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < refDate.getDate())) {
+      yearsPassed--;
+    }
+    
+    return yearsPassed >= 1;
+  }
 
   toggleLoanExpansion(id: string) {
     if (window.innerWidth < 640) {
@@ -1303,12 +1725,17 @@ export class AdminDashboardComponent implements OnInit {
 
   @ViewChild('loanChart') loanChart?: BaseChartDirective;
   @ViewChild('chittiChart') chittiChart?: BaseChartDirective;
+  @ViewChild('rentalChart') rentalChart?: BaseChartDirective;
 
   // Analytics State
   selectedYear: number = new Date().getFullYear();
   selectedMonth: number = -1; // -1 for All
   availableYears: number[] = [new Date().getFullYear()];
   filteredTotalInterest: number = 0;
+
+  rentalSelectedYear: number = new Date().getFullYear();
+  rentalAvailableYears: number[] = [new Date().getFullYear()];
+  filteredTotalRent: number = 0;
 
   public barChartOptions: ChartConfiguration['options'] = {
     responsive: true,
@@ -1398,6 +1825,19 @@ export class AdminDashboardComponent implements OnInit {
     ]
   };
 
+  public rentalBarChartData: ChartData<'bar'> = {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    datasets: [
+      {
+        data: Array(12).fill(0),
+        label: 'Collected Rent',
+        backgroundColor: '#6366f1',
+        borderRadius: 8,
+        borderSkipped: false
+      }
+    ]
+  };
+
   editingCustomer: Customer | null = null;
   customerForm: FormGroup;
   isSaving = false;
@@ -1474,7 +1914,28 @@ export class AdminDashboardComponent implements OnInit {
       tab_interest: [true],
       tab_chitti: [true],
       tab_customers: [true],
-      tab_bills: [true]
+      tab_bills: [true],
+      tab_rentals: [false]
+    });
+    this.rentalHouseForm = this.fb.group({
+      houseName: ['', Validators.required],
+      advanceAmount: [0, Validators.required],
+      advanceMonths: [0, Validators.required],
+      monthlyRent: [0, Validators.required],
+      renterName: ['', Validators.required],
+      renterPhone: ['', [Validators.required, Validators.pattern(/^[0-9]+$/), Validators.minLength(10), Validators.maxLength(10)]],
+      arrivedDate: [new Date().toISOString().split('T')[0], Validators.required],
+      electricMeterNo: [''],
+      waterBillNo: [''],
+      lastRentIncreaseDate: [''],
+      status: ['Occupied']
+    });
+    this.monthlyBillForm = this.fb.group({
+      billDate: [new Date().toISOString().split('T')[0], Validators.required],
+      rentAmount: [0, Validators.required],
+      electricBill: [0],
+      waterBill: [0],
+      status: ['Pending', Validators.required]
     });
     this.trackedServiceForm = this.fb.group({
       serviceType: ['electricity', Validators.required],
@@ -1603,7 +2064,6 @@ export class AdminDashboardComponent implements OnInit {
       return matchesStatus && matchesSearch;
     });
 
-    // Sort by Upcoming Interest Date (Next Due)
     return filtered.sort((a, b) => {
       const dateA = this.getNextInterestDate(a);
       const dateB = this.getNextInterestDate(b);
@@ -1611,14 +2071,16 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
+
   get visibleMobileTabs() {
-    const all = ['overview', 'interest', 'chitti', 'customers', 'bills', 'security'];
+    const all = ['overview', 'interest', 'chitti', 'customers', 'bills', 'rentals', 'security'];
     return all.filter(t => {
       if (t === 'overview' || t === 'security') return true;
       if (t === 'interest') return this.showInterestTab;
       if (t === 'chitti') return this.showChittiTab;
       if (t === 'customers') return this.showCustomersTab;
       if (t === 'bills') return this.showBillsTab;
+      if (t === 'rentals') return this.showRentalsTab;
       return false;
     });
   }
@@ -1750,9 +2212,9 @@ export class AdminDashboardComponent implements OnInit {
     if (this.adminForm.valid) {
       this.isSaving = true;
       try {
-        const { username, name, phone, password, address, idType, idValue, tab_interest, tab_chitti, tab_customers, tab_bills } = this.adminForm.getRawValue();
+        const { username, name, phone, password, address, idType, idValue, tab_interest, tab_chitti, tab_customers, tab_bills, tab_rentals } = this.adminForm.getRawValue();
         const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
-        const tabConfig = { interest: tab_interest, chitti: tab_chitti, customers: tab_customers, bills: tab_bills };
+        const tabConfig = { interest: tab_interest, chitti: tab_chitti, customers: tab_customers, bills: tab_bills, rentals: tab_rentals };
 
         if (this.isAdminEditMode && this.editingAdminUid) {
           // Update basic info + address/ID + tabConfig
@@ -1799,7 +2261,8 @@ export class AdminDashboardComponent implements OnInit {
       tab_interest: admin.tabConfig?.interest !== false,
       tab_chitti: admin.tabConfig?.chitti !== false,
       tab_customers: admin.tabConfig?.customers !== false,
-      tab_bills: admin.tabConfig?.bills !== false
+      tab_bills: admin.tabConfig?.bills !== false,
+      tab_rentals: admin.tabConfig?.rentals === true
     });
     this.adminForm.get('username')?.disable();
     this.scrollToTop();
@@ -1863,6 +2326,10 @@ export class AdminDashboardComponent implements OnInit {
           this.trackedServices = data;
         });
       }
+      this.rentalService.getHouses(filterUid).subscribe(data => {
+        this.houses = data;
+        this.updateRentalAnalytics();
+      });
     });
   }
 
@@ -2105,6 +2572,44 @@ export class AdminDashboardComponent implements OnInit {
     this.chittiChart?.update();
   }
 
+  updateRentalAnalytics() {
+    const monthlyData = Array(12).fill(0);
+    const yearsSet = new Set<number>([new Date().getFullYear()]);
+    let total = 0;
+
+    const sYear = Number(this.rentalSelectedYear);
+
+    this.houses.forEach(house => {
+      (house.bills || []).forEach(bill => {
+        if (bill.status !== 'Paid') return;
+        
+        const bDate = new Date(bill.billDate);
+        if (isNaN(bDate.getTime())) return;
+
+        const year = bDate.getFullYear();
+        const month = bDate.getMonth();
+        yearsSet.add(year);
+
+        if (year === sYear) {
+          monthlyData[month] += (bill.rentAmount || 0);
+          total += (bill.rentAmount || 0);
+        }
+      });
+    });
+
+    this.rentalAvailableYears = Array.from(yearsSet).sort((a, b) => b - a);
+    this.filteredTotalRent = total;
+
+    this.rentalBarChartData = {
+      ...this.rentalBarChartData,
+      datasets: [{
+        ...this.rentalBarChartData.datasets[0],
+        data: monthlyData
+      }]
+    };
+    this.rentalChart?.update();
+  }
+
   get currentMonthName(): string {
     return new Date().toLocaleString('default', { month: 'long' });
   }
@@ -2226,17 +2731,44 @@ export class AdminDashboardComponent implements OnInit {
       });
     });
 
+    // Gather Rentals
+    const tenantHouses = this.houses.filter(h => h.renterPhone === cust.phone);
+    tenantHouses.forEach(house => {
+      accounts.push({
+        type: 'rent',
+        id: house.id!,
+        name: house.houseName,
+        amount: house.monthlyRent,
+        info: `Rent - ₹${house.monthlyRent}/mo`
+      });
+    });
+
     if (accounts.length === 0) {
-      this.toast.error('No active loan or chitti accounts found for this customer.');
+      this.toast.error('No active loan, chitti, or rental accounts found for this customer.');
     } else if (accounts.length === 1) {
       // Direct navigation
       if (accounts[0].type === 'chitti') this.viewChitDetails(accounts[0].id);
-      else this.viewInterestDetails(accounts[0].id);
+      else if (accounts[0].type === 'interest') this.viewInterestDetails(accounts[0].id);
+      else {
+        this.activeTab = 'rentals';
+        this.activeHouseId = accounts[0].id;
+        this.scrollToTop();
+      }
     } else {
       // Multiple - show modal
       this.customerAccountsList = accounts;
       this.selectedCustomerForAccounts = cust;
       this.showAccountsModal = true;
+    }
+  }
+
+  handleAccountSelection(acc: any) {
+    if (acc.type === 'chitti') this.viewChitDetails(acc.id);
+    else if (acc.type === 'interest') this.viewInterestDetails(acc.id);
+    else {
+      this.activeTab = 'rentals';
+      this.activeHouseId = acc.id;
+      this.scrollToTop();
     }
   }
 
@@ -2515,4 +3047,160 @@ export class AdminDashboardComponent implements OnInit {
       }
     }
   }
+
+  // Rental Methods
+  openRentalHouseForm(house?: RentalHouse) {
+    if (house) {
+      this.isRentalEditMode = true;
+      this.editingRentalId = house.id || null;
+      this.rentalHouseForm.patchValue({
+        houseName: house.houseName,
+        advanceAmount: house.advanceAmount,
+        advanceMonths: house.advanceMonths,
+        monthlyRent: house.monthlyRent || 0,
+        renterName: house.renterName,
+        renterPhone: house.renterPhone,
+        arrivedDate: house.arrivedDate,
+        electricMeterNo: house.electricMeterNo || '',
+        waterBillNo: house.waterBillNo || '',
+        lastRentIncreaseDate: house.lastRentIncreaseDate || '',
+        status: house.status
+      });
+    } else {
+      this.isRentalEditMode = false;
+      this.editingRentalId = null;
+      this.rentalHouseForm.reset({
+        advanceAmount: 0, advanceMonths: 0, monthlyRent: 0, status: 'Occupied',
+        arrivedDate: new Date().toISOString().split('T')[0]
+      });
+    }
+    this.showRentalHouseForm = true;
+  }
+
+  async saveRentalHouse() {
+    if (this.rentalHouseForm.valid) {
+      this.isSaving = true;
+      try {
+        const profile = await new Promise<any>(res => this.authService.userProfile$.subscribe(res));
+        const houseData = { ...this.rentalHouseForm.getRawValue(), createdBy: profile?.uid };
+        
+        if (this.isRentalEditMode && this.editingRentalId) {
+          await this.rentalService.updateHouse(this.editingRentalId, houseData);
+          this.toast.success('House updated successfully!');
+        } else {
+          await this.rentalService.addHouse({ ...houseData, bills: [] });
+          this.toast.success('New house registered!');
+        }
+        this.showRentalHouseForm = false;
+      } catch (e) {
+        this.toast.error('Failed to save house information');
+      } finally {
+        this.isSaving = false;
+      }
+    }
+  }
+
+  async deleteRentalHouse(id: string) {
+    if (confirm('Are you sure you want to delete this house and all its billing history?')) {
+      try {
+        await this.rentalService.deleteHouse(id);
+        this.toast.success('House deleted.');
+        if (this.activeHouseId === id) this.activeHouseId = null;
+      } catch (e) {
+        this.toast.error('Failed to delete house.');
+      }
+    }
+  }
+
+  viewHouseBills(houseId: string) {
+    this.activeHouseId = houseId;
+    this.scrollToTop();
+  }
+
+  getActiveHouse(): RentalHouse | undefined {
+    return this.houses.find(h => h.id === this.activeHouseId);
+  }
+
+  openMonthlyBillForm(bill?: RentalBill, index: number | null = null) {
+    const house = this.getActiveHouse();
+    if (!house) return;
+
+    this.editingBillIndex = index;
+    if (bill) {
+      this.monthlyBillForm.patchValue({
+        billDate: bill.billDate || new Date().toISOString().split('T')[0],
+        rentAmount: bill.rentAmount,
+        electricBill: bill.electricBill,
+        waterBill: bill.waterBill,
+        status: bill.status || 'Pending'
+      });
+    } else {
+      this.monthlyBillForm.reset({
+        billDate: new Date().toISOString().split('T')[0],
+        rentAmount: house.monthlyRent || 0,
+        electricBill: 0,
+        waterBill: 0,
+        status: 'Pending'
+      });
+    }
+    this.showMonthlyBillForm = true;
+  }
+
+  async saveMonthlyBill() {
+    if (this.monthlyBillForm.valid && this.activeHouseId) {
+      this.isSaving = true;
+      try {
+        const house = this.getActiveHouse();
+        if (!house) return;
+
+        const billRaw = this.monthlyBillForm.getRawValue();
+        const date = new Date(billRaw.billDate);
+        
+        const billData: RentalBill = {
+          ...billRaw,
+          month: date.toLocaleString('default', { month: 'short' }),
+          year: date.getFullYear(),
+          total: (Number(billRaw.rentAmount) || 0) + (Number(billRaw.electricBill) || 0) + (Number(billRaw.waterBill) || 0)
+        };
+
+        let updatedBills = [...(house.bills || [])];
+        if (this.editingBillIndex !== null) {
+          updatedBills[this.editingBillIndex] = billData;
+        } else {
+          updatedBills.push(billData);
+        }
+
+        updatedBills.sort((a, b) => new Date(a.billDate).getTime() - new Date(b.billDate).getTime());
+
+        if (this.activeHouseId) {
+          await this.rentalService.updateHouse(this.activeHouseId, { bills: updatedBills });
+          this.toast.success('Monthly bill recorded!');
+        }
+        this.showMonthlyBillForm = false;
+      } catch (e) {
+        this.toast.error('Failed to save monthly bill');
+      } finally {
+        this.isSaving = false;
+      }
+    }
+  }
+
+  async deleteMonthlyBill(index: number) {
+    if (confirm('Delete this monthly record?') && this.activeHouseId) {
+      try {
+        const house = this.getActiveHouse();
+        if (!house) return;
+        const updatedBills = [...(house.bills || [])];
+        updatedBills.splice(index, 1);
+        if (this.activeHouseId) {
+          await this.rentalService.updateHouse(this.activeHouseId, { bills: updatedBills });
+          this.toast.success('Record deleted.');
+        }
+      } catch (e) {
+        this.toast.error('Delete failed.');
+      }
+    }
+  }
 }
+
+

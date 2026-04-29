@@ -19,6 +19,7 @@ export interface UserProfile {
     chitti: boolean;
     customers: boolean;
     bills: boolean;
+    rentals: boolean;
   };
 }
 

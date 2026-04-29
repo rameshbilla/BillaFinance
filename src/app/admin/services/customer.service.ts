@@ -24,7 +24,7 @@ export interface Customer {
   email?: string;
   address?: string;
   schemeId: string;
-  schemeType: 'chitti' | 'interest';
+  schemeType: 'chitti' | 'interest' | 'rental';
   joinedDate: string;
   username: string;
   status: 'Active' | 'Inactive';

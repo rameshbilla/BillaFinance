@@ -6,6 +6,7 @@ import { BiometricService } from '../../services/biometric.service';
 import { ChittiService, ChittiScheme } from '../../admin/services/chitti.service';
 import { InterestService, InterestScheme } from '../../admin/services/interest.service';
 import { CustomerService, Customer } from '../../admin/services/customer.service';
+import { RentalService, RentalHouse, RentalBill } from '../../admin/services/rental.service';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ToastService } from '../../shared/toast.service';
 import { BaseChartDirective } from 'ng2-charts';
@@ -109,7 +110,7 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
       </nav>
 
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 animate-fade-up delay-100">
-        @if (!selectedChit && !selectedLoan) {
+        @if (!selectedChit && !selectedLoan && !selectedHouse) {
           <!-- Welcome Section -->
           <section class="fade-in-up" *ngIf="authService.userProfile$ | async as profile" style="animation-delay: 0.1s">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 mb-2">
@@ -126,7 +127,7 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
                </div>
                <div class="glass-card rounded-3xl p-5 border-blue-500/10 text-right">
                   <p class="text-[8px] sm:text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 leading-none">Active Products</p>
-                  <p class="text-xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tighter">{{ customerChitties.length + activeLoans.length }}</p>
+                  <p class="text-xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tighter">{{ customerChitties.length + activeLoans.length + tenantHouses.length }}</p>
                </div>
             </div>
           </section>
@@ -164,8 +165,8 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
                   <div class="min-w-0">
                     <h4 class="text-xl font-black text-gray-900 dark:text-white mb-2 truncate">{{ item.scheme.name }}</h4>
                     <div class="flex flex-wrap items-center gap-2">
-                      <span class="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[8px] font-black uppercase tracking-widest rounded-md">Chit Fund</span>
-                      <button (click)="openIdentityProfile('chit', item)" class="px-2 py-0.5 bg-gray-100/80 dark:bg-gray-800/80 text-gray-500 text-[8px] font-black uppercase tracking-widest rounded-md">ID Proof</button>
+                       <span class="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[8px] font-black uppercase tracking-widest rounded-md">Chit Fund</span>
+                       <button (click)="openIdentityProfile('chit', item)" class="px-2 py-0.5 bg-gray-100/80 dark:bg-gray-800/80 text-gray-500 text-[8px] font-black uppercase tracking-widest rounded-md">ID Proof</button>
                     </div>
                   </div>
                   <div class="text-right shrink-0">
@@ -275,18 +276,57 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
           </div>
         </section>
 
+        <!-- RENTAL HOUSES -->
+        <section *ngIf="tenantHouses.length > 0" class="fade-in-up" style="animation-delay: 0.35s">
+          <div class="flex items-center gap-3 mb-6">
+             <div class="h-6 w-1.5 bg-green-600 rounded-full"></div>
+             <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Rental Properties</h3>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @for (house of tenantHouses; track house.id) {
+              <div class="glass-card rounded-[2.5rem] p-6 sm:p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 overflow-hidden relative group">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-green-500/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
+                
+                <div class="flex justify-between items-start mb-6">
+                  <div class="min-w-0">
+                    <h4 class="text-xl font-black text-gray-900 dark:text-white mb-2 truncate">{{ house.houseName }}</h4>
+                    <span class="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-[8px] font-black uppercase tracking-widest rounded-md">Tenant Account</span>
+                  </div>
+                  <div class="text-right shrink-0">
+                    <p class="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1">Advance Paid</p>
+                    <p class="text-xl font-black text-green-600 tracking-tighter leading-none">₹{{ house.advanceAmount | number:'1.0-0' }}</p>
+                  </div>
+                </div>
+
+                <div class="bg-gray-50/50 dark:bg-gray-900/50 p-4 rounded-3xl mb-6">
+                   <div class="flex justify-between items-center mb-2">
+                      <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Occupancy</p>
+                      <p class="text-[10px] font-black text-gray-700 dark:text-white uppercase tracking-widest">{{ house.status }}</p>
+                   </div>
+                   <div class="flex justify-between items-center">
+                      <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Joined Since</p>
+                      <p class="text-[10px] font-black text-gray-700 dark:text-white uppercase tracking-widest">{{ house.arrivedDate | date:'mediumDate' }}</p>
+                   </div>
+                </div>
+
+                <button (click)="openRentalHistory(house)" class="w-full py-3.5 bg-green-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:scale-[1.02] transition-all shadow-lg active:scale-95">Billing Statement</button>
+              </div>
+            }
+          </div>
+        </section>
+
         <!-- No Active Schemes State -->
-        <div *ngIf="customerChitties.length === 0 && activeLoans.length === 0" class="py-20 text-center">
+        <div *ngIf="customerChitties.length === 0 && activeLoans.length === 0 && tenantHouses.length === 0" class="py-20 text-center">
             <div class="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
                <svg class="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </div>
             <h3 class="text-xl font-bold text-gray-900 dark:text-white">No active records found</h3>
-            <p class="text-gray-500 mt-2">You don't have any active chit or loan schemes at the moment.</p>
+            <p class="text-gray-500 mt-2">You don't have any active chit, loan, or rental schemes at the moment.</p>
         </div>
         } @else {
            <!-- Statement Directive View -->
            <div class="animate-in fade-in slide-in-from-right-4 duration-500 col-span-full w-full">
-             <button (click)="selectedChit = null; selectedLoan = null" class="flex items-center gap-2 text-[10px] font-black text-gray-500 hover:text-purple-600 transition-colors uppercase tracking-[0.2em] mb-6">
+             <button (click)="selectedChit = null; selectedLoan = null; selectedHouse = null" class="flex items-center gap-2 text-[10px] font-black text-gray-500 hover:text-purple-600 transition-colors uppercase tracking-[0.2em] mb-6">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                 Back to Dashboard
              </button>
@@ -297,9 +337,9 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
                   <div class="flex justify-between items-start mb-8">
                      <div>
                         <div class="flex items-center gap-2 mb-1">
-                           <span class="w-3 h-3 rounded-full" [class]="selectedChit ? 'bg-purple-500' : 'bg-blue-500'"></span>
+                           <span class="w-3 h-3 rounded-full" [class]="selectedChit ? 'bg-purple-500' : (selectedLoan ? 'bg-blue-500' : 'bg-green-500')"></span>
                            <h3 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">
-                             {{ selectedChit ? selectedChit.scheme.name : selectedLoan?.name }}
+                             {{ selectedChit ? selectedChit.scheme.name : (selectedLoan ? selectedLoan.name : selectedHouse?.houseName) }}
                            </h3>
                         </div>
                         <p class="text-gray-500 font-medium">Transaction Statement</p>
@@ -309,16 +349,22 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
                   <div class="grid grid-cols-2 gap-2 sm:gap-4 mb-8">
                     <div class="bg-gray-50 dark:bg-gray-900/50 p-4 sm:p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 flex flex-col justify-center">
                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 truncate">
-                         {{ selectedChit ? 'Total Paid' : 'Principal Paid' }}
+                         {{ selectedChit ? 'Total Paid' : (selectedLoan ? 'Principal Paid' : 'Security Deposit') }}
                        </p>
                        <p class="text-2xl font-black text-gray-900 dark:text-white truncate">
-                         ₹{{ selectedChit ? getChitPaid(selectedChit.customer) : getLoanPaid(selectedLoan!) | number:'1.0-0' }}
+                         ₹{{ selectedChit ? getChitPaid(selectedChit.customer) : (selectedLoan ? getLoanPaid(selectedLoan) : selectedHouse?.advanceAmount) | number:'1.0-0' }}
                        </p>
                     </div>
                     <div class="bg-gray-50 dark:bg-gray-900/50 p-4 sm:p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 flex flex-col justify-center">
                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 truncate">Balance</p>
                        <p class="text-2xl font-black text-red-600 truncate">
-                         ₹{{ selectedChit ? getChitPending(selectedChit.scheme, selectedChit.customer) : getBalance(selectedLoan!) | number:'1.0-0' }}
+                         @if (selectedChit) {
+                            ₹{{ getChitPending(selectedChit.scheme, selectedChit.customer) | number:'1.0-0' }}
+                         } @else if (selectedLoan) {
+                            ₹{{ getBalance(selectedLoan) | number:'1.0-0' }}
+                         } @else if (selectedHouse) {
+                            ₹{{ (selectedHouse.bills && selectedHouse.bills.length > 0) ? selectedHouse.bills[selectedHouse.bills.length-1].total : 0 | number:'1.0-0' }}
+                         }
                        </p>
                     </div>
                   </div>
@@ -335,6 +381,44 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
                            <canvas baseChart [data]="chartData" [options]="chartOptions" [type]="chartType"></canvas>
                         </div>
                      </div>
+                  }
+
+                  @if (selectedHouse) {
+                      <div class="overflow-x-auto no-scrollbar -mx-8 sm:mx-0">
+                         <table class="w-full text-left border-collapse min-w-[650px]">
+                            <thead>
+                               <tr class="bg-green-600 text-white uppercase text-[9px] font-black tracking-widest">
+                                  <th class="p-4 rounded-tl-2xl">Bill Date</th>
+                                  <th class="p-4">Rent</th>
+                                  <th class="p-4">Electric</th>
+                                  <th class="p-4">Water</th>
+                                  
+                                  
+                                  <th class="p-4">Total</th>
+                                   <th class="p-4 rounded-tr-2xl">Status</th>
+                               </tr>
+                            </thead>
+                            <tbody class="text-xs font-bold text-gray-700 dark:text-gray-300">
+                               @for (bill of selectedHouse.bills; track $index) {
+                                  <tr class="border-b border-gray-50 dark:border-gray-800/50">
+                                     <td class="p-4 font-black text-green-600">{{ bill.billDate | date:'MMM dd, yyyy' }}</td>
+                                     <td class="p-4">₹{{ bill.rentAmount | number:'1.0-0' }}</td>
+                                     <td class="p-4">₹{{ bill.electricBill | number:'1.0-0' }}</td>
+                                     <td class="p-4">₹{{ bill.waterBill | number:'1.0-0' }}</td>
+                                     
+                                     
+                                     <td class="p-4 font-black text-gray-900 dark:text-white bg-green-50/30">₹{{ bill.total | number:'1.0-0' }}</td>
+                                      <td class="p-4">
+                                         <span class="px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest"
+                                            [class]="bill.status === 'Paid' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'">
+                                            {{ bill.status || 'Pending' }}
+                                         </span>
+                                      </td>
+                                  </tr>
+                               }
+                            </tbody>
+                         </table>
+                      </div>
                   }
 
                   <div class="max-h-[50vh] overflow-y-auto pr-3 space-y-0 custom-scrollbar mt-2">
@@ -575,6 +659,7 @@ export class CustomerDashboardComponent implements OnInit {
   private chittiService = inject(ChittiService);
   private interestService = inject(InterestService);
   private customerService = inject(CustomerService);
+  private rentalService = inject(RentalService);
   private router = inject(Router);
   private fb = inject(FormBuilder);
   private toast = inject(ToastService);
@@ -582,6 +667,7 @@ export class CustomerDashboardComponent implements OnInit {
 
   customerChitties: { scheme: ChittiScheme, customer: Customer }[] = [];
   activeLoans: InterestScheme[] = [];
+  tenantHouses: RentalHouse[] = [];
   isDarkMode = false;
   activeMobileMenu: 'home' | 'security' = 'home';
   activeTab: 'home' | 'security' = 'home';
@@ -593,8 +679,16 @@ export class CustomerDashboardComponent implements OnInit {
 
   selectedChit: { scheme: ChittiScheme, customer: Customer } | null = null;
   selectedLoan: InterestScheme | null = null;
+  selectedHouse: RentalHouse | null = null;
   showIdentityPopup = false;
   identityPayload: any = null;
+
+  openRentalHistory(house: RentalHouse) {
+    this.selectedHouse = house;
+    this.selectedChit = null;
+    this.selectedLoan = null;
+    this.scrollToTop();
+  }
 
   openIdentityProfile(type: 'chit' | 'loan', payload: any) {
     if (type === 'chit') {
@@ -647,7 +741,11 @@ export class CustomerDashboardComponent implements OnInit {
   get totalOutstanding(): number {
     let chitPending = this.customerChitties.reduce((sum, item) => sum + this.getChitPending(item.scheme, item.customer), 0);
     let loanPending = this.activeLoans.reduce((sum, loan) => sum + this.getBalance(loan) + this.getPendingInterest(loan), 0);
-    return chitPending + loanPending;
+    let rentPending = this.tenantHouses.reduce((sum, house) => {
+       const latestBill = house.bills?.length ? house.bills[house.bills.length - 1] : null;
+       return sum + (latestBill ? latestBill.total : 0);
+    }, 0);
+    return chitPending + loanPending + rentPending;
   }
 
   ngOnInit() {
@@ -678,6 +776,11 @@ export class CustomerDashboardComponent implements OnInit {
           this.activeLoans = allLoans.filter(l => l.borrowerPhone === profile.phone)
             .sort((a, b) => this.getNextInterestDate(a).getTime() - this.getNextInterestDate(b).getTime());
           this.generateOverallChart();
+        });
+
+        // Load Rental Houses for this tenant
+        this.rentalService.getHouses().subscribe((allHouses: RentalHouse[]) => {
+          this.tenantHouses = allHouses.filter(h => h.renterPhone === profile.phone);
         });
       }
     });
@@ -790,11 +893,15 @@ export class CustomerDashboardComponent implements OnInit {
 
   openChitHistory(item: { scheme: ChittiScheme, customer: Customer }) {
     this.selectedChit = item;
+    this.selectedHouse = null;
+    this.selectedLoan = null;
     this.selectedYearStatement = new Date().getFullYear();
     this.generateChitChart(item);
   }
   openLoanHistory(loan: InterestScheme) {
     this.selectedLoan = loan;
+    this.selectedHouse = null;
+    this.selectedChit = null;
     this.selectedYearStatement = new Date().getFullYear();
     this.generateLoanChart(loan);
   }
@@ -960,3 +1067,4 @@ export class CustomerDashboardComponent implements OnInit {
   logout() { this.router.navigate(['/login']); }
   scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 }
+

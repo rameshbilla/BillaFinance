@@ -51,7 +51,7 @@ import { Bill } from '../../services/bill.service';
           <div>
             <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Due Date</label>
             <input type="date" formControlName="dueDate"
-                   class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white font-bold">
+                   class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white font-bold [color-scheme:light] dark:[color-scheme:dark]">
           </div>
           <div class="md:col-span-2">
             <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Status</label>
