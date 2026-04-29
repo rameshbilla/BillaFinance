@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -10,7 +10,9 @@ import { RentalService, RentalHouse, RentalBill } from '../../admin/services/ren
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ToastService } from '../../shared/toast.service';
 import { BaseChartDirective } from 'ng2-charts';
-import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
+import { ChartConfiguration, ChartData, ChartType, Chart } from 'chart.js';
+import zoomPlugin from 'chartjs-plugin-zoom';
+Chart.register(zoomPlugin);
 
 @Component({
   selector: 'app-customer-dashboard',
@@ -20,8 +22,13 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
     <style>
       @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
       .fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
-      .glass-card { background: rgb(214 214 214 / 20%); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.4); }
-      .dark .glass-card { background:rgb(214 214 214 / 20%); border: 1px solid rgba(255,255,255,0.1); }
+      
+      .glass-card { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+      .dark .bottom-nav-pill {
+        background: rgba(15, 23, 42, 0.9) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      }
       .custom-scrollbar::-webkit-scrollbar { width: 4px; }
       .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
       
@@ -34,7 +41,7 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
         bottom: 32px;
         left: 50%;
         transform: translateX(-50%);
-        background: rgba(237, 237, 237, 0.85);
+        background: rgba(255, 255, 255, 0.85);
         backdrop-filter: blur(20px);
         height: 68px;
         width: 85%;
@@ -42,9 +49,14 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
         border-radius: 34px;
         display: flex;
         padding: 4px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
         z-index: 100;
         border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+      .dark .bottom-nav-pill {
+        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(15, 23, 42, 0.85);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
       }
       .nav-item-box {
         flex: 1 1 0%;
@@ -68,21 +80,19 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
         transform: scale(1.1) translateY(-1px);
       }
       .icon-inactive {
-        color: #505d6f;
+        color: #94a3b8;
       }
       .nav-item-box:active .nav-icon {
         transform: scale(0.9);
       }
-      .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.5); }
-      .dark .glass-card { background: rgba(17, 24, 39, 0.7); border: 1px solid rgba(255,255,255,0.05); }
-      .dark .bottom-nav-pill {
-        border: 1px solid rgba(255,255,255,0.1);
-        background: rgba(15, 23, 42, 0.85);
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-      }
     </style>
 
-    <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-950 transition-colors duration-500 pb-32 sm:pb-0 overflow-x-hidden">
+    <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-950 transition-colors duration-500 pb-32 sm:pb-0 relative">
+      <!-- Decorative Background Glows (Match Login Screen) -->
+      <div class="absolute top-0 left-0 w-96 h-96 bg-purple-600/20 dark:bg-purple-600/10 rounded-full mix-blend-screen filter blur-[128px] pointer-events-none"></div>
+      <div class="absolute bottom-0 right-0 w-96 h-96 bg-pink-600/20 dark:bg-pink-600/10 rounded-full mix-blend-screen filter blur-[128px] pointer-events-none"></div>
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/5 dark:bg-indigo-500/5 rounded-full filter blur-[120px] pointer-events-none"></div>
+
       <!-- Premium Header -->
       <nav class="sticky top-0 z-50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 animate-fade-down">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -120,12 +130,12 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
               </div>
             </div>
             
-            <div class="grid grid-cols-2 gap-3 mt-8">
-               <div class="glass-card rounded-3xl p-5 border-purple-500/10">
+            <div class="grid grid-cols-2 gap-3 mt-8 relative z-10">
+               <div class="glass-card bg-white/80 dark:bg-[#0f172a] rounded-3xl p-5 border border-purple-500/50 shadow-sm transition-all duration-500">
                   <p class="text-[8px] sm:text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1 leading-none">Total Outstanding</p>
                   <p class="text-xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tighter">₹{{ totalOutstanding | number:'1.0-0' }}</p>
                </div>
-               <div class="glass-card rounded-3xl p-5 border-blue-500/10 text-right">
+               <div class="glass-card bg-white/80 dark:bg-[#0f172a] rounded-3xl p-5 border border-blue-500/50 text-right shadow-sm transition-all duration-500">
                   <p class="text-[8px] sm:text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 leading-none">Active Products</p>
                   <p class="text-xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tighter">{{ customerChitties.length + activeLoans.length + tenantHouses.length }}</p>
                </div>
@@ -133,8 +143,8 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
           </section>
 
         <!-- OVERALL ACTIVITY CHART -->
-        <section *ngIf="(customerChitties.length > 0 || activeLoans.length > 0) && overallChartData.datasets.length > 0" class="fade-in-up mb-10" style="animation-delay: 0.15s">
-          <div class="glass-card rounded-[2.5rem] p-6 shadow-sm border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800">
+        <section *ngIf="(customerChitties.length > 0 || activeLoans.length > 0) && overallChartData.datasets.length > 0" class="fade-in-up mb-10 relative z-10" style="animation-delay: 0.15s">
+          <div class="glass-card bg-white/80 dark:bg-[#0f172a] rounded-[2.5rem] p-6 border border-white/50 dark:border-white/10 shadow-sm">
              <div class="flex justify-between items-center mb-4">
                <div class="flex items-center gap-2">
                  <div class="h-4 w-1 bg-gradient-to-b from-purple-500 to-blue-500 rounded-full"></div>
@@ -156,9 +166,9 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
              <div class="h-6 w-1.5 bg-purple-600 rounded-full"></div>
              <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Chitti Accounts</h3>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
             @for (item of customerChitties; track item.scheme.id) {
-              <div class="glass-card rounded-[2.5rem] p-6 sm:p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 group relative overflow-hidden">
+              <div class="glass-card bg-white/80 dark:bg-[#0f172a] rounded-[2.5rem] p-6 sm:p-8 border border-white/50 dark:border-white/10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 group relative overflow-hidden">
                 <div class="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
                 
                 <div class="flex justify-between items-start mb-6">
@@ -211,9 +221,9 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
              <div class="h-6 w-1.5 bg-blue-600 rounded-full"></div>
              <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Loan Accounts</h3>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
             @for (loan of activeLoans; track loan.id) {
-              <div class="glass-card rounded-[2.5rem] p-6 sm:p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 overflow-hidden relative group">
+              <div class="glass-card bg-white/80 dark:bg-[#0f172a] rounded-[2.5rem] p-6 sm:p-8 border border-white/50 dark:border-white/10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 overflow-hidden relative group">
                 <div class="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
                 
                 <div class="flex justify-between items-start mb-6">
@@ -282,9 +292,9 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
              <div class="h-6 w-1.5 bg-green-600 rounded-full"></div>
              <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Rental Properties</h3>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
             @for (house of tenantHouses; track house.id) {
-              <div class="glass-card rounded-[2.5rem] p-6 sm:p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 overflow-hidden relative group">
+              <div class="glass-card bg-white/80 dark:bg-[#0f172a] rounded-[2.5rem] p-6 sm:p-8 border border-white/50 dark:border-white/10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 overflow-hidden relative group">
                 <div class="absolute -right-4 -top-4 w-24 h-24 bg-green-500/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
                 
                 <div class="flex justify-between items-start mb-6">
@@ -324,15 +334,19 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
             <p class="text-gray-500 mt-2">You don't have any active chit, loan, or rental schemes at the moment.</p>
         </div>
         } @else {
-           <!-- Statement Directive View -->
-           <div class="animate-in fade-in slide-in-from-right-4 duration-500 col-span-full w-full">
-             <button (click)="selectedChit = null; selectedLoan = null; selectedHouse = null" class="flex items-center gap-2 text-[10px] font-black text-gray-500 hover:text-purple-600 transition-colors uppercase tracking-[0.2em] mb-6">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                Back to Dashboard
-             </button>
-             
-             <!-- Restored Inline layout core -->
-             <div class="bg-white dark:bg-gray-800 rounded-[3rem] w-full mt-2 overflow-hidden shadow-2xl transition-all border border-gray-100 dark:border-gray-700">
+           <!-- FULL SCREEN STATEMENT VIEW -->
+           <div class="fixed inset-0 z-[110] bg-[#f8fafc] dark:bg-gray-950 animate-in slide-in-from-bottom duration-500 pb-20">
+             <!-- Decorative Background Glows (Match Dashboard) -->
+             <div class="absolute top-0 left-0 w-96 h-96 bg-purple-600/10 dark:bg-purple-600/5 rounded-full mix-blend-screen filter blur-[128px] pointer-events-none"></div>
+             <div class="absolute bottom-0 right-0 w-96 h-96 bg-pink-600/10 dark:bg-pink-600/5 rounded-full mix-blend-screen filter blur-[128px] pointer-events-none"></div>
+
+             <div class="max-w-4xl mx-auto px-4 py-8 relative z-10">
+               <button (click)="selectedChit = null; selectedLoan = null; selectedHouse = null" class="flex items-center gap-2 text-xs font-black text-gray-500 hover:text-purple-600 transition-colors uppercase tracking-[0.2em] mb-8 bg-white/50 dark:bg-gray-900/50 px-4 py-2 rounded-full border border-gray-100 dark:border-gray-800 backdrop-blur-sm shadow-sm active:scale-95 transition-all">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                  Close Statement
+               </button>
+               
+               <div class="bg-white/90 dark:bg-[#0f172a] rounded-[2.5rem] w-full mt-2 overflow-hidden shadow-2xl transition-all border border-gray-100 dark:border-white/10">
                <div class="p-8 sm:p-10">
                   <div class="flex justify-between items-start mb-8">
                      <div>
@@ -370,15 +384,35 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
                   </div>
 
                   @if (selectedLoan || selectedChit) {
-                     <div class="w-full h-[220px] sm:h-[260px] mb-8 p-4 rounded-[2rem] border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800 shadow-sm relative overflow-hidden">
-                        <div class="absolute top-4 right-4 z-10">
-                           <select [(ngModel)]="selectedYearStatement" (ngModelChange)="onStatementYearChange($event)"
-                                   class="px-3 py-1 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur border border-gray-200 dark:border-gray-700 rounded-xl text-[10px] font-bold text-gray-700 dark:text-gray-300 outline-none focus:ring-1 focus:ring-purple-500 transition-colors cursor-pointer appearance-none pr-8">
-                              <option *ngFor="let y of availableYears" [ngValue]="y">{{y}}</option>
-                           </select>
+                     <div class="w-full h-[220px] sm:h-[260px] mb-8 p-4 rounded-[2rem] border border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-[#0f172a] shadow-sm relative overflow-hidden">
+                        <div class="absolute top-4 right-4 z-20 flex items-center gap-2">
+                           <div class="flex items-center bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur rounded-xl border border-gray-200 dark:border-gray-700 p-1 shadow-sm">
+                              <button (click)="panChart(100)" class="p-1.5 hover:bg-white dark:hover:bg-gray-800 rounded-lg text-gray-500 hover:text-purple-600 transition-all" title="Move Left">
+                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                              </button>
+                              <button (click)="zoomChart(1.1)" class="p-1.5 hover:bg-white dark:hover:bg-gray-800 rounded-lg text-gray-500 hover:text-purple-600 transition-all" title="Zoom In">
+                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
+                              </button>
+                              <button (click)="resetChartZoom()" class="p-1.5 hover:bg-white dark:hover:bg-gray-800 rounded-lg text-gray-500 hover:text-purple-600 transition-all" title="Reset Zoom">
+                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                              </button>
+                              <button (click)="zoomChart(0.9)" class="p-1.5 hover:bg-white dark:hover:bg-gray-800 rounded-lg text-gray-500 hover:text-purple-600 transition-all" title="Zoom Out">
+                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" /></svg>
+                              </button>
+                              <button (click)="panChart(-100)" class="p-1.5 hover:bg-white dark:hover:bg-gray-800 rounded-lg text-gray-500 hover:text-purple-600 transition-all" title="Move Right">
+                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                              </button>
+                           </div>
+                           <div class="relative">
+                              <select [(ngModel)]="selectedYearStatement" (ngModelChange)="onStatementYearChange($event)"
+                                      class="pl-3 pr-8 py-1.5 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur border border-gray-200 dark:border-gray-700 rounded-xl text-[10px] font-black text-gray-700 dark:text-gray-300 outline-none focus:ring-1 focus:ring-purple-500 transition-colors cursor-pointer appearance-none">
+                                 <option *ngFor="let y of availableYears" [ngValue]="y">{{y}}</option>
+                              </select>
+                              <svg class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" /></svg>
+                           </div>
                         </div>
-                        <div class="w-full h-full pt-6">
-                           <canvas baseChart [data]="chartData" [options]="chartOptions" [type]="chartType"></canvas>
+                        <div class="w-full h-full pt-8">
+                           <canvas #baseChartRef="base-chart" baseChart [data]="chartData" [options]="chartOptions" [type]="chartType"></canvas>
                         </div>
                      </div>
                   }
@@ -421,7 +455,7 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
                       </div>
                   }
 
-                  <div class="max-h-[50vh] overflow-y-auto pr-3 space-y-0 custom-scrollbar mt-2">
+                  <div class="pr-3 space-y-0 custom-scrollbar mt-2">
                      @if (selectedChit) {
                         @let chitTrans = sortLatest(selectedChit.customer.payments);
                         @for (payment of chitTrans; track payment.id; let i = $index) {
@@ -430,7 +464,7 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
                               <div class="stepper-dot w-8 h-8 rounded-full flex items-center justify-center text-white bg-purple-600 shadow-lg shadow-purple-500/30 z-10 transition-transform group-hover:scale-110">
                                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
                               </div>
-                              <div class="p-4 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-md hover:border-purple-200 flex justify-between items-center">
+                              <div class="p-4 bg-white dark:bg-[#0f172a] rounded-3xl border border-gray-100 dark:border-purple-500/30 shadow-sm transition-all hover:shadow-md hover:border-purple-200 flex justify-between items-center">
                                  <div>
                                     <p class="font-bold text-gray-900 dark:text-white">{{ payment.date | date:'longDate' }}</p>
                                     <p class="text-[10px] text-purple-500 font-black uppercase tracking-widest mt-1">REF: {{ payment.id?.slice(-8) || 'N/A' }}</p>
@@ -451,8 +485,8 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
                                    [class]="item.type === 'interest' ? 'bg-indigo-600 shadow-indigo-500/30' : 'bg-green-600 shadow-green-500/30'">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
                               </div>
-                              <div class="p-4 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all flex justify-between items-center"
-                                   [class]="item.type === 'interest' ? 'hover:border-indigo-200 hover:shadow-md' : 'hover:border-green-200 hover:shadow-md'">
+                              <div class="p-4 bg-white dark:bg-[#0f172a] rounded-3xl border border-gray-100 dark:border-white/10 shadow-sm transition-all flex justify-between items-center"
+                                   [class]="item.type === 'interest' ? 'hover:border-indigo-200 hover:shadow-md dark:border-indigo-500/30' : 'hover:border-green-200 hover:shadow-md dark:border-green-500/30'">
                                 <div>
                                    <p class="font-bold text-gray-900 dark:text-white leading-tight">{{ item.date | date:'longDate' }}</p>
                                    <p class="text-[9px] font-black uppercase tracking-widest mt-1" [class]="item.type === 'interest' ? 'text-indigo-500' : 'text-green-500'">
@@ -472,6 +506,7 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
                   </div>
                </div>
              </div>
+           </div>
            </div>
         }
       </main>
@@ -742,8 +777,8 @@ export class CustomerDashboardComponent implements OnInit {
     let chitPending = this.customerChitties.reduce((sum, item) => sum + this.getChitPending(item.scheme, item.customer), 0);
     let loanPending = this.activeLoans.reduce((sum, loan) => sum + this.getBalance(loan) + this.getPendingInterest(loan), 0);
     let rentPending = this.tenantHouses.reduce((sum, house) => {
-       const latestBill = house.bills?.length ? house.bills[house.bills.length - 1] : null;
-       return sum + (latestBill ? latestBill.total : 0);
+      const latestBill = house.bills?.length ? house.bills[house.bills.length - 1] : null;
+      return sum + (latestBill ? latestBill.total : 0);
     }, 0);
     return chitPending + loanPending + rentPending;
   }
@@ -911,30 +946,87 @@ export class CustomerDashboardComponent implements OnInit {
     if (this.selectedLoan) this.generateLoanChart(this.selectedLoan, year);
   }
 
-  public chartOptions: ChartConfiguration['options'] = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      x: { grid: { display: false }, ticks: { font: { size: 9, weight: 'bold' } }, stacked: true },
-      y: {
-        beginAtZero: true,
-        stacked: true,
-        grid: { color: 'rgba(0,0,0,0.05)' },
-        ticks: { font: { size: 9 }, callback: (val) => '₹' + Number(val).toLocaleString() }
-      }
-    },
-    plugins: {
-      legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10, weight: 'bold' } } },
-      tooltip: {
-        backgroundColor: '#1f2937', titleFont: { size: 12, weight: 'bold' },
-        bodyFont: { size: 13, weight: 'bold' }, padding: 12, cornerRadius: 8,
-        callbacks: { label: (ctx) => ` ₹${(ctx.parsed.y || 0).toLocaleString()}` }
-      }
+  @ViewChild('baseChartRef') chart?: BaseChartDirective;
+
+  resetChartZoom() {
+    if (this.chart && this.chart.chart) {
+      (this.chart.chart as any).resetZoom();
     }
-  };
-  public chartType: ChartType = 'bar';
-  public chartData: ChartData<'bar'> = { labels: [], datasets: [] };
-  public overallChartData: ChartData<'bar'> = { labels: [], datasets: [] };
+  }
+
+  zoomChart(amount: number) {
+    if (this.chart && this.chart.chart) {
+      (this.chart.chart as any).zoom(amount);
+    }
+  }
+
+  panChart(amount: number) {
+    if (this.chart && this.chart.chart) {
+      (this.chart.chart as any).pan({ x: amount });
+    }
+  }
+
+  getChartOptions(): ChartConfiguration['options'] {
+    const isDark = document.documentElement.classList.contains('dark');
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+    const textColor = isDark ? '#94a3b8' : '#64748b';
+
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: textColor, font: { size: 9, weight: 'bold' } },
+          stacked: true
+        },
+        y: {
+          beginAtZero: true,
+          stacked: true,
+          grid: { color: gridColor },
+          ticks: { color: textColor, font: { size: 9 }, callback: (val) => '₹' + Number(val).toLocaleString() }
+        }
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: { color: textColor, boxWidth: 12, font: { size: 10, weight: 'bold' } }
+        },
+        tooltip: {
+          backgroundColor: isDark ? '#0f172a' : '#1f2937',
+          titleFont: { size: 12, weight: 'bold' },
+          bodyFont: { size: 13, weight: 'bold' },
+          padding: 12,
+          cornerRadius: 8,
+          callbacks: { label: (ctx) => ` ₹${(ctx.parsed.y || 0).toLocaleString()}` }
+        },
+        zoom: {
+          pan: {
+            enabled: true,
+            mode: 'x',
+            threshold: 10
+          },
+          zoom: {
+            wheel: { enabled: true },
+            pinch: { enabled: true },
+            mode: 'x',
+            drag: {
+              enabled: true,
+              backgroundColor: 'rgba(124, 58, 237, 0.1)',
+              borderColor: 'rgba(124, 58, 237, 0.4)',
+              borderWidth: 1
+            }
+          }
+        }
+      }
+    };
+  }
+
+  public chartOptions: ChartConfiguration['options'] = this.getChartOptions();
+  public chartType: ChartType = 'line';
+  public chartData: ChartData<'line'> = { labels: [], datasets: [] };
+  public overallChartData: ChartData<'line'> = { labels: [], datasets: [] };
 
   generateOverallChart(year: number = this.selectedYearOverall) {
     this.selectedYearOverall = year;
@@ -964,9 +1056,9 @@ export class CustomerDashboardComponent implements OnInit {
     this.overallChartData = {
       labels,
       datasets: [
-        { data: chittiData, label: 'Chitti Installments', backgroundColor: '#a855f7', borderRadius: 4 },
-        { data: loanPrincipalData, label: 'Loan Principal', backgroundColor: '#22c55e', borderRadius: 4 },
-        { data: loanInterestData, label: 'Loan Interest', backgroundColor: '#6366f1', borderRadius: 4 }
+        { data: chittiData, label: 'Chitti Installments', borderColor: '#a855f7', backgroundColor: 'rgba(168,85,247,0.1)', fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#a855f7' },
+        { data: loanPrincipalData, label: 'Loan Principal', borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#22c55e' },
+        { data: loanInterestData, label: 'Loan Interest', borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#6366f1' }
       ]
     };
   }
@@ -984,7 +1076,7 @@ export class CustomerDashboardComponent implements OnInit {
     this.chartData = {
       labels,
       datasets: [
-        { data: paymentData, label: 'Installments Paid', backgroundColor: '#a855f7', borderRadius: 4 }
+        { data: paymentData, label: 'Installments Paid', borderColor: '#a855f7', backgroundColor: 'rgba(168,85,247,0.1)', fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#a855f7' }
       ]
     };
   }
@@ -1007,8 +1099,8 @@ export class CustomerDashboardComponent implements OnInit {
     this.chartData = {
       labels,
       datasets: [
-        { data: principalData, label: 'Principal Paid', backgroundColor: '#22c55e', borderRadius: 4 },
-        { data: interestData, label: 'Interest Paid', backgroundColor: '#6366f1', borderRadius: 4 }
+        { data: principalData, label: 'Principal Paid', borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#22c55e' },
+        { data: interestData, label: 'Interest Paid', borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#6366f1' }
       ]
     };
   }
@@ -1042,6 +1134,10 @@ export class CustomerDashboardComponent implements OnInit {
   toggleTheme() {
     this.isDarkMode = !this.isDarkMode;
     document.documentElement.classList.toggle('dark');
+    this.chartOptions = this.getChartOptions();
+    if (this.chart) {
+      this.chart.update();
+    }
   }
 
   async toggleBiometric(event: any) {

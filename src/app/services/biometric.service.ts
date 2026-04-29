@@ -50,6 +50,23 @@ export class BiometricService {
     localStorage.setItem('biometric_prompted', val ? 'true' : 'false');
   }
 
+  async verifyIdentity(): Promise<boolean> {
+    if (!Capacitor.isNativePlatform()) return false;
+    try {
+      await NativeBiometric.verifyIdentity({
+        reason: 'Authenticate to enable biometric login for your FinServe account',
+        title: 'Biometric Verification',
+        subtitle: 'Identification required',
+        description: 'Please scan your fingerprint or Face ID to continue',
+        negativeButtonText: 'Cancel'
+      });
+      return true;
+    } catch (error) {
+      console.error('Identity verification failed:', error);
+      return false;
+    }
+  }
+
   async saveCredentials(username: string, password: string) {
     if (!Capacitor.isNativePlatform()) return;
     
