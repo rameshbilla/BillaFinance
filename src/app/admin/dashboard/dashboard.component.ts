@@ -801,10 +801,12 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                           <p class="text-sm font-black text-indigo-600">₹{{ (loan.amount * loan.interestRate / 100) | number:'1.0-0' }}</p>
                         </div>
                       </div>
-                      <div class="mb-4 bg-indigo-50/30 dark:bg-indigo-900/10 p-3 rounded-2xl flex justify-between items-center border border-indigo-100/30 dark:border-indigo-900/20">
-                         <p class="text-[9px] font-black text-indigo-500 uppercase tracking-widest italic opacity-70">Overall Interest</p>
-                         <p class="text-sm font-black text-indigo-600 dark:text-indigo-400">₹{{ getTotalLoanInterest(loan) | number:'1.0-0' }}</p>
-                      </div>
+                      @if (loan.status !== 'Inactive' && getPendingInterestForLoan(loan) > 0) {
+                        <div class="mb-4 bg-indigo-50/30 dark:bg-indigo-900/10 p-3 rounded-2xl flex justify-between items-center border border-indigo-100/30 dark:border-indigo-900/20">
+                           <p class="text-[9px] font-black text-indigo-500 uppercase tracking-widest italic opacity-70">Overall Interest Due</p>
+                           <p class="text-sm font-black text-indigo-600 dark:text-indigo-400">₹{{ getPendingInterestForLoan(loan) | number:'1.0-0' }}</p>
+                        </div>
+                      }
                       <div class="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-gray-700/50">
                          <button (click)="$event.stopPropagation(); viewInterestDetails(loan.id!)" class="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">Loan Statement</button>
                          <div class="flex space-x-1">

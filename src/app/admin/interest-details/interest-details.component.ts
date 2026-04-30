@@ -126,16 +126,18 @@ import { ToastService } from '../../shared/toast.service';
                   </div>
                 </div>
 
-                <div class="col-span-2 bg-gradient-to-br from-orange-500 to-pink-600 p-6 sm:p-8 rounded-[2.5rem] shadow-xl shadow-orange-500/20 text-white relative overflow-hidden group">
-                  <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700"></div>
-                  <div class="relative z-10 flex items-end justify-between gap-4">
-                    <div class="min-w-0">
-                      <p class="text-[9px] sm:text-[10px] font-black text-orange-100 uppercase tracking-widest mb-2 opacity-80">Overall Interest Due</p>
-                      <p class="text-3xl sm:text-5xl font-black leading-none tracking-tighter">&#8377;{{ totalPendingInterest | number:'1.0-0' }}</p>
+                @if (scheme.status !== 'Inactive' && totalPendingInterest > 0) {
+                  <div class="col-span-2 bg-gradient-to-br from-orange-500 to-pink-600 p-6 sm:p-8 rounded-[2.5rem] shadow-xl shadow-orange-500/20 text-white relative overflow-hidden group">
+                    <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700"></div>
+                    <div class="relative z-10 flex items-end justify-between gap-4">
+                      <div class="min-w-0">
+                        <p class="text-[9px] sm:text-[10px] font-black text-orange-100 uppercase tracking-widest mb-2 opacity-80">Overall Interest Due</p>
+                        <p class="text-3xl sm:text-5xl font-black leading-none tracking-tighter">&#8377;{{ totalPendingInterest | number:'1.0-0' }}</p>
+                      </div>
+                      <p class="text-[10px] font-bold text-orange-100/80 text-right uppercase tracking-widest leading-relaxed">Calculated<br>till today</p>
                     </div>
-                    <p class="text-[10px] font-bold text-orange-100/80 text-right uppercase tracking-widest leading-relaxed">Calculated<br>till today</p>
                   </div>
-                </div>
+                }
               </div>
             }
 
