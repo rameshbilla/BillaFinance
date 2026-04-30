@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ViewChild } from '@angular/core';
+﻿import { Component, inject, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -37,28 +37,11 @@ Chart.register(zoomPlugin);
       .stepper-dot { position: absolute; left: 1rem; top: 0.25rem; transform: translateX(-50%); }
       
       .bottom-nav-pill {
-        position: fixed;
-        bottom: 32px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(20px);
-        height: 68px;
-        width: auto;
-        min-width: min(320px, 95vw);
-        max-width: 95vw;
-        padding: 4px 12px;
-        border-radius: 34px;
         display: flex;
-        padding: 4px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+        width: 100%;
+        height: 64px;
+        padding-bottom: env(safe-area-inset-bottom, 0);
         z-index: 100;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-      }
-      .dark .bottom-nav-pill {
-        border: 1px solid rgba(255,255,255,0.1);
-        background: rgba(15, 23, 42, 0.85);
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
       }
       .nav-item-box {
         flex: 1 1 0%;
@@ -87,9 +70,14 @@ Chart.register(zoomPlugin);
       .nav-item-box:active .nav-icon {
         transform: scale(0.9);
       }
+
+      /* Mobile chart scroll lock */
+      @media (max-width: 639px) {
+        .chart-touch-wrapper { touch-action: none; }
+      }
     </style>
 
-    <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-950 transition-colors duration-500 pb-32 sm:pb-0 relative">
+    <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-950 transition-colors duration-500 pb-32 sm:pb-0 relative overflow-x-hidden w-full">
       <!-- Decorative Background Glows (Match Login Screen) -->
       <div class="absolute top-0 left-0 w-96 h-96 bg-purple-600/20 dark:bg-purple-600/10 rounded-full mix-blend-screen filter blur-[128px] pointer-events-none"></div>
       <div class="absolute bottom-0 right-0 w-96 h-96 bg-pink-600/20 dark:bg-pink-600/10 rounded-full mix-blend-screen filter blur-[128px] pointer-events-none"></div>
@@ -157,7 +145,8 @@ Chart.register(zoomPlugin);
                   <option *ngFor="let y of availableYears" [ngValue]="y">{{y}}</option>
                </select>
              </div>
-             <div class="w-full h-[200px] sm:h-[250px]">
+             <div class="w-full h-[200px] sm:h-[250px] chart-touch-wrapper"
+                  (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
                 <canvas baseChart [data]="overallChartData" [options]="chartOptions" [type]="chartType"></canvas>
              </div>
           </div>
@@ -348,8 +337,8 @@ Chart.register(zoomPlugin);
                   Close Statement
                </button>
                
-               <div class="bg-white/90 dark:bg-[#0f172a] rounded-[2.5rem] w-full mt-2 overflow-hidden shadow-2xl transition-all border border-gray-100 dark:border-white/10">
-               <div class="p-8 sm:p-10">
+               <div class="w-full mt-2 overflow-hidden transition-all">
+               <div class="sm:p-10">
                   <div class="flex justify-between items-start mb-8">
                      <div>
                         <div class="flex items-center gap-2 mb-1">
@@ -413,9 +402,10 @@ Chart.register(zoomPlugin);
                               <svg class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" /></svg>
                            </div>
                         </div>
-                        <div class="w-full h-full pt-8">
-                           <canvas #baseChartRef="base-chart" baseChart [data]="chartData" [options]="chartOptions" [type]="chartType"></canvas>
-                        </div>
+                         <div class="w-full h-full pt-8 chart-touch-wrapper"
+                              (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
+                            <canvas #baseChartRef="base-chart" baseChart [data]="chartData" [options]="chartOptions" [type]="chartType"></canvas>
+                         </div>
                      </div>
                   }
 
@@ -514,8 +504,8 @@ Chart.register(zoomPlugin);
       </main>
 
       <!-- Bottom Mobile Nav -->
-      <div class="fixed bottom-6 left-0 right-0 z-[100] sm:hidden flex justify-center pointer-events-none">
-         <div class="bottom-nav-pill pointer-events-auto relative">
+      <div class="fixed bottom-0 left-0 right-0 z-[100] sm:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-colors duration-500">
+         <div class="bottom-nav-pill pointer-events-auto relative flex items-center px-4">
             
             <div class="absolute inset-1 flex pointer-events-none z-0">
                <div [style.flex-grow]="activeMobileMenu === 'home' ? 0 : 1" class="transition-all duration-500 ease-in-out"></div>
@@ -993,7 +983,12 @@ export class CustomerDashboardComponent implements OnInit {
         legend: {
           display: true,
           position: 'bottom',
-          labels: { color: textColor, boxWidth: 12, font: { size: 10, weight: 'bold' } }
+          labels: { 
+            color: textColor, 
+            usePointStyle: true,
+            padding: 10,
+            font: { size: 9, weight: 'bold' } 
+          }
         },
         tooltip: {
           backgroundColor: isDark ? '#0f172a' : '#1f2937',
@@ -1034,8 +1029,6 @@ export class CustomerDashboardComponent implements OnInit {
     this.selectedYearOverall = year;
     const labels: string[] = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const chittiData: number[] = new Array(12).fill(0);
-    const loanPrincipalData: number[] = new Array(12).fill(0);
-    const loanInterestData: number[] = new Array(12).fill(0);
 
     this.customerChitties.forEach(item => {
       (item.customer.payments || []).forEach(p => {
@@ -1044,7 +1037,24 @@ export class CustomerDashboardComponent implements OnInit {
       });
     });
 
-    this.activeLoans.forEach(loan => {
+    const datasets: any[] = [];
+    if (this.customerChitties.length > 0) {
+       datasets.push({ data: chittiData, label: 'Chitti Installments', borderColor: '#a855f7', backgroundColor: 'rgba(168,85,247,0.1)', fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#a855f7' });
+    }
+
+    const loanColors = [
+      { border: '#22c55e', bg: 'rgba(34,197,94,0.1)' }, // Green
+      { border: '#6366f1', bg: 'rgba(99,102,241,0.1)' }, // Indigo
+      { border: '#f59e0b', bg: 'rgba(245,158,11,0.1)' }, // Amber
+      { border: '#06b6d4', bg: 'rgba(6,182,212,0.1)' }, // Cyan
+      { border: '#ec4899', bg: 'rgba(236,72,153,0.1)' }, // Pink
+      { border: '#ef4444', bg: 'rgba(239,68,68,0.1)' }  // Red
+    ];
+
+    this.activeLoans.forEach((loan, index) => {
+      const loanPrincipalData: number[] = new Array(12).fill(0);
+      const loanInterestData: number[] = new Array(12).fill(0);
+
       (loan.settlements || []).forEach(s => {
         const sd = new Date(s.date);
         if (sd.getFullYear() === year) loanPrincipalData[sd.getMonth()] += s.amount;
@@ -1053,15 +1063,19 @@ export class CustomerDashboardComponent implements OnInit {
         const cd = new Date(c.date);
         if (cd.getFullYear() === year) loanInterestData[cd.getMonth()] += c.amount;
       });
+
+      const pColor = loanColors[(index * 2) % loanColors.length];
+      const iColor = loanColors[(index * 2 + 1) % loanColors.length];
+      const labelPrin = this.activeLoans.length > 1 ? `${loan.name} Prin.` : 'Loan Principal';
+      const labelInt = this.activeLoans.length > 1 ? `${loan.name} Int.` : 'Loan Interest';
+
+      datasets.push({ data: loanPrincipalData, label: labelPrin, borderColor: pColor.border, backgroundColor: pColor.bg, fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: pColor.border });
+      datasets.push({ data: loanInterestData, label: labelInt, borderColor: iColor.border, backgroundColor: iColor.bg, fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: iColor.border });
     });
 
     this.overallChartData = {
       labels,
-      datasets: [
-        { data: chittiData, label: 'Chitti Installments', borderColor: '#a855f7', backgroundColor: 'rgba(168,85,247,0.1)', fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#a855f7' },
-        { data: loanPrincipalData, label: 'Loan Principal', borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#22c55e' },
-        { data: loanInterestData, label: 'Loan Interest', borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#6366f1' }
-      ]
+      datasets
     };
   }
 
@@ -1164,5 +1178,8 @@ export class CustomerDashboardComponent implements OnInit {
 
   logout() { this.router.navigate(['/login']); }
   scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+  lockScroll() { document.body.style.overflow = 'hidden'; }
+  unlockScroll() { document.body.style.overflow = ''; }
 }
 

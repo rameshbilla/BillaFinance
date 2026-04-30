@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ViewChild } from '@angular/core';
+﻿import { Component, inject, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ChittiService, ChittiScheme } from '../services/chitti.service';
@@ -42,25 +42,17 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
       
       .modal-open { overflow: hidden; }
 
+      /* Mobile chart scroll lock */
+      @media (max-width: 639px) {
+        .chart-touch-wrapper { touch-action: none; }
+      }
+
       .bottom-nav-pill {
-        position: fixed;
-        bottom: 32px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
         display: flex;
-        align-items: center;
-        padding: 2px 0px;
-        border-radius: 9999px;
-        box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.2);
+        width: 100%;
+        height: 64px;
+        padding-bottom: env(safe-area-inset-bottom, 0);
         z-index: 100;
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        width: auto;
-        min-width: min(320px, 95vw);
-        max-width: 95vw;
-        padding: 4px 12px;
       }
       .nav-item-box {
         flex: 1 1 0%;
@@ -97,17 +89,13 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
       }
       .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.5); }
       .dark .glass-card { background: rgba(17, 24, 39, 0.7); border: 1px solid rgba(255,255,255,0.05); }
-      .dark .bottom-nav-pill {
-        background: rgba(15, 23, 42, 0.9);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-      }
+
       .history-step { position: relative; padding-left: 3.5rem; }
       .stepper-line { position: absolute; left: 1rem; top: 2.25rem; bottom: -2rem; width: 2px; transform: translateX(-50%); }
       .stepper-dot { position: absolute; left: 1rem; top: 0.25rem; transform: translateX(-50%); }
     </style>
 
-    <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-950 transition-colors duration-500 pb-32 sm:pb-0 overflow-x-hidden">
+    <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-950 transition-colors duration-500 pb-32 sm:pb-0 overflow-x-hidden w-full relative">
       <!-- Decorative Background Glows (Subtle) -->
       <div class="absolute top-0 left-0 w-96 h-96 bg-purple-500/5 rounded-full filter blur-[100px] pointer-events-none"></div>
       <div class="absolute bottom-0 right-0 w-96 h-96 bg-pink-500/5 rounded-full filter blur-[100px] pointer-events-none"></div>
@@ -201,7 +189,7 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                        <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest pl-2 hidden sm:inline">DATA</span>
                        <label class="relative inline-flex items-center cursor-pointer scale-75 sm:scale-90">
                           <input type="checkbox" [(ngModel)]="showOverviewData" class="sr-only peer">
-                          <div class="w-10 h-5 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+                          <div style="border-radius: 10px;" class="w-10 h-5 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
                        </label>
                     </div>
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-2 shadow-sm border border-gray-100 dark:border-gray-700">
@@ -240,7 +228,8 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                            <p class="text-[10px] font-bold text-indigo-500/60 uppercase tracking-widest italic hidden sm:block">Scroll to Zoom</p>
                         </div>
                      </div>
-                     <div class="w-full h-[300px]">
+                     <div class="w-full h-[300px] chart-touch-wrapper"
+                          (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
                         <canvas #overviewChart="base-chart" baseChart [data]="overviewChartData" [options]="overviewChartOptions" [type]="overviewChartType"></canvas>
                      </div>
                   </div>
@@ -691,7 +680,8 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                       </div>
                    </div>
                 </div>
-                <div class="h-[140px] sm:h-[220px] w-full">
+                <div class="h-[140px] sm:h-[220px] w-full chart-touch-wrapper"
+                     (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
                   <canvas #loanChart="base-chart" baseChart
                     [data]="barChartData"
                     [options]="barChartOptions"
@@ -878,7 +868,8 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                       </div>
                    </div>
                 </div>
-                <div class="h-[140px] sm:h-[220px] w-full">
+                <div class="h-[140px] sm:h-[220px] w-full chart-touch-wrapper"
+                     (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
                   <canvas #chittiChart="base-chart" baseChart
                     [data]="chittiBarChartData"
                     [options]="barChartOptions"
@@ -1094,7 +1085,8 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                     </div>
                 </div>
 
-                <div class="h-[200px] sm:h-[250px] relative">
+                <div class="h-[200px] sm:h-[250px] relative chart-touch-wrapper"
+                     (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
                     <canvas baseChart #rentalChart="base-chart"
                       [data]="rentalBarChartData"
                       [options]="barChartOptions"
@@ -1543,8 +1535,8 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
       </main>
 
       <!-- Mobile Bottom Navigation -->
-      <div class="fixed bottom-6 left-0 right-0 z-[100] sm:hidden flex justify-center pointer-events-none">
-         <div class="bottom-nav-pill pointer-events-auto relative">
+      <div class="fixed bottom-0 left-0 right-0 z-[100] sm:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-colors duration-500">
+         <div class="bottom-nav-pill pointer-events-auto relative flex items-center px-2">
             
             <div class="absolute inset-1 flex pointer-events-none z-0">
                <div [style.flex-grow]="visibleMobileTabs.indexOf(activeMobileMenu)" class="transition-all duration-500 ease-in-out"></div>
@@ -1848,7 +1840,7 @@ export class AdminDashboardComponent implements OnInit {
   loanStatusFilter: 'Active' | 'Inactive' | 'All' = 'Active';
   isBiometricEnabled = false;
   expandedLoans: { [id: string]: boolean } = {};
-  
+
   // Rentals State
   houses: RentalHouse[] = [];
   showRentalHouseForm = false;
@@ -1866,7 +1858,7 @@ export class AdminDashboardComponent implements OnInit {
   get overviewTransactions() {
     const year = this.selectedOverviewYear;
     const txs: any[] = [];
-    
+
     this.interests.forEach(loan => {
       // Loan Issuance
       if (loan.startDate && (this.overviewFilter === 'All' || this.overviewFilter === 'Loan Issue')) {
@@ -1883,7 +1875,7 @@ export class AdminDashboardComponent implements OnInit {
           });
         }
       }
-      
+
       // Settlements
       if (this.overviewFilter === 'All' || this.overviewFilter === 'Settlement') {
         (loan.settlements || []).forEach(s => {
@@ -1901,7 +1893,7 @@ export class AdminDashboardComponent implements OnInit {
           }
         });
       }
-      
+
       // Interest Collections
       if (this.overviewFilter === 'All' || this.overviewFilter === 'Interest') {
         (loan.interestCollections || []).forEach(c => {
@@ -1920,7 +1912,7 @@ export class AdminDashboardComponent implements OnInit {
         });
       }
     });
-    
+
     return txs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
 
@@ -1942,20 +1934,20 @@ export class AdminDashboardComponent implements OnInit {
 
   isRentIncreaseDue(house: RentalHouse): boolean {
     if (!house.arrivedDate || house.status !== 'Occupied') return false;
-    
+
     // Check if 1 year has passed since arrivedDate OR lastRentIncreaseDate
     const referenceDateStr = house.lastRentIncreaseDate || house.arrivedDate;
     const refDate = new Date(referenceDateStr);
     const today = new Date();
-    
+
     // Simple year check
     let yearsPassed = today.getFullYear() - refDate.getFullYear();
     const monthDiff = today.getMonth() - refDate.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < refDate.getDate())) {
       yearsPassed--;
     }
-    
+
     return yearsPassed >= 1;
   }
 
@@ -2446,7 +2438,7 @@ export class AdminDashboardComponent implements OnInit {
       // Aggregate by Year
       const yearMap: { [y: number]: { given: number, settled: number, interest: number } } = {};
       const yearsSet = new Set<number>();
-      
+
       this.interests.forEach(loan => {
         if (loan.startDate) {
           const y = new Date(loan.startDate).getFullYear();
@@ -2470,7 +2462,7 @@ export class AdminDashboardComponent implements OnInit {
 
       labels = Array.from(yearsSet).sort((a, b) => a - b).map(y => y.toString());
       if (labels.length === 0) labels = [new Date().getFullYear().toString()];
-      
+
       givenLoans = labels.map(y => yearMap[Number(y)]?.given || 0);
       settlements = labels.map(y => yearMap[Number(y)]?.settled || 0);
       interestCollected = labels.map(y => yearMap[Number(y)]?.interest || 0);
@@ -2915,7 +2907,7 @@ export class AdminDashboardComponent implements OnInit {
     this.houses.forEach(house => {
       (house.bills || []).forEach(bill => {
         if (bill.status !== 'Paid') return;
-        
+
         const bDate = new Date(bill.billDate);
         if (isNaN(bDate.getTime())) return;
 
@@ -3413,7 +3405,7 @@ export class AdminDashboardComponent implements OnInit {
       try {
         const profile = await new Promise<any>(res => this.authService.userProfile$.subscribe(res));
         const houseData = { ...this.rentalHouseForm.getRawValue(), createdBy: profile?.uid };
-        
+
         if (this.isRentalEditMode && this.editingRentalId) {
           await this.rentalService.updateHouse(this.editingRentalId, houseData);
           this.toast.success('House updated successfully!');
@@ -3487,7 +3479,7 @@ export class AdminDashboardComponent implements OnInit {
 
         const billRaw = this.monthlyBillForm.getRawValue();
         const date = new Date(billRaw.billDate);
-        
+
         const billData: RentalBill = {
           ...billRaw,
           month: date.toLocaleString('default', { month: 'short' }),
@@ -3534,6 +3526,9 @@ export class AdminDashboardComponent implements OnInit {
       }
     }
   }
+
+  lockScroll() { document.body.style.overflow = 'hidden'; }
+  unlockScroll() { document.body.style.overflow = ''; }
 }
 
 
