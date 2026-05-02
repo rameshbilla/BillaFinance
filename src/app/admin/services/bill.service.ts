@@ -1,28 +1,38 @@
 import { Injectable, inject } from '@angular/core';
-import { 
-  Firestore, 
-  collection, 
-  collectionData, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
-  query, 
-  where, 
-  orderBy, 
+import {
+  Firestore,
+  collection,
+  collectionData,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  query,
+  where,
+  orderBy,
   Timestamp,
-  serverTimestamp 
+  serverTimestamp,
+  arrayUnion,
+  getDoc
 } from '@angular/fire/firestore';
 import { Observable, from, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
+
+export interface BillPaymentRecord {
+  date: string;        // ISO date string
+  amount: number;      // Amount paid in this installment
+  reference?: string;  // UPI / receipt / transaction ref
+  notes?: string;      // Optional notes
+  addedAt?: string;    // Timestamp when entry was created
+}
 
 export interface Bill {
   id?: string;
   serviceType: 'electricity' | 'mobile' | 'water' | 'internet' | 'rent' | 'other';
   provider?: string;
-  serviceNumber: string; // Unique Service Number (e.g. USCNO, Consumer ID)
+  serviceNumber: string;
   amount: number;
-  dueDate: string; // ISO format
+  dueDate: string;
   status: 'pending' | 'completed' | 'overdue';
   year: number;
   month: string;
@@ -31,6 +41,13 @@ export interface Bill {
   createdAt: any;
   updatedAt: any;
   adminUid: string;
+  // Multi-payment tracking
+  payments?: BillPaymentRecord[];
+  totalPaid?: number;       // Sum of all payment amounts
+  paidDate?: string;        // Date of last/full payment (for backward compat)
+  paidAmount?: number;      // Legacy single-payment field
+  paidReference?: string;   // Legacy
+  gmailSnippet?: string;
 }
 
 export interface TrackedService {
@@ -67,7 +84,7 @@ export class BillService {
   // --- Bill Operations ---
   getBills(adminUid: string): Observable<Bill[]> {
     const q = query(
-      this.billsCollection, 
+      this.billsCollection,
       where('adminUid', '==', adminUid),
       where('isDeleted', '!=', true),
       orderBy('isDeleted'),
@@ -77,9 +94,9 @@ export class BillService {
   }
 
   getBillsByFilters(adminUid: string, filters: {
-    status?: string, 
-    serviceType?: string, 
-    year?: number, 
+    status?: string,
+    serviceType?: string,
+    year?: number,
     month?: string
   }): Observable<Bill[]> {
     let constraints: any[] = [
@@ -99,10 +116,24 @@ export class BillService {
     return collectionData(q, { idField: 'id' }) as Observable<Bill[]>;
   }
 
+  getPaidBills(adminUid: string, year?: number, month?: string): Observable<Bill[]> {
+    let constraints: any[] = [
+      where('adminUid', '==', adminUid),
+      where('status', '==', 'completed'),
+      where('isDeleted', '!=', true)
+    ];
+    if (year) constraints.push(where('year', '==', year));
+    if (month) constraints.push(where('month', '==', month));
+    constraints.push(orderBy('isDeleted'));
+    constraints.push(orderBy('paidDate', 'desc'));
+    const q = query(this.billsCollection, ...constraints);
+    return collectionData(q, { idField: 'id' }) as Observable<Bill[]>;
+  }
+
   addBill(bill: Partial<Bill>): Promise<any> {
     const date = new Date(bill.dueDate!);
-    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    
+    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
     const newBill = {
       ...bill,
       status: bill.status || 'pending',
@@ -123,12 +154,50 @@ export class BillService {
     });
   }
 
+  async addPaymentRecord(id: string, payment: BillPaymentRecord): Promise<void> {
+    const billDoc = doc(this.firestore, `bills/${id}`);
+    const docSnap = await getDoc(billDoc);
+    if (!docSnap.exists()) return;
+
+    const currentBill = docSnap.data() as Bill;
+    const currentTotalPaid = currentBill.totalPaid || currentBill.paidAmount || 0;
+    const newTotalPaid = currentTotalPaid + payment.amount;
+    
+    // Auto complete if fully paid
+    const isFullyPaid = newTotalPaid >= currentBill.amount;
+
+    return updateDoc(billDoc, {
+      payments: arrayUnion({
+        ...payment,
+        addedAt: new Date().toISOString()
+      }),
+      totalPaid: newTotalPaid,
+      // Keep backward compatibility fields
+      paidDate: isFullyPaid ? payment.date : currentBill.paidDate || payment.date,
+      paidAmount: newTotalPaid,
+      status: isFullyPaid ? 'completed' : currentBill.status,
+      updatedAt: serverTimestamp()
+    });
+  }
+
+  markBillAsPaid(id: string, paidDate: string, paidAmount: number, reference?: string, gmailSnippet?: string): Promise<void> {
+    const billDoc = doc(this.firestore, `bills/${id}`);
+    return updateDoc(billDoc, {
+      status: 'completed',
+      paidDate,
+      paidAmount,
+      paidReference: reference || '',
+      gmailSnippet: gmailSnippet || '',
+      updatedAt: serverTimestamp()
+    });
+  }
+
   deleteBill(id: string, hardDelete: boolean = false): Promise<void> {
     const billDoc = doc(this.firestore, `bills/${id}`);
     if (hardDelete) {
       return deleteDoc(billDoc);
     } else {
-      return updateDoc(billDoc, { 
+      return updateDoc(billDoc, {
         isDeleted: true,
         updatedAt: serverTimestamp()
       });
@@ -137,19 +206,12 @@ export class BillService {
 
   // Mock Sync from Servers based on Service Numbers
   syncBillsFromServers(adminUid: string): Observable<any> {
-    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const now = new Date();
-    const currentMonth = months[now.getMonth()];
-    const currentYear = now.getFullYear();
-
     const q = query(this.trackedServicesCollection, where('adminUid', '==', adminUid));
-    
     return collectionData(q) as Observable<TrackedService[]>;
   }
 
-  // Helper for sync since mapping promises in observables is messy
   async processSync(adminUid: string, services: TrackedService[]): Promise<any> {
-    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     const now = new Date();
     const currentMonth = months[now.getMonth()];
     const currentYear = now.getFullYear();
@@ -157,13 +219,13 @@ export class BillService {
 
     for (const service of services) {
       const existingQ = query(
-        this.billsCollection, 
+        this.billsCollection,
         where('serviceNumber', '==', service.serviceNumber),
         where('month', '==', currentMonth),
         where('year', '==', currentYear),
         where('isDeleted', '!=', true)
       );
-      
+
       const existingData = await new Promise<any[]>(res => {
          const sub = collectionData(existingQ).subscribe(data => {
            res(data);
@@ -176,10 +238,9 @@ export class BillService {
         let mockDueDate = "";
         let mockNotes = `Auto-generated for Service No: ${service.serviceNumber}`;
 
-        // Special case for User's Example USCNO: 101046746
         if (service.serviceNumber === '101046746') {
           mockAmount = 504.00;
-          mockDueDate = "2026-04-18"; // From image
+          mockDueDate = "2026-04-18";
           mockNotes = "Fetched from BillDesk (Sri Narahari)";
         } else {
           mockAmount = Math.floor(Math.random() * (2500 - 500 + 1)) + 500;
@@ -200,5 +261,14 @@ export class BillService {
       }
     }
     return { success: true, count: addedCount };
+  }
+
+  buildGmailSearchUrl(serviceNumber: string, provider?: string): string {
+    const query = [
+      provider ? `"${provider}"` : '',
+      `"${serviceNumber}"`,
+      'subject:(payment OR paid OR receipt OR confirmation OR bill)'
+    ].filter(Boolean).join(' ');
+    return `https://mail.google.com/mail/#search/${encodeURIComponent(query)}`;
   }
 }

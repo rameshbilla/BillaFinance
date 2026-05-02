@@ -6,7 +6,7 @@ import { InterestService, InterestScheme } from '../services/interest.service';
 import { CustomerService, Customer } from '../services/customer.service';
 import { ToastService } from '../../shared/toast.service';
 import { AuthService } from '../../services/auth.service';
-import { Storage, ref, uploadBytesResumable, getDownloadURL } from '@angular/fire/storage';
+import { Storage, ref, uploadBytes, getDownloadURL, deleteObject } from '@angular/fire/storage';
 import { numberToWords } from '../../shared/utils/number-to-words.util';
 
 @Component({
@@ -14,7 +14,10 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-900 transition-colors duration-300 relative overflow-hidden">
+      <!-- Background decorative glows -->
+      <div class="absolute top-0 right-0 w-80 h-80 bg-blue-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+      <div class="absolute bottom-0 left-0 w-60 h-60 bg-indigo-500/5 rounded-full blur-[80px] pointer-events-none"></div>
       <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700 shadow-sm px-4 sm:px-6 lg:px-8 py-4 animate-fade-down">
         <div class="flex items-center space-x-4">
            <button (click)="goBack()" class="text-gray-500 hover:text-purple-600 transition-colors">
@@ -24,7 +27,15 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
         </div>
       </nav>
 
-      <main class="max-w-4xl mx-auto px-4 py-8 animate-fade-up delay-100">
+      <main class="max-w-4xl mx-auto px-4 py-8 animate-fade-up delay-100 relative z-10">
+         <!-- Form header banner -->
+         <div class="mb-6 p-5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[2rem] text-white shadow-xl shadow-blue-500/20 animate-fade-up delay-50 relative overflow-hidden">
+           <div class="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl animate-float-slow"></div>
+           <div class="absolute top-3 right-3 w-4 h-4 bg-white/10 rounded-full animate-ping" style="animation-duration:3s"></div>
+           <p class="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">{{ isEditMode ? 'Modify' : 'New' }} Loan</p>
+           <h2 class="text-2xl font-black tracking-tighter">{{ isEditMode ? 'Edit Loan Scheme' : 'Create Loan Scheme' }}</h2>
+           <p class="text-[11px] opacity-70 mt-1">Enter financial and borrower details. Monthly interest is auto-calculated.</p>
+         </div>
          <form [formGroup]="schemeForm" (ngSubmit)="onSubmit()" class="space-y-8">
             
             <!-- Scheme Financials Section -->
@@ -107,7 +118,7 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
                          <div class="flex justify-between items-center">
                            <div>
                              <p class="font-black text-sm text-gray-900 dark:text-white group-hover:text-indigo-700">{{ cust.name }}</p>
-                             <p class="text-[10px] text-gray-400 font-bold">{{ cust.phone }}{{ cust.username ? ' · @' + cust.username : '' }}</p>
+                             <p class="text-[10px] text-gray-400 font-bold">{{ cust.phone }}{{ cust.username ? ' Â· @' + cust.username : '' }}</p>
                            </div>
                            <span class="text-[10px] text-indigo-500 font-black px-2 py-1 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">Fill →</span>
                          </div>
@@ -210,9 +221,9 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
                                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
                               </svg>
                               <p class="mb-2 text-sm text-gray-500 dark:text-gray-400 px-4 text-center"><span class="font-bold">Click to upload</span></p>
-                              <p class="text-[10px] text-gray-400 text-center uppercase font-bold tracking-tight px-4 truncate w-full">{{ selectedFile ? selectedFile.name : 'Max 5MB • JPG, PNG, PDF' }}</p>
+                              <p class="text-[10px] text-gray-400 text-center uppercase font-bold tracking-tight px-4 truncate w-full">{{ selectedFiles.length > 0 ? selectedFiles.length + ' file(s) selected' : 'Max 5MB • JPG, PNG, PDF' }}</p>
                            </div>
-                           <input id="dropzone-file" type="file" class="hidden" accept="image/*,application/pdf" (change)="onFileSelected($event)" />
+                           <input id="dropzone-file" type="file" class="hidden" accept="image/*,application/pdf" multiple (change)="onFileSelected($event)" />
                         </label>
                      </div>
                      @if (uploadProgress > 0 && uploadProgress < 100) {
@@ -220,11 +231,41 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
                            <div class="bg-indigo-600 h-1.5 rounded-full" [style.width.%]="uploadProgress"></div>
                         </div>
                      }
-                     @if (isEditMode && currentDocUrl && !selectedFile) {
-                        <p class="mt-3 text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-2">
-                           <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                           Existing Document: <a [href]="currentDocUrl" target="_blank" class="text-blue-500 hover:underline">View <svg class="w-3 h-3 inline pb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg></a>
-                        </p>
+                     
+                     @if (selectedFiles.length > 0) {
+                        <div class="mt-3 flex flex-wrap gap-2">
+                           @for (file of selectedFiles; track file.name; let i = $index) {
+                              <div class="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                                 <span class="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 truncate max-w-[120px]">{{ file.name }}</span>
+                                 <button type="button" (click)="removeSelectedFile(i)" class="text-indigo-400 hover:text-red-500">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                 </button>
+                              </div>
+                           }
+                        </div>
+                     }
+
+                     @if (isEditMode && currentDocUrls.length > 0) {
+                        <div class="mt-3">
+                           <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Existing Documents:</p>
+                           <div class="flex flex-wrap gap-3">
+                              @for (url of currentDocUrls; track url; let i = $index) {
+                                 <div class="relative group w-20 h-20 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 shadow-sm transition-transform hover:scale-105">
+                                    <a [href]="url" target="_blank" class="block w-full h-full relative cursor-pointer" title="View Document">
+                                       <img [src]="url" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                                       <div class="hidden w-full h-full flex-col items-center justify-center text-gray-400 absolute inset-0 bg-gray-50 dark:bg-gray-800">
+                                          <svg class="w-6 h-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                          <span class="text-[8px] font-bold uppercase">Doc</span>
+                                       </div>
+                                       <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
+                                    </a>
+                                    <button type="button" (click)="removeExistingDoc(i)" class="absolute top-1 right-1 bg-white/90 dark:bg-black/90 rounded-full p-1 text-red-500 opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-sm" title="Remove Document">
+                                       <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                 </div>
+                              }
+                           </div>
+                        </div>
                      }
                   </div>
                </div>
@@ -330,9 +371,9 @@ export class AdminInterestCreateComponent implements OnInit {
   currentSchemeId: string | null = null;
   isSubmitting = false;
 
-  selectedFile: File | null = null;
+  selectedFiles: File[] = [];
   uploadProgress: number = 0;
-  currentDocUrl: string | null = null;
+  currentDocUrls: string[] = [];
 
   get calculatedPayable(): number {
     const amt = this.schemeForm.get('amount')?.value || 0;
@@ -435,7 +476,14 @@ export class AdminInterestCreateComponent implements OnInit {
             description: scheme.description,
             status: scheme.status || 'Active'
           });
-          this.currentDocUrl = scheme.borrowerIdDoc || null;
+          
+          this.currentDocUrls = [];
+          if (scheme.borrowerIdDocs && scheme.borrowerIdDocs.length > 0) {
+            this.currentDocUrls = [...scheme.borrowerIdDocs];
+          } else if (scheme.borrowerIdDoc) {
+            this.currentDocUrls = [scheme.borrowerIdDoc];
+          }
+          
           if (scheme.borrowerUsername) {
              this.checkUsername(scheme.borrowerUsername);
           }
@@ -446,39 +494,51 @@ export class AdminInterestCreateComponent implements OnInit {
   }
 
   onFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      this.selectedFile = file;
+    const files = event.target.files;
+    if (files) {
+      for (let i = 0; i < files.length; i++) {
+        this.selectedFiles.push(files[i]);
+      }
     }
+  }
+
+  removeSelectedFile(index: number) {
+    this.selectedFiles.splice(index, 1);
+  }
+
+  removeExistingDoc(index: number) {
+    this.currentDocUrls.splice(index, 1);
   }
 
   goBack() {
     this.router.navigate(['/admin']);
   }
 
-  async uploadDocument(): Promise<string | null> {
-    if (!this.selectedFile) return this.currentDocUrl;
+  async uploadDocuments(): Promise<string[]> {
+    if (this.selectedFiles.length === 0) return [];
 
-    return new Promise((resolve, reject) => {
-      const fileName = `interest-documents/${Date.now()}_${this.selectedFile!.name}`;
-      const storageRef = ref(this.storage, fileName);
-      const uploadTask = uploadBytesResumable(storageRef, this.selectedFile!);
+    const uploadPromises = this.selectedFiles.map((file, index) => {
+      return new Promise<string>((resolve, reject) => {
+        const fileName = `interest-documents/${Date.now()}_${file.name}`;
+        const storageRef = ref(this.storage, fileName);
+        const uploadTask = uploadBytes(storageRef, file);
 
-      uploadTask.on('state_changed',
-        (snapshot) => {
-          this.uploadProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        },
-        (error) => {
-          console.error('Upload failed', error);
-          this.toast.error('File upload failed.');
-          reject(error);
-        },
-        async () => {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+        uploadTask.then(async (snapshot) => {
+          const downloadURL = await getDownloadURL(snapshot.ref);
           resolve(downloadURL);
-        }
-      );
+        }).catch((error) => {
+          console.error('Upload failed', error);
+          reject(error);
+        });
+      });
     });
+
+    try {
+      return await Promise.all(uploadPromises);
+    } catch (e) {
+      this.toast.error('Some files failed to upload.');
+      return [];
+    }
   }
 
   async onSubmit() {
@@ -486,15 +546,18 @@ export class AdminInterestCreateComponent implements OnInit {
       this.isSubmitting = true;
 
       try {
-        let uploadedDocUrl: string | null = this.currentDocUrl;
-        if (this.selectedFile) {
-          uploadedDocUrl = await this.uploadDocument();
+        let uploadedDocUrls: string[] = [...this.currentDocUrls];
+        if (this.selectedFiles.length > 0) {
+          const newUrls = await this.uploadDocuments();
+          uploadedDocUrls = [...uploadedDocUrls, ...newUrls];
         }
 
         const profile = await new Promise<any>(res => this.authService.userProfile$.subscribe(res));
         const schemeData: InterestScheme = {
           ...this.schemeForm.value,
-          borrowerIdDoc: uploadedDocUrl,
+          borrowerIdDocs: uploadedDocUrls,
+          // keep legacy field for backwards compatibility temporarily
+          borrowerIdDoc: uploadedDocUrls.length > 0 ? uploadedDocUrls[0] : null,
           settlements: [],
           createdBy: profile?.uid
         };
@@ -519,3 +582,4 @@ export class AdminInterestCreateComponent implements OnInit {
     }
   }
 }
+

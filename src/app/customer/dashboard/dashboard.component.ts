@@ -1,4 +1,4 @@
-﻿import { Component, inject, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -667,8 +667,28 @@ Chart.register(zoomPlugin);
                                <p class="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1">{{ identityPayload.idType }}</p>
                                <p class="text-sm font-black text-blue-700 dark:text-blue-300">{{ identityPayload.idValue }}</p>
                             </div>
-                            @if (identityPayload.idDoc) {
-                               <a [href]="identityPayload.idDoc" target="_blank" class="px-4 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-colors shadow-sm">View Proof &rarr;</a>
+                            @if (identityPayload.idDocs && identityPayload.idDocs.length > 0) {
+                               <div class="flex flex-wrap gap-2 justify-end">
+                                  @for (doc of identityPayload.idDocs; track doc; let i = $index) {
+                                     <a [href]="doc" target="_blank" class="relative group w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden border-2 border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-800 shadow-sm transition-transform hover:scale-110 block" title="View Document {{ i + 1 }}">
+                                        <img [src]="doc" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                                        <div class="hidden w-full h-full flex-col items-center justify-center text-blue-400 absolute inset-0 bg-blue-50 dark:bg-blue-900/50">
+                                           <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                           <span class="text-[7px] font-black uppercase">Doc</span>
+                                        </div>
+                                        <div class="absolute inset-0 bg-black/0 group-hover:bg-blue-900/20 transition-colors"></div>
+                                     </a>
+                                  }
+                               </div>
+                            } @else if (identityPayload.idDoc) {
+                               <a [href]="identityPayload.idDoc" target="_blank" class="relative group w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden border-2 border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-800 shadow-sm transition-transform hover:scale-110 block" title="View Document">
+                                  <img [src]="identityPayload.idDoc" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                                  <div class="hidden w-full h-full flex-col items-center justify-center text-blue-400 absolute inset-0 bg-blue-50 dark:bg-blue-900/50">
+                                     <svg class="w-5 h-5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                     <span class="text-[7px] font-black uppercase">Doc</span>
+                                  </div>
+                                  <div class="absolute inset-0 bg-black/0 group-hover:bg-blue-900/20 transition-colors"></div>
+                               </a>
                             }
                          </div>
                        </div>
@@ -734,7 +754,8 @@ export class CustomerDashboardComponent implements OnInit {
         type: 'Chit Member',
         idType: 'N/A',
         idValue: 'N/A',
-        idDoc: null
+        idDoc: null,
+        idDocs: []
       };
     } else {
       const loan = payload as InterestScheme;
@@ -752,7 +773,8 @@ export class CustomerDashboardComponent implements OnInit {
         type: 'Loan Borrower',
         idType: loan.borrowerIdType || 'N/A',
         idValue: loan.borrowerIdValue || 'N/A',
-        idDoc: loan.borrowerIdDoc || null
+        idDoc: loan.borrowerIdDoc || null,
+        idDocs: loan.borrowerIdDocs || []
       };
     }
     this.showIdentityPopup = true;

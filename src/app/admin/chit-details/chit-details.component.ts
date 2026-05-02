@@ -14,7 +14,7 @@ import { AuthService } from '../../services/auth.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
   template: `
-    <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-950 transition-colors duration-500 pb-20 sm:pb-0">
+    <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-950 transition-colors duration-500 pb-20 sm:pb-0 relative overflow-x-hidden">
       <nav class="sticky top-0 z-50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 animate-fade-down">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between h-20 items-center">
@@ -39,28 +39,40 @@ import { AuthService } from '../../services/auth.service';
         @if (scheme) {
           <!-- Stats Summary Grid -->
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-            <div class="glass-card p-6 rounded-[2.5rem] border-purple-500/10">
+            <div class="glass-card p-6 rounded-[2.5rem] border-purple-500/10 animate-fade-up delay-100 hover:-translate-y-1 transition-all duration-300 animate-pulse-glow group">
+              <div class="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500 mb-3 group-hover:scale-110 transition-transform">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
               <p class="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1 leading-none">Total Value</p>
-              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter">₹{{ scheme.totalValue | number:'1.0-0' }}</p>
+              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter kpi-number">₹{{ scheme.totalValue | number:'1.0-0' }}</p>
             </div>
-            <div class="glass-card p-6 rounded-[2.5rem] border-blue-500/10">
+            <div class="glass-card p-6 rounded-[2.5rem] border-blue-500/10 animate-fade-up delay-200 hover:-translate-y-1 transition-all duration-300 group">
+              <div class="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 mb-3 group-hover:scale-110 transition-transform">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              </div>
               <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 leading-none">Monthly EMI</p>
-              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter">₹{{ scheme.monthlyAmount | number:'1.0-0' }}</p>
+              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter kpi-number">₹{{ scheme.monthlyAmount | number:'1.0-0' }}</p>
             </div>
-            <div class="glass-card p-6 rounded-[2.5rem] border-pink-500/10">
+            <div class="glass-card p-6 rounded-[2.5rem] border-pink-500/10 animate-fade-up delay-300 hover:-translate-y-1 transition-all duration-300 group">
+              <div class="w-8 h-8 rounded-xl bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center text-pink-500 mb-3 group-hover:scale-110 transition-transform">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              </div>
               <p class="text-[10px] font-black text-pink-500 uppercase tracking-widest mb-1 leading-none">Members</p>
-              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter">{{ customers.length }} / {{ scheme.capacity }}</p>
+              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter kpi-number">{{ customers.length }} / {{ scheme.capacity }}</p>
             </div>
-            <div class="glass-card p-6 rounded-[2.5rem] border-green-500/10">
+            <div class="glass-card p-6 rounded-[2.5rem] border-green-500/10 animate-fade-up delay-400 hover:-translate-y-1 transition-all duration-300 group">
+              <div class="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-500 mb-3 group-hover:scale-110 transition-transform">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
               <p class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1 leading-none">Tenure</p>
-              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter">{{ scheme.tenure }} Mo</p>
+              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter kpi-number">{{ scheme.tenure }} Mo</p>
             </div>
           </div>
 
         <!-- Scheme-Specific Monthly Snapshot -->
         <div class="grid grid-cols-2 gap-3 sm:gap-6 mb-8">
-           <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row items-start sm:items-center">
-              <div class="h-10 w-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 mb-2 sm:mb-0 sm:mr-4">
+           <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row items-start sm:items-center animate-fade-up delay-500 hover:shadow-md transition-all group">
+              <div class="h-10 w-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 mb-2 sm:mb-0 sm:mr-4 animate-pulse-glow-green group-hover:scale-110 transition-transform">
                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               </div>
               <div>
@@ -68,8 +80,8 @@ import { AuthService } from '../../services/auth.service';
                  <p class="text-base sm:text-xl font-black text-gray-900 dark:text-white">₹{{ schemeCollectedThisMonth | number:'1.0-0' }}</p>
               </div>
            </div>
-           <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row items-start sm:items-center">
-              <div class="h-10 w-10 rounded-xl bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center text-pink-600 dark:text-pink-400 mb-2 sm:mb-0 sm:mr-4">
+           <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row items-start sm:items-center animate-fade-up delay-600 hover:shadow-md transition-all group">
+              <div class="h-10 w-10 rounded-xl bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center text-pink-600 dark:text-pink-400 mb-2 sm:mb-0 sm:mr-4 animate-pulse-glow-pink group-hover:scale-110 transition-transform">
                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               </div>
               <div>
@@ -80,15 +92,18 @@ import { AuthService } from '../../services/auth.service';
         </div>
 
           <!-- Enrolled Customers List -->
-          <div class="flex items-center gap-3 mb-6">
-             <div class="h-6 w-1.5 bg-purple-600 rounded-full"></div>
+          <div class="flex items-center gap-3 mb-6 animate-fade-up delay-700">
+             <div class="h-6 w-1.5 bg-gradient-to-b from-purple-600 to-pink-500 rounded-full animate-pulse"></div>
              <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Enrolled Members</h3>
+             <span class="ml-auto px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[10px] font-black rounded-full animate-badge-pop">{{ filteredCustomers.length }} Active</span>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-up delay-200">
-            @for (cust of filteredCustomers; track cust.id) {
-              <div class="glass-card rounded-[2.5rem] p-6 sm:p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 group relative overflow-hidden animate-scale-in">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @for (cust of filteredCustomers; track cust.id; let i = $index) {
+              <div class="glass-card rounded-[2.5rem] p-6 sm:p-8 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-500 group relative overflow-hidden animate-fade-up"
+                   [style.animation-delay]="(i * 80) + 'ms'">
                 <div class="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
+                <div class="absolute -left-8 -bottom-8 w-32 h-32 bg-indigo-500/3 rounded-full group-hover:scale-125 transition-transform duration-1000"></div>
                 
                 <div class="flex justify-between items-start mb-6">
                    <div class="min-w-0">
@@ -150,12 +165,15 @@ import { AuthService } from '../../services/auth.service';
           </button>
 
           @if (customers.length === 0) {
-            <div class="py-20 text-center">
-              <div class="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg class="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            <div class="py-20 text-center animate-fade-up">
+              <div class="w-24 h-24 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-full flex items-center justify-center mx-auto mb-6 animate-float shadow-lg shadow-purple-500/10">
+                <svg class="w-12 h-12 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
               </div>
               <h3 class="text-xl font-bold text-gray-900 dark:text-white">No members enrolled</h3>
               <p class="text-gray-500 mt-2">Start adding customers to this chit scheme.</p>
+              <div class="mt-6 flex justify-center">
+                <button (click)="openAddCustomerModal()" class="shimmer-hover px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-purple-500/20 hover:-translate-y-1 transition-all active:scale-95">+ Enrol First Member</button>
+              </div>
             </div>
           }
         }

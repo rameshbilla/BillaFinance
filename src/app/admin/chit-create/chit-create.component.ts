@@ -13,7 +13,10 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-900 transition-colors duration-300 relative overflow-hidden">
+      <!-- Background decorative glows -->
+      <div class="absolute top-0 right-0 w-80 h-80 bg-purple-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+      <div class="absolute bottom-0 left-0 w-60 h-60 bg-pink-500/5 rounded-full blur-[80px] pointer-events-none"></div>
       <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700 shadow-sm px-4 sm:px-6 lg:px-8 py-4 animate-fade-down">
         <div class="flex items-center space-x-4">
            <button (click)="goBack()" class="text-gray-500 hover:text-purple-600 transition-colors">
@@ -23,7 +26,14 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
         </div>
       </nav>
 
-      <main class="max-w-3xl mx-auto px-4 py-8 animate-fade-up delay-100">
+      <main class="max-w-3xl mx-auto px-4 py-8 animate-fade-up delay-100 relative z-10">
+         <!-- Form header banner -->
+         <div class="mb-6 p-5 bg-gradient-to-r from-purple-600 to-pink-500 rounded-[2rem] text-white shadow-xl shadow-purple-500/20 animate-fade-up delay-50 relative overflow-hidden">
+           <div class="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl animate-float-slow"></div>
+           <p class="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">{{ isEditMode ? 'Modify' : 'New' }} Scheme</p>
+           <h2 class="text-2xl font-black tracking-tighter">{{ isEditMode ? 'Edit Chitti Scheme' : 'Create Chitti Scheme' }}</h2>
+           <p class="text-[11px] opacity-70 mt-1">Fill in scheme details below. Total value is auto-calculated.</p>
+         </div>
          <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-4 sm:p-8">
             <h2 class="text-2xl font-extrabold text-gray-900 dark:text-white mb-6">Scheme Details</h2>
             
@@ -61,13 +71,13 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
                </div>
 
                <!-- Total Payable Value Calculator Display -->
-               <div class="p-5 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-100 dark:border-purple-800/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-6">
+               <div class="p-5 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-100 dark:border-purple-800/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-6 animate-pulse-glow hover:scale-[1.01] transition-transform duration-300">
                   <div>
                      <p class="text-sm text-purple-800 dark:text-purple-300 font-medium tracking-wide">Total Payable Value</p>
                      <p class="text-xs text-purple-600/70 dark:text-purple-400 mt-1 leading-none">Tenure × Monthly Amount</p>
                   </div>
                   <div class="text-left sm:text-right">
-                     <div class="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
+                     <div class="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 kpi-number">
                         ₹{{ calculatedTotal | number:'1.0-0' }}
                      </div>
                      <p class="text-[9px] sm:text-[10px] text-purple-600 dark:text-purple-400 mt-1 font-bold italic">{{ amountToWords(calculatedTotal) }}</p>
@@ -75,8 +85,8 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
                </div>
 
                <div class="pt-4 flex flex-col sm:flex-row justify-end gap-3">
-                  <button type="button" (click)="goBack()" class="px-8 py-3 font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-colors order-2 sm:order-1">Cancel</button>
-                  <button type="submit" [disabled]="schemeForm.invalid || isSubmitting" class="px-10 py-3 font-black text-white bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 rounded-xl shadow-md cursor-pointer disabled:opacity-50 transition-all hover:-translate-y-0.5 order-1 sm:order-2">
+                  <button type="button" (click)="goBack()" class="px-8 py-3 font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-all order-2 sm:order-1 active:scale-95">Cancel</button>
+                  <button type="submit" [disabled]="schemeForm.invalid || isSubmitting" class="shimmer-hover px-10 py-3 font-black text-white bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 rounded-xl shadow-md shadow-purple-500/20 cursor-pointer disabled:opacity-50 transition-all hover:-translate-y-0.5 hover:shadow-purple-500/40 order-1 sm:order-2 active:scale-95">
                      {{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update Scheme' : 'Finalize & Create') }}
                   </button>
                </div>

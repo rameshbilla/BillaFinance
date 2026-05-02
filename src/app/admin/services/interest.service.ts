@@ -26,6 +26,7 @@ export interface InterestScheme {
   borrowerIdType?: string;
   borrowerIdValue?: string;
   borrowerIdDoc?: string;
+  borrowerIdDocs?: string[];
   settlements: Settlement[];
   interestCollections?: InterestCollection[];
   startDate: string;

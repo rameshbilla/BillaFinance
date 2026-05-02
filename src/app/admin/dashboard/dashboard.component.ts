@@ -1,8 +1,9 @@
-﻿import { Component, inject, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ChittiService, ChittiScheme } from '../services/chitti.service';
 import { InterestService, InterestScheme } from '../services/interest.service';
+import { WhatsAppService } from '../services/whatsapp.service';
 import { CustomerService, Customer } from '../services/customer.service';
 import { ToastService } from '../../shared/toast.service';
 import { AuthService, UserProfile } from '../../services/auth.service';
@@ -19,12 +20,13 @@ Chart.register(zoomPlugin);
 import { BillService, Bill, TrackedService } from '../services/bill.service';
 import { BillListComponent } from '../bills/bill-list/bill-list.component';
 import { BillFormComponent } from '../bills/bill-form/bill-form.component';
+import { BillPaymentModalComponent } from '../bills/bill-payment-modal/bill-payment-modal.component';
 import { RentalService, RentalHouse, RentalBill } from '../services/rental.service';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, BaseChartDirective, BillListComponent, BillFormComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, BaseChartDirective, BillListComponent, BillFormComponent, BillPaymentModalComponent],
   template: `
     <style>
       @keyframes fadeInUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
@@ -592,13 +594,23 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
               </div>
             }
 
-            <app-bill-list 
-              [bills]="bills" 
+            <app-bill-list
+              [bills]="bills"
               (filterChanged)="handleBillFilters($event)"
               (editBill)="openBillForm($event)"
               (deleteBill)="handleDeleteBill($event)"
+              (payBill)="openPaymentModal($event)"
               (updateStatus)="handleUpdateBillStatus($event)">
             </app-bill-list>
+
+            <!-- Payment Modal -->
+            @if (showPaymentModal && payingBill) {
+              <app-bill-payment-modal
+                [bill]="payingBill"
+                (paid)="onBillPaid()"
+                (cancel)="closePaymentModal()">
+              </app-bill-payment-modal>
+            }
           </div>
         }
 
@@ -627,6 +639,13 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                   <svg class="h-4 w-4 sm:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                   <span class="hidden sm:inline">New Loan</span>
                </button>
+
+               @if (getFilteredLoans().length > 0) {
+                 <button (click)="sendAllReminders()" [disabled]="isSaving" class="px-6 py-4 bg-emerald-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 active:scale-95 transition-all whitespace-nowrap">
+                    <svg class="h-4 w-4" [class.animate-pulse]="isSaving" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    <span class="hidden sm:inline">{{ isSaving ? 'Sending...' : 'Send All Reminders' }}</span>
+                 </button>
+               }
             </div>
 
             <!-- Loan Filters Row -->
@@ -775,9 +794,17 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                       </div>
                       <div class="flex justify-between items-start mb-4">
                          <h3 class="text-lg font-black text-gray-900 dark:text-white cursor-pointer hover:text-indigo-600 transition-colors truncate flex-1" (click)="$event.stopPropagation(); viewInterestDetails(loan.id!)">{{ loan.name }}</h3>
-                         <div class="text-right">
-                           <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Last Collection</p>
-                           <p class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase">{{ (getLastInterestDate(loan) | date:'dd MMM yyyy') || 'None' }}</p>
+                         <div class="flex flex-col items-end">
+                           <div class="flex items-center gap-2">
+                             @if (isLoanReminderDue(loan)) {
+                               <span class="text-[8px] font-black px-2 py-0.5 bg-orange-500 text-white rounded-md uppercase animate-pulse">Reminder Due</span>
+                             }
+                             <button (click)="$event.stopPropagation(); sendLoanWhatsAppReminder(loan)" class="w-7 h-7 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg shadow-green-500/30" title="Send WhatsApp Reminder">
+                                <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                             </button>
+                           </div>
+                           <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">Last Collection</p>
+                           <p class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase leading-none">{{ (getLastInterestDate(loan) | date:'dd MMM yyyy') || 'None' }}</p>
                          </div>
                       </div>
                       <p class="text-xs text-gray-500 font-bold mb-4">{{ loan.borrowerName }}</p>
@@ -1835,6 +1862,9 @@ export class AdminDashboardComponent implements OnInit {
   trackedServices: TrackedService[] = [];
   showServiceModal = false;
   trackedServiceForm: FormGroup;
+  // Payment Modal
+  showPaymentModal = false;
+  payingBill?: Bill;
   customerSearchQuery: string = '';
   loanSearchQuery: string = '';
   loanStatusFilter: 'Active' | 'Inactive' | 'All' = 'Active';
@@ -2713,6 +2743,21 @@ export class AdminDashboardComponent implements OnInit {
     this.showBillForm = true;
   }
 
+  openPaymentModal(bill: Bill) {
+    this.payingBill = bill;
+    this.showPaymentModal = true;
+  }
+
+  closePaymentModal() {
+    this.showPaymentModal = false;
+    this.payingBill = undefined;
+  }
+
+  onBillPaid() {
+    this.closePaymentModal();
+    this.toast.success('Payment recorded successfully! ✓');
+  }
+
   closeBillForm() {
     this.showBillForm = false;
     this.editingBill = undefined;
@@ -3525,6 +3570,143 @@ export class AdminDashboardComponent implements OnInit {
         this.toast.error('Delete failed.');
       }
     }
+  }
+
+  private whatsappApi = inject(WhatsAppService);
+
+  async sendAllReminders() {
+    const dueLoans = this.interests.filter(loan => this.isLoanReminderDue(loan));
+    
+    if (dueLoans.length === 0) {
+      this.toast.info('No reminders due at this time.');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to send automatic WhatsApp reminders to ${dueLoans.length} customers?`)) {
+      return;
+    }
+
+    this.isSaving = true;
+    let successCount = 0;
+
+    try {
+      for (const loan of dueLoans) {
+        const nextDue = this.nextLoanDueDate(loan);
+        const amountDue = this.calculateTotalPendingInterest(loan) || (this.getInterestBalance(loan) * (loan.interestRate / 100));
+        
+        const message = `Hello ${loan.borrowerName}, this is a reminder for your interest payment for ${loan.name}. ` +
+          `Amount due: ₹${amountDue.toLocaleString('en-IN')}. ` +
+          (nextDue ? `Due date: ${nextDue.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}. ` : '') +
+          `Please pay to avoid penalties. Thank you!`;
+
+        await this.whatsappApi.sendMessage(loan.borrowerPhone, message);
+        successCount++;
+      }
+      this.toast.success(`Sent ${successCount} reminders successfully!`);
+    } catch (error) {
+      this.toast.error('One or more reminders failed to send.');
+    } finally {
+      this.isSaving = false;
+    }
+  }
+
+  // --- WhatsApp & Reminder Logic ---
+  isLoanReminderDue(loan: InterestScheme): boolean {
+    if (!loan.startDate) return false;
+    const nextDue = this.nextLoanDueDate(loan);
+    if (!nextDue) return false;
+
+    // Check if interest is overdue
+    if (this.calculateTotalPendingInterest(loan) > 0) return true;
+
+    const today = this.getLocalToday();
+    const timeDiff = nextDue.getTime() - today.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+    return daysDiff <= 5 && daysDiff >= 0;
+  }
+
+  nextLoanDueDate(loan: InterestScheme): Date | null {
+    if (!loan.startDate) return null;
+    const startDate = this.parseLocalDateForReminder(loan.startDate);
+    if (!startDate) return null;
+
+    const today = this.getLocalToday();
+    let cycleIndex = 0;
+    let dueDate = this.addMonthsClampedForReminder(startDate, cycleIndex);
+
+    while (dueDate.getTime() < today.getTime()) {
+      cycleIndex++;
+      dueDate = this.addMonthsClampedForReminder(startDate, cycleIndex);
+    }
+    return dueDate;
+  }
+
+  sendLoanWhatsAppReminder(loan: InterestScheme) {
+    const nextDue = this.nextLoanDueDate(loan);
+    const amountDue = this.calculateTotalPendingInterest(loan) || (this.getInterestBalance(loan) * (loan.interestRate / 100));
+    
+    const message = `Hello ${loan.borrowerName}, this is a reminder for your interest payment for ${loan.name}. ` +
+      `Amount due: ₹${amountDue.toLocaleString('en-IN')}. ` +
+      (nextDue ? `Due date: ${nextDue.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}. ` : '') +
+      `Please pay to avoid penalties. Thank you!`;
+
+    this.whatsappApi.sendMessage(loan.borrowerPhone, message)
+      .then(() => this.toast.success('Reminder sent successfully!'))
+      .catch(() => {
+        // Fallback to manual if API fails or not configured
+        const encodedMessage = encodeURIComponent(message);
+        const phoneNumber = loan.borrowerPhone.replace(/\D/g, '');
+        window.open(`https://wa.me/91${phoneNumber}?text=${encodedMessage}`, '_blank');
+      });
+  }
+
+  private calculateTotalPendingInterest(loan: InterestScheme): number {
+    if (!loan.startDate) return 0;
+    const today = this.getLocalToday();
+    const accrued = this.getAccruedInterestThroughDate(loan, today);
+    const collected = (loan.interestCollections || []).reduce((sum, c) => {
+      const cDate = this.parseLocalDateForReminder(c.date);
+      return (cDate && cDate.getTime() <= today.getTime()) ? sum + c.amount : sum;
+    }, 0);
+    return Math.max(0, accrued - collected);
+  }
+
+  private getAccruedInterestThroughDate(loan: InterestScheme, date: Date): number {
+    const startDate = this.parseLocalDateForReminder(loan.startDate);
+    if (!startDate) return 0;
+    let totalDue = 0;
+    let cycleIndex = 1;
+    while (true) {
+      const cycleStart = this.addMonthsClampedForReminder(startDate, cycleIndex - 1);
+      if (cycleStart.getTime() > date.getTime()) break;
+      const settledBeforeCycle = (loan.settlements || []).reduce((sum, s) => {
+        const sDate = this.parseLocalDateForReminder(s.date);
+        return (sDate && sDate.getTime() <= cycleStart.getTime()) ? sum + s.amount : sum;
+      }, 0);
+      const balanceAtStart = Math.max(0, loan.amount - settledBeforeCycle);
+      totalDue += balanceAtStart * (loan.interestRate / 100);
+      cycleIndex++;
+    }
+    return totalDue;
+  }
+
+  private getLocalToday(): Date {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+
+  private parseLocalDateForReminder(value: string): Date | null {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (match) return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  private addMonthsClampedForReminder(date: Date, months: number): Date {
+    const targetMonth = new Date(date.getFullYear(), date.getMonth() + months, 1);
+    const lastDay = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0).getDate();
+    return new Date(targetMonth.getFullYear(), targetMonth.getMonth(), Math.min(date.getDate(), lastDay));
   }
 
   lockScroll() { document.body.style.overflow = 'hidden'; }
