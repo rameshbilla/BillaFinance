@@ -5,10 +5,12 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { InterestService, InterestScheme, Settlement, InterestCollection } from '../services/interest.service';
 import { ToastService } from '../../shared/toast.service';
 
+import { CountUpDirective } from '../../shared/directives/count-up.directive';
+
 @Component({
   selector: 'app-admin-interest-details',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, CountUpDirective],
   template: `
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300 overflow-x-hidden">
       <style>
@@ -69,7 +71,7 @@ import { ToastService } from '../../shared/toast.service';
               <div class="w-full sm:w-auto flex flex-row sm:flex-col items-center sm:items-end gap-3 pt-4 sm:pt-0 border-t sm:border-none border-white/10">
                 <div class="flex-1 sm:text-right">
                    <p class="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1 opacity-70">Total Principal</p>
-                   <p class="text-2xl sm:text-3xl font-black tracking-tighter">₹{{ scheme.amount | number:'1.0-0' }}</p>
+                   <p class="text-2xl sm:text-3xl font-black tracking-tighter" [appCountUp]="scheme.amount" prefix="₹"></p>
                 </div>
               </div>
             </div>
@@ -113,7 +115,7 @@ import { ToastService } from '../../shared/toast.service';
               <div class="grid grid-cols-2 gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
                 <div class="glass-card p-5 sm:p-7 rounded-[2rem] animate-fade-up delay-100 hover:-translate-y-1 transition-all duration-300">
                   <p class="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 opacity-60">Principal Amount</p>
-                  <p class="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tighter kpi-number">&#8377;{{ scheme.amount | number:'1.0-0' }}</p>
+                  <p class="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tighter kpi-number" [appCountUp]="scheme.amount" prefix="&#8377;"></p>
                 </div>
 
                 <div class="glass-card p-5 sm:p-7 rounded-[2rem] text-right animate-fade-up delay-200 hover:-translate-y-1 transition-all duration-300">
@@ -123,19 +125,19 @@ import { ToastService } from '../../shared/toast.service';
 
                 <div class="glass-card p-5 sm:p-7 rounded-[2rem] border-green-500/20 animate-fade-up delay-300 hover:-translate-y-1 transition-all duration-300 animate-pulse-glow-green">
                   <p class="text-[8px] sm:text-[10px] font-black text-green-600 uppercase tracking-widest mb-1">Paid Principal</p>
-                  <p class="text-xl sm:text-2xl font-black text-green-700 dark:text-green-300 tracking-tighter kpi-number">&#8377;{{ totalSettled | number:'1.0-0' }}</p>
+                  <p class="text-xl sm:text-2xl font-black text-green-700 dark:text-green-300 tracking-tighter kpi-number" [appCountUp]="totalSettled" prefix="&#8377;"></p>
                 </div>
 
                 <div class="glass-card p-5 sm:p-7 rounded-[2rem] border-red-500/20 text-right animate-fade-up delay-400 hover:-translate-y-1 transition-all duration-300">
                   <p class="text-[8px] sm:text-[10px] font-black text-red-600 uppercase tracking-widest mb-1">Balance Due</p>
-                  <p class="text-xl sm:text-2xl font-black text-red-700 dark:text-red-400 tracking-tighter kpi-number">&#8377;{{ currentBalance | number:'1.0-0' }}</p>
+                  <p class="text-xl sm:text-2xl font-black text-red-700 dark:text-red-400 tracking-tighter kpi-number" [appCountUp]="currentBalance" prefix="&#8377;"></p>
                 </div>
 
                 <div class="col-span-2 glass-card p-6 sm:p-8 rounded-[2rem] border-indigo-500/20">
                   <div class="flex items-end justify-between gap-4">
                     <div class="min-w-0">
                       <p class="text-[9px] sm:text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Total Interest Collected</p>
-                      <p class="text-2xl sm:text-4xl font-black text-indigo-700 dark:text-indigo-300 leading-none tracking-tighter">&#8377;{{ totalInterestCollected | number:'1.0-0' }}</p>
+                      <p class="text-2xl sm:text-4xl font-black text-indigo-700 dark:text-indigo-300 leading-none tracking-tighter" [appCountUp]="totalInterestCollected" prefix="&#8377;"></p>
                     </div>
                     <p class="text-[10px] font-bold text-indigo-400 text-right uppercase tracking-[0.1em]">Recorded across<br>all collections</p>
                   </div>
@@ -147,7 +149,7 @@ import { ToastService } from '../../shared/toast.service';
                     <div class="relative z-10 flex items-end justify-between gap-4">
                       <div class="min-w-0">
                         <p class="text-[9px] sm:text-[10px] font-black text-orange-100 uppercase tracking-widest mb-2 opacity-80">Overall Interest Due</p>
-                        <p class="text-3xl sm:text-5xl font-black leading-none tracking-tighter">&#8377;{{ totalPendingInterest | number:'1.0-0' }}</p>
+                        <p class="text-3xl sm:text-5xl font-black leading-none tracking-tighter" [appCountUp]="totalPendingInterest" prefix="&#8377;"></p>
                       </div>
                       <p class="text-[10px] font-bold text-orange-100/80 text-right uppercase tracking-widest leading-relaxed">Calculated<br>till today</p>
                     </div>
@@ -176,7 +178,7 @@ import { ToastService } from '../../shared/toast.service';
                           <span class="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400 font-bold">₹</span>
                           <input type="number" formControlName="amount" class="w-full pl-8 pr-4 py-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-black text-indigo-700 dark:text-indigo-300" placeholder="0">
                         </div>
-                        <p class="text-[9px] font-black text-indigo-400 mt-1.5 px-1 uppercase tracking-widest">Expected: ₹{{ pendingInterest | number:'1.0-0' }}</p>
+                        <p class="text-[9px] font-black text-indigo-400 mt-1.5 px-1 uppercase tracking-widest">Expected: <span [appCountUp]="pendingInterest" prefix="₹"></span></p>
                       </div>
                       <div>
                         <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1 block">Collection Date</label>
@@ -211,7 +213,7 @@ import { ToastService } from '../../shared/toast.service';
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Manual Collection</p>
                           </div>
                           <div class="text-right shrink-0">
-                            <p class="text-lg sm:text-xl font-black text-gray-900 dark:text-white tracking-tighter">&#8377;{{ collection.amount | number:'1.0-0' }}</p>
+                            <p class="text-lg sm:text-xl font-black text-gray-900 dark:text-white tracking-tighter" [appCountUp]="collection.amount" prefix="&#8377;"></p>
                             <button (click)="deleteCollection(collection.id!)" class="text-[9px] font-black text-red-400 uppercase tracking-[0.2em] mt-1.5 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all">Remove</button>
                           </div>
                         </div>
@@ -280,7 +282,7 @@ import { ToastService } from '../../shared/toast.service';
                           <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Principal Recorded</p>
                         </div>
                         <div class="text-right shrink-0">
-                          <p class="text-lg sm:text-xl font-black text-gray-900 dark:text-white tracking-tighter">&#8377;{{ settlement.amount | number:'1.0-0' }}</p>
+                          <p class="text-lg sm:text-xl font-black text-gray-900 dark:text-white tracking-tighter" [appCountUp]="settlement.amount" prefix="&#8377;"></p>
                            <button (click)="deleteSettlement(settlement.id!)" class="text-[9px] font-black text-red-400 uppercase tracking-[0.2em] mt-1.5 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all">Remove</button>
                         </div>
                       </div>

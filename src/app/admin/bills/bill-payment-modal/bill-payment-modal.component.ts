@@ -2,11 +2,12 @@ import { Component, Input, Output, EventEmitter, OnInit, OnChanges } from '@angu
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Bill, BillService } from '../../services/bill.service';
+import { CountUpDirective } from '../../../shared/directives/count-up.directive';
 
 @Component({
   selector: 'app-bill-payment-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, CountUpDirective],
   template: `
     <div class="fixed inset-0 z-[150] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-md px-0 sm:px-4" (click)="onBackdrop($event)">
       <div class="bg-white dark:bg-gray-900 w-full sm:max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl animate-scale-in overflow-hidden" (click)="$event.stopPropagation()">
@@ -35,21 +36,21 @@ import { Bill, BillService } from '../../services/bill.service';
         <!-- Bill Amount Reference & History -->
         <div class="mx-6 mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-800/30 flex justify-between items-center">
           <span class="text-[10px] font-black text-amber-600 uppercase tracking-widest">Total Bill Amount</span>
-          <span class="text-xl font-black text-amber-700 dark:text-amber-400">₹{{ bill?.amount | number:'1.0-0' }}</span>
+          <span class="text-xl font-black text-amber-700 dark:text-amber-400" [appCountUp]="bill?.amount || 0" prefix="₹"></span>
         </div>
 
         <div *ngIf="bill?.payments && bill!.payments!.length > 0" class="mx-6 mt-3 max-h-32 overflow-y-auto space-y-2 no-scrollbar border-b border-gray-100 dark:border-gray-800 pb-3">
           <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Payment History</p>
           <div *ngFor="let p of bill?.payments" class="flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 p-2 rounded-xl border border-gray-100 dark:border-gray-700">
             <div>
-              <p class="text-xs font-black text-gray-700 dark:text-gray-300">₹{{ p.amount | number:'1.0-0' }}</p>
+              <p class="text-xs font-black text-gray-700 dark:text-gray-300" [appCountUp]="p.amount" prefix="₹"></p>
               <p class="text-[8px] font-bold text-gray-400 uppercase">{{ p.date | date:'dd MMM yyyy' }} <span *ngIf="p.reference">· {{ p.reference }}</span></p>
             </div>
             <span class="text-[8px] px-1.5 py-0.5 bg-green-100 text-green-600 rounded font-black uppercase">Paid</span>
           </div>
           <div class="flex justify-between px-2 pt-1 border-t border-gray-200 dark:border-gray-700">
             <span class="text-[10px] font-bold text-gray-500 uppercase">Remaining</span>
-            <span class="text-[10px] font-black text-red-500">₹{{ remainingAmount | number:'1.0-0' }}</span>
+            <span class="text-[10px] font-black text-red-500" [appCountUp]="remainingAmount" prefix="₹"></span>
           </div>
         </div>
 

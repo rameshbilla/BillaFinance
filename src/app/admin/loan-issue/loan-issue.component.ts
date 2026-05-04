@@ -4,11 +4,12 @@ import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil, debounceTime } from 'rxjs/operators';
+import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
 @Component({
   selector: 'app-admin-loan-issue',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, CountUpDirective],
   template: `
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700 shadow-sm px-4 sm:px-6 lg:px-8 py-4 animate-fade-down">
@@ -63,7 +64,7 @@ import { takeUntil, debounceTime } from 'rxjs/operators';
                      <input type="number" formControlName="collectInterestAmount" class="flex-1 block rounded-xl border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-pink-500 outline-none transition-shadow" placeholder="0">
                      <button type="button" (click)="autoFillInterestAmount()" class="px-4 py-3 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-medium rounded-xl hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors whitespace-nowrap">Use Calculated</button>
                   </div>
-                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Default: ₹{{ totalInterest | number:'1.0-0' }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Default: <span [appCountUp]="totalInterest" prefix="₹"></span></p>
                </div>
 
                <!-- EMI Breakdown Visualizer -->
@@ -72,15 +73,15 @@ import { takeUntil, debounceTime } from 'rxjs/operators';
                   <div class="grid grid-cols-2 sm:grid-cols-3 gap-6">
                      <div>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Calculated EMI / Mo</p>
-                        <p class="text-2xl font-bold text-pink-600">₹{{ calculatedEMI | number:'1.0-0' }}</p>
+                        <p class="text-2xl font-bold text-pink-600" [appCountUp]="calculatedEMI" prefix="₹"></p>
                      </div>
                      <div>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Interest</p>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-white">₹{{ totalInterest | number:'1.0-0' }}</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white" [appCountUp]="totalInterest" prefix="₹"></p>
                      </div>
                      <div>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Payable</p>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-white">₹{{ totalPayable | number:'1.0-0' }}</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white" [appCountUp]="totalPayable" prefix="₹"></p>
                      </div>
                   </div>
                </div>

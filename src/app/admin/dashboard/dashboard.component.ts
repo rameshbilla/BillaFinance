@@ -22,11 +22,12 @@ import { BillListComponent } from '../bills/bill-list/bill-list.component';
 import { BillFormComponent } from '../bills/bill-form/bill-form.component';
 import { BillPaymentModalComponent } from '../bills/bill-payment-modal/bill-payment-modal.component';
 import { RentalService, RentalHouse, RentalBill } from '../services/rental.service';
+import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, BaseChartDirective, BillListComponent, BillFormComponent, BillPaymentModalComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, BaseChartDirective, BillListComponent, BillFormComponent, BillPaymentModalComponent, CountUpDirective],
   template: `
     <style>
       @keyframes fadeInUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
@@ -240,23 +241,23 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                   <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                      <div class="bg-blue-50 dark:bg-blue-900/20 p-4 sm:p-5 rounded-3xl border border-blue-100 dark:border-blue-800/50">
                         <p class="text-[8px] sm:text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 leading-none">Total Given Loans</p>
-                        <p class="text-lg sm:text-xl font-black text-blue-700 dark:text-blue-300 tracking-tighter">₹{{ totalGivenLoans | number:'1.0-0' }}</p>
+                        <p class="text-lg sm:text-xl font-black text-blue-700 dark:text-blue-300 tracking-tighter" [appCountUp]="totalGivenLoans" prefix="₹"></p>
                      </div>
                      <div class="bg-emerald-50 dark:bg-emerald-900/20 p-4 sm:p-5 rounded-3xl border border-emerald-100 dark:border-emerald-800/50">
                         <p class="text-[8px] sm:text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1 leading-none">Total Settlements</p>
-                        <p class="text-lg sm:text-xl font-black text-emerald-700 dark:text-emerald-300 tracking-tighter">₹{{ totalSettlement | number:'1.0-0' }}</p>
+                        <p class="text-lg sm:text-xl font-black text-emerald-700 dark:text-emerald-300 tracking-tighter" [appCountUp]="totalSettlement" prefix="₹"></p>
                      </div>
                      <div class="bg-red-50 dark:bg-red-900/20 p-4 sm:p-5 rounded-3xl border border-red-100 dark:border-red-800/50">
                         <p class="text-[8px] sm:text-[10px] font-black text-red-500 uppercase tracking-widest mb-1 leading-none">Pending Principal</p>
-                        <p class="text-lg sm:text-xl font-black text-red-700 dark:text-red-300 tracking-tighter">₹{{ totalPendingPrincipal | number:'1.0-0' }}</p>
+                        <p class="text-lg sm:text-xl font-black text-red-700 dark:text-red-300 tracking-tighter" [appCountUp]="totalPendingPrincipal" prefix="₹"></p>
                      </div>
                      <div class="bg-purple-50 dark:bg-purple-900/20 p-4 sm:p-5 rounded-3xl border border-purple-100 dark:border-purple-800/50">
                         <p class="text-[8px] sm:text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1 leading-none">Interest Collected</p>
-                        <p class="text-lg sm:text-xl font-black text-purple-700 dark:text-purple-300 tracking-tighter">₹{{ totalCollectedInterest | number:'1.0-0' }}</p>
+                        <p class="text-lg sm:text-xl font-black text-purple-700 dark:text-purple-300 tracking-tighter" [appCountUp]="totalCollectedInterest" prefix="₹"></p>
                      </div>
                      <div class="bg-orange-50 dark:bg-orange-900/20 p-4 sm:p-5 rounded-3xl border border-orange-100 dark:border-orange-800/50">
                         <p class="text-[8px] sm:text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1 leading-none">Pending Interest</p>
-                        <p class="text-lg sm:text-xl font-black text-orange-700 dark:text-orange-300 tracking-tighter">₹{{ totalPendingInterest | number:'1.0-0' }}</p>
+                        <p class="text-lg sm:text-xl font-black text-orange-700 dark:text-orange-300 tracking-tighter" [appCountUp]="totalPendingInterest" prefix="₹"></p>
                      </div>
                   </div>
                } @else {
@@ -289,7 +290,7 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                                  </div>
                               </div>
                               <div class="text-right">
-                                 <p class="text-lg font-black text-gray-900 dark:text-white tracking-tighter">₹{{ tx.amount | number:'1.0-0' }}</p>
+                                 <p class="text-lg font-black text-gray-900 dark:text-white tracking-tighter" [appCountUp]="tx.amount" prefix="₹"></p>
                                  <p class="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Verified</p>
                               </div>
                            </div>
@@ -521,19 +522,19 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                <div class="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
                   <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Pending</p>
-                  <p class="text-2xl font-black text-amber-500">₹{{ billStats.pendingAmount | number:'1.0-0' }}</p>
+                  <p class="text-2xl font-black text-amber-500" [appCountUp]="billStats.pendingAmount" prefix="₹"></p>
                </div>
                <div class="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
                   <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Due in 7 Days</p>
-                  <p class="text-2xl font-black text-purple-600">₹{{ billStats.upcomingAmount | number:'1.0-0' }}</p>
+                  <p class="text-2xl font-black text-purple-600" [appCountUp]="billStats.upcomingAmount" prefix="₹"></p>
                </div>
                <div class="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
                   <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Due Today</p>
-                  <p class="text-2xl font-black text-rose-500">{{ billStats.dueTodayCount }} Bills</p>
+                  <p class="text-2xl font-black text-rose-500" [appCountUp]="billStats.dueTodayCount" suffix=" Bills"></p>
                </div>
                <div class="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
                   <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Paid this Month</p>
-                  <p class="text-2xl font-black text-green-500">₹{{ billStats.paidThisMonthAmount | number:'1.0-0' }}</p>
+                  <p class="text-2xl font-black text-green-500" [appCountUp]="billStats.paidThisMonthAmount" prefix="₹"></p>
                </div>
             </div>
 
@@ -749,7 +750,7 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
 
                 <div class="pt-3 sm:pt-4 border-t border-gray-50 dark:border-gray-700/50 mt-4 sm:mt-0">
                   <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Filtered Interest</p>
-                  <p class="text-2xl sm:text-3xl font-black text-indigo-600">₹{{ filteredTotalInterest | number:'1.0-0' }}</p>
+                  <p class="text-2xl sm:text-3xl font-black text-indigo-600" [appCountUp]="filteredTotalInterest" prefix="₹"></p>
                 </div>
               </div>
             </div>
@@ -775,7 +776,7 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                       </p>
                     </div>
                     <div class="text-right ml-4">
-                      <p class="text-xs font-black text-gray-900 dark:text-white">₹{{ loan.amount | number:'1.0-0' }}</p>
+                      <p class="text-xs font-black text-gray-900 dark:text-white" [appCountUp]="loan.amount" prefix="₹"></p>
                       <p class="text-[9px] font-black text-indigo-500">{{ loan.interestRate }}% Int.</p>
                     </div>
                     <svg class="w-4 h-4 text-gray-300 ml-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
@@ -811,17 +812,17 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                       <div class="grid grid-cols-2 gap-3 mb-3">
                         <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-100/50 dark:border-gray-700/50">
                           <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Principal</p>
-                          <p class="text-sm font-black text-gray-900 dark:text-white">₹{{ loan.amount | number:'1.0-0' }}</p>
+                          <p class="text-sm font-black text-gray-900 dark:text-white" [appCountUp]="loan.amount" prefix="₹"></p>
                         </div>
                         <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl text-right border border-gray-100/50 dark:border-gray-700/50">
                           <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Monthly Int.</p>
-                          <p class="text-sm font-black text-indigo-600">₹{{ (loan.amount * loan.interestRate / 100) | number:'1.0-0' }}</p>
+                          <p class="text-sm font-black text-indigo-600" [appCountUp]="(loan.amount * loan.interestRate / 100)" prefix="₹"></p>
                         </div>
                       </div>
                       @if (loan.status !== 'Inactive' && getPendingInterestForLoan(loan) > 0) {
                         <div class="mb-4 bg-indigo-50/30 dark:bg-indigo-900/10 p-3 rounded-2xl flex justify-between items-center border border-indigo-100/30 dark:border-indigo-900/20">
                            <p class="text-[9px] font-black text-indigo-500 uppercase tracking-widest italic opacity-70">Overall Interest Due</p>
-                           <p class="text-sm font-black text-indigo-600 dark:text-indigo-400">₹{{ getPendingInterestForLoan(loan) | number:'1.0-0' }}</p>
+                           <p class="text-sm font-black text-indigo-600 dark:text-indigo-400" [appCountUp]="getPendingInterestForLoan(loan)" prefix="₹"></p>
                         </div>
                       }
                       <div class="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-gray-700/50">
@@ -945,7 +946,7 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
 
                 <div class="pt-3 sm:pt-4 border-t border-gray-50 dark:border-gray-700/50 mt-4 sm:mt-0">
                   <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Filtered Collection</p>
-                  <p class="text-2xl sm:text-3xl font-black text-pink-600">₹{{ filteredTotalChitti | number:'1.0-0' }}</p>
+                  <p class="text-2xl sm:text-3xl font-black text-pink-600" [appCountUp]="filteredTotalChitti" prefix="₹"></p>
                 </div>
               </div>
             </div>
@@ -962,7 +963,7 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                     <div class="grid grid-cols-2 gap-3 mb-3">
                       <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-100/50 dark:border-gray-700/50">
                         <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Monthly</p>
-                        <p class="text-sm font-black text-gray-900 dark:text-white">₹{{ chit.monthlyAmount | number:'1.0-0' }}</p>
+                        <p class="text-sm font-black text-gray-900 dark:text-white" [appCountUp]="chit.monthlyAmount" prefix="₹"></p>
                       </div>
                       <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl text-right border border-gray-100/50 dark:border-gray-700/50">
                         <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Members</p>
@@ -971,7 +972,7 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                     </div>
                     <div class="mb-4 bg-purple-50/30 dark:bg-purple-900/10 p-3 rounded-2xl flex justify-between items-center border border-purple-100/30 dark:border-purple-900/20">
                        <p class="text-[9px] font-black text-purple-500 uppercase tracking-widest italic opacity-70">Total Collection</p>
-                       <p class="text-sm font-black text-purple-600 dark:text-purple-400">₹{{ getTotalChittiPaid(chit.id!) | number:'1.0-0' }}</p>
+                       <p class="text-sm font-black text-purple-600 dark:text-purple-400" [appCountUp]="getTotalChittiPaid(chit.id!)" prefix="₹"></p>
                     </div>
 
                     <!-- Professional Progress Bar -->
@@ -1103,7 +1104,7 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                         <div class="h-6 w-[1px] bg-gray-200 dark:bg-gray-800"></div>
                         <div class="px-3 py-1 text-right min-w-[80px]">
                             <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-0.5">Total</p>
-                            <p class="text-[11px] sm:text-sm font-black text-indigo-600">₹{{ filteredTotalRent | number:'1.0-0' }}</p>
+                            <p class="text-[11px] sm:text-sm font-black text-indigo-600" [appCountUp]="filteredTotalRent" prefix="₹"></p>
                         </div>
                       </div>
                       <button (click)="openRentalHouseForm()" class="sm:hidden p-3 bg-gray-900 dark:bg-white dark:text-gray-900 text-white rounded-xl shadow-lg">
@@ -1147,7 +1148,7 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                               <div class="w-2 h-2 rounded-full bg-green-500"></div>
                               <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Rent Collected</span>
                             </div>
-                            <span class="text-xs font-black text-gray-900 dark:text-white">₹{{ getHouseStats(house).collected | number:'1.0-0' }}</span>
+                            <span class="text-xs font-black text-gray-900 dark:text-white" [appCountUp]="getHouseStats(house).collected" prefix="₹"></span>
                         </div>
                         
                         <div class="flex items-center justify-between pb-3 border-b border-gray-50 dark:border-gray-800/50">
@@ -1163,7 +1164,7 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                               <div class="w-2 h-2 rounded-full bg-red-500"></div>
                               <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Pending</span>
                             </div>
-                            <span class="text-xs font-black text-red-600">₹{{ getHouseStats(house).pending | number:'1.0-0' }}</span>
+                            <span class="text-xs font-black text-red-600" [appCountUp]="getHouseStats(house).pending" prefix="₹"></span>
                         </div>
                       </div>
 
@@ -1232,17 +1233,17 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                                   <div class="flex flex-wrap gap-x-4 gap-y-2">
                                     <div class="flex flex-col">
                                       <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Rent</span>
-                                      <span class="text-xs font-bold text-gray-700 dark:text-gray-300">₹{{ bill.rentAmount | number:'1.0-0' }}</span>
+                                      <span class="text-xs font-bold text-gray-700 dark:text-gray-300" [appCountUp]="bill.rentAmount" prefix="₹"></span>
                                     </div>
                                     <div class="flex items-center text-gray-200 dark:text-gray-700 text-xs px-1">/</div>
                                     <div class="flex flex-col">
                                       <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Electric</span>
-                                      <span class="text-xs font-bold text-gray-700 dark:text-gray-300">₹{{ bill.electricBill | number:'1.0-0' }}</span>
+                                      <span class="text-xs font-bold text-gray-700 dark:text-gray-300" [appCountUp]="bill.electricBill" prefix="₹"></span>
                                     </div>
                                     <div class="flex items-center text-gray-200 dark:text-gray-700 text-xs px-1">/</div>
                                     <div class="flex flex-col">
                                       <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Water</span>
-                                      <span class="text-xs font-bold text-gray-700 dark:text-gray-300">₹{{ bill.waterBill | number:'1.0-0' }}</span>
+                                      <span class="text-xs font-bold text-gray-700 dark:text-gray-300" [appCountUp]="bill.waterBill" prefix="₹"></span>
                                     </div>
                                   </div>
                                 </div>
@@ -1250,7 +1251,7 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                                 <div class="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-none border-gray-50 dark:border-gray-700">
                                   <div class="sm:text-right">
                                     <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Bill</p>
-                                    <p class="text-xl font-black text-indigo-600 dark:text-indigo-400 tracking-tighter leading-none">₹{{ bill.total | number:'1.0-0' }}</p>
+                                    <p class="text-xl font-black text-indigo-600 dark:text-indigo-400 tracking-tighter leading-none" [appCountUp]="bill.total" prefix="₹"></p>
                                   </div>
                                   <div class="flex gap-1 sm:mt-4">
                                     <button (click)="openMonthlyBillForm(bill, findOriginalBillIndex(bill, activeHouse))" class="p-2 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all">
@@ -1664,7 +1665,7 @@ import { RentalService, RentalHouse, RentalBill } from '../services/rental.servi
                                <h4 class="text-base font-black text-gray-900 dark:text-white mt-1">{{ acc.name }}</h4>
                             </div>
                             <div class="text-right">
-                               <p class="text-sm font-black text-gray-900 dark:text-white">₹{{ acc.amount | number:'1.0-0' }}</p>
+                               <p class="text-sm font-black text-gray-900 dark:text-white" [appCountUp]="acc.amount" prefix="₹"></p>
                                <div class="mt-1 flex justify-end">
                                   <span class="text-[10px] font-bold px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/40 group-hover:text-purple-600 dark:group-hover:text-purple-400 rounded-full transition-colors uppercase">View &rarr;</span>
                                </div>

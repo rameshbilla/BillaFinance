@@ -2,11 +2,12 @@ import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Bill } from '../../services/bill.service';
+import { CountUpDirective } from '../../../shared/directives/count-up.directive';
 
 @Component({
   selector: 'app-bill-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CountUpDirective],
   template: `
     <div class="space-y-6">
 
@@ -34,7 +35,7 @@ import { Bill } from '../../services/bill.service';
           </div>
           <div class="flex-1 min-w-0">
             <p class="text-sm font-black text-red-700 dark:text-red-400">{{ overdueBills.length }} Bill{{ overdueBills.length > 1 ? 's' : '' }} Overdue!</p>
-            <p class="text-[10px] text-red-500 font-bold">Total: ₹{{ overdueTotal | number:'1.0-0' }} — Pay immediately</p>
+            <p class="text-[10px] text-red-500 font-bold">Total: <span [appCountUp]="overdueTotal" prefix="₹"></span> — Pay immediately</p>
           </div>
         </div>
 
@@ -102,7 +103,7 @@ import { Bill } from '../../services/bill.service';
           </select>
           <div class="flex-1 min-w-[120px] bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 px-4 py-2.5 rounded-xl border border-green-100 dark:border-green-800/30">
             <p class="text-[9px] font-black text-green-600 uppercase tracking-widest">Total Paid</p>
-            <p class="text-base font-black text-green-700 dark:text-green-400">₹{{ historyTotal | number:'1.0-0' }}</p>
+            <p class="text-base font-black text-green-700 dark:text-green-400" [appCountUp]="historyTotal" prefix="₹"></p>
           </div>
         </div>
 
@@ -122,7 +123,7 @@ import { Bill } from '../../services/bill.service';
                 </div>
               </div>
               <div class="text-right shrink-0">
-                <p class="text-lg font-black text-green-600 dark:text-green-400">₹{{ (bill.paidAmount || bill.amount) | number:'1.0-0' }}</p>
+                <p class="text-lg font-black text-green-600 dark:text-green-400" [appCountUp]="bill.paidAmount || bill.amount" prefix="₹"></p>
                 <span class="text-[9px] px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-full font-black uppercase">Paid</span>
               </div>
             </div>
@@ -163,7 +164,7 @@ import { Bill } from '../../services/bill.service';
         <div class="bg-white dark:bg-gray-800 p-5 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm">
           <div class="flex items-end gap-2 h-40 px-2">
             <div *ngFor="let bar of analyticsBars; let i = index" class="flex-1 flex flex-col items-center gap-1">
-              <span *ngIf="bar.amount > 0" class="text-[8px] font-black text-purple-600">₹{{ bar.amount | number:'1.0-0' }}</span>
+              <span *ngIf="bar.amount > 0" class="text-[8px] font-black text-purple-600" [appCountUp]="bar.amount" prefix="₹"></span>
               <div class="w-full rounded-t-lg transition-all duration-700 relative overflow-hidden"
                 [style.height.px]="bar.height"
                 [ngClass]="bar.amount > 0 ? 'bg-gradient-to-t from-purple-600 to-indigo-500 shadow-lg shadow-purple-500/20' : 'bg-gray-100 dark:bg-gray-700'">
@@ -183,7 +184,7 @@ import { Bill } from '../../services/bill.service';
               <div class="flex-1">
                 <div class="flex justify-between mb-1">
                   <span class="text-xs font-black text-gray-700 dark:text-gray-300 capitalize">{{ s.type }}</span>
-                  <span class="text-xs font-black text-purple-600">₹{{ s.total | number:'1.0-0' }}</span>
+                  <span class="text-xs font-black text-purple-600" [appCountUp]="s.total" prefix="₹"></span>
                 </div>
                 <div class="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div class="h-full rounded-full transition-all duration-700" [ngClass]="getServiceBg(s.type)" [style.width.%]="s.pct"></div>
@@ -201,11 +202,11 @@ import { Bill } from '../../services/bill.service';
         <div class="grid grid-cols-2 gap-3">
           <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-2xl border border-purple-100 dark:border-purple-800/30">
             <p class="text-[9px] font-black text-purple-500 uppercase tracking-widest mb-1">Total Paid ({{ analyticsYear }})</p>
-            <p class="text-xl font-black text-purple-700 dark:text-purple-300">₹{{ yearTotalPaid | number:'1.0-0' }}</p>
+            <p class="text-xl font-black text-purple-700 dark:text-purple-300" [appCountUp]="yearTotalPaid" prefix="₹"></p>
           </div>
           <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-800/30">
             <p class="text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1">Bills Paid ({{ analyticsYear }})</p>
-            <p class="text-xl font-black text-blue-700 dark:text-blue-300">{{ yearBillCount }}</p>
+            <p class="text-xl font-black text-blue-700 dark:text-blue-300" [appCountUp]="yearBillCount"></p>
           </div>
         </div>
       </div>
@@ -234,7 +235,7 @@ import { Bill } from '../../services/bill.service';
               </div>
             </div>
             <div class="text-right">
-              <p class="text-lg font-black text-gray-900 dark:text-white">₹{{ bill.amount | number:'1.0-0' }}</p>
+              <p class="text-lg font-black text-gray-900 dark:text-white" [appCountUp]="bill.amount" prefix="₹"></p>
               <p class="text-[9px] font-black" [ngClass]="{'text-red-500': bill.status === 'overdue', 'text-orange-500': isDueToday(bill), 'text-amber-500': !isDueToday(bill) && bill.status === 'pending', 'text-green-500': bill.status === 'completed'}">
                 {{ bill.status === 'overdue' ? 'OVERDUE' : bill.status === 'completed' ? 'PAID' : isDueToday(bill) ? 'DUE TODAY' : 'PENDING' }}
               </p>
@@ -247,8 +248,8 @@ import { Bill } from '../../services/bill.service';
           
           <div *ngIf="bill.totalPaid && bill.totalPaid > 0 && bill.totalPaid < bill.amount" class="mb-3 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-xl">
             <div class="flex justify-between text-[8px] font-black uppercase tracking-widest mb-1">
-              <span class="text-green-500">Paid: ₹{{ bill.totalPaid | number:'1.0-0' }}</span>
-              <span class="text-red-500">Left: ₹{{ (bill.amount - bill.totalPaid) | number:'1.0-0' }}</span>
+              <span class="text-green-500">Paid: <span [appCountUp]="bill.totalPaid" prefix="₹"></span></span>
+              <span class="text-red-500">Left: <span [appCountUp]="bill.amount - bill.totalPaid" prefix="₹"></span></span>
             </div>
             <div class="h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
               <div class="h-full bg-green-500 transition-all duration-500" [style.width.%]="(bill.totalPaid / bill.amount) * 100"></div>

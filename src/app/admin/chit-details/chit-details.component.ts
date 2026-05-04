@@ -9,10 +9,12 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
 import { ToastService } from '../../shared/toast.service';
 import { AuthService } from '../../services/auth.service';
 
+import { CountUpDirective } from '../../shared/directives/count-up.directive';
+
 @Component({
   selector: 'app-admin-chit-details',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, CountUpDirective],
   template: `
     <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-950 transition-colors duration-500 pb-20 sm:pb-0 relative overflow-x-hidden">
       <nav class="sticky top-0 z-50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 animate-fade-down">
@@ -44,28 +46,28 @@ import { AuthService } from '../../services/auth.service';
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               </div>
               <p class="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1 leading-none">Total Value</p>
-              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter kpi-number">₹{{ scheme.totalValue | number:'1.0-0' }}</p>
+              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter kpi-number" [appCountUp]="scheme.totalValue" prefix="₹"></p>
             </div>
             <div class="glass-card p-6 rounded-[2.5rem] border-blue-500/10 animate-fade-up delay-200 hover:-translate-y-1 transition-all duration-300 group">
               <div class="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 mb-3 group-hover:scale-110 transition-transform">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
               </div>
               <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 leading-none">Monthly EMI</p>
-              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter kpi-number">₹{{ scheme.monthlyAmount | number:'1.0-0' }}</p>
+              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter kpi-number" [appCountUp]="scheme.monthlyAmount" prefix="₹"></p>
             </div>
             <div class="glass-card p-6 rounded-[2.5rem] border-pink-500/10 animate-fade-up delay-300 hover:-translate-y-1 transition-all duration-300 group">
               <div class="w-8 h-8 rounded-xl bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center text-pink-500 mb-3 group-hover:scale-110 transition-transform">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               </div>
               <p class="text-[10px] font-black text-pink-500 uppercase tracking-widest mb-1 leading-none">Members</p>
-              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter kpi-number">{{ customers.length }} / {{ scheme.capacity }}</p>
+              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter kpi-number"><span [appCountUp]="customers.length"></span> / {{ scheme.capacity }}</p>
             </div>
             <div class="glass-card p-6 rounded-[2.5rem] border-green-500/10 animate-fade-up delay-400 hover:-translate-y-1 transition-all duration-300 group">
               <div class="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-500 mb-3 group-hover:scale-110 transition-transform">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               </div>
               <p class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1 leading-none">Tenure</p>
-              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter kpi-number">{{ scheme.tenure }} Mo</p>
+              <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter kpi-number" [appCountUp]="scheme.tenure" suffix=" Mo"></p>
             </div>
           </div>
 
@@ -77,7 +79,7 @@ import { AuthService } from '../../services/auth.service';
               </div>
               <div>
                  <p class="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Collected <span class="hidden md:inline">({{ currentMonthName }})</span></p>
-                 <p class="text-base sm:text-xl font-black text-gray-900 dark:text-white">₹{{ schemeCollectedThisMonth | number:'1.0-0' }}</p>
+                 <p class="text-base sm:text-xl font-black text-gray-900 dark:text-white" [appCountUp]="schemeCollectedThisMonth" prefix="₹"></p>
               </div>
            </div>
            <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row items-start sm:items-center animate-fade-up delay-600 hover:shadow-md transition-all group">
@@ -86,7 +88,7 @@ import { AuthService } from '../../services/auth.service';
               </div>
               <div>
                  <p class="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Pending <span class="hidden md:inline">({{ currentMonthName }})</span></p>
-                 <p class="text-base sm:text-xl font-black text-pink-600">₹{{ schemePendingThisMonth | number:'1.0-0' }}</p>
+                 <p class="text-base sm:text-xl font-black text-pink-600" [appCountUp]="schemePendingThisMonth" prefix="₹"></p>
               </div>
            </div>
         </div>
@@ -128,20 +130,18 @@ import { AuthService } from '../../services/auth.service';
                 <div class="grid grid-cols-2 gap-4 mb-6">
                    <div class="bg-gray-50/50 dark:bg-gray-900/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-800">
                       <p class="text-[8px] font-black text-gray-400 uppercase mb-1">Paid Status</p>
-                      <p class="text-sm font-black text-green-600 tracking-tighter">₹{{ getPaidAmount(cust) | number:'1.0-0' }}</p>
+                      <p class="text-sm font-black text-green-600 tracking-tighter" [appCountUp]="getPaidAmount(cust)" prefix="₹"></p>
                    </div>
                    <div class="bg-pink-50/50 dark:bg-pink-900/10 p-3 rounded-2xl border border-pink-100 dark:border-pink-900/20">
                       <p class="text-[8px] font-black text-pink-400 uppercase mb-1 text-right">Pending Due</p>
-                      <p class="text-sm font-black text-pink-600 tracking-tighter text-right">₹{{ getPendingAmount(cust) | number:'1.0-0' }}</p>
+                      <p class="text-sm font-black text-pink-600 tracking-tighter text-right" [appCountUp]="getPendingAmount(cust)" prefix="₹"></p>
                    </div>
                 </div>
 
                 <div class="space-y-3 mb-6 px-1">
                    <div class="flex justify-between items-end">
-                      <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none">Progress: {{ getPaidAmount(cust)/scheme.monthlyAmount | number:'1.0-0' }}/{{ scheme.tenure }} Mo</p>
-                      <p class="text-[10px] font-black text-purple-600 dark:text-purple-400 tracking-tighter">
-                         {{ (getPaidAmount(cust) / (scheme.monthlyAmount * scheme.tenure)) * 100 | number:'1.0-0' }}%
-                      </p>
+                      <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none">Progress: <span [appCountUp]="getPaidAmount(cust)/scheme.monthlyAmount"></span>/{{ scheme.tenure }} Mo</p>
+                      <p class="text-[10px] font-black text-purple-600 dark:text-purple-400 tracking-tighter" [appCountUp]="(getPaidAmount(cust) / (scheme.monthlyAmount * scheme.tenure)) * 100" suffix="%"></p>
                    </div>
                    <div class="w-full bg-gray-100 dark:bg-gray-800 h-1.5 rounded-full overflow-hidden">
                       <div class="bg-gradient-to-r from-purple-600 to-indigo-600 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(124,58,237,0.3)]" 
@@ -289,7 +289,7 @@ import { AuthService } from '../../services/auth.service';
                     <h4 class="text-sm font-bold text-gray-400 uppercase tracking-wider">Payment Records</h4>
                     <div class="text-right">
                        <p class="text-[10px] text-gray-500 uppercase">Pending Amount</p>
-                       <p class="text-lg font-bold text-pink-600">₹{{ currentPendingAmount | number:'1.0-0' }}</p>
+                       <p class="text-lg font-bold text-pink-600" [appCountUp]="currentPendingAmount" prefix="₹"></p>
                     </div>
                   </div>
 

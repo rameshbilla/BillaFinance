@@ -12,12 +12,13 @@ import { ToastService } from '../../shared/toast.service';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType, Chart } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
+import { CountUpDirective } from '../../shared/directives/count-up.directive';
 Chart.register(zoomPlugin);
 
 @Component({
   selector: 'app-customer-dashboard',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, BaseChartDirective],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, BaseChartDirective, CountUpDirective],
   template: `
     <style>
       @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -123,7 +124,7 @@ Chart.register(zoomPlugin);
             <div class="grid grid-cols-2 gap-3 mt-8 relative z-10">
                <div class="glass-card bg-white/80 dark:bg-[#0f172a] rounded-3xl p-5 border border-purple-500/50 shadow-sm transition-all duration-500">
                   <p class="text-[8px] sm:text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1 leading-none">Total Outstanding</p>
-                  <p class="text-xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tighter">₹{{ totalOutstanding | number:'1.0-0' }}</p>
+                  <p class="text-xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tighter" [appCountUp]="totalOutstanding" prefix="₹"></p>
                </div>
                <div class="glass-card bg-white/80 dark:bg-[#0f172a] rounded-3xl p-5 border border-blue-500/50 text-right shadow-sm transition-all duration-500">
                   <p class="text-[8px] sm:text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 leading-none">Active Products</p>
@@ -172,27 +173,25 @@ Chart.register(zoomPlugin);
                   </div>
                   <div class="text-right shrink-0">
                     <p class="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1">Pending</p>
-                    <p class="text-xl font-black text-red-600 tracking-tighter leading-none">₹{{ getChitPending(item.scheme, item.customer) | number:'1.0-0' }}</p>
+                    <p class="text-xl font-black text-red-600 tracking-tighter leading-none" [appCountUp]="getChitPending(item.scheme, item.customer)" prefix="₹"></p>
                   </div>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-4 mb-6">
                   <div class="bg-gray-50/50 dark:bg-gray-900/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-800">
                     <p class="text-[8px] font-black text-gray-400 uppercase mb-1">Paid Status</p>
-                    <p class="text-sm font-black text-gray-900 dark:text-white tracking-tighter">₹{{ getChitPaid(item.customer) | number:'1.0-0' }}</p>
+                    <p class="text-sm font-black text-gray-900 dark:text-white tracking-tighter" [appCountUp]="getChitPaid(item.customer)" prefix="₹"></p>
                   </div>
                   <div class="bg-gray-50/50 dark:bg-gray-900/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-800">
                     <p class="text-[8px] font-black text-gray-400 uppercase mb-1 text-right">Tenure Remaining</p>
-                    <p class="text-sm font-black text-gray-900 dark:text-white tracking-tighter text-right">{{ item.scheme.tenure - (getChitPaid(item.customer) / item.scheme.monthlyAmount) | number:'1.0-0' }} Mo</p>
+                    <p class="text-sm font-black text-gray-900 dark:text-white tracking-tighter text-right" [appCountUp]="item.scheme.tenure - (getChitPaid(item.customer) / item.scheme.monthlyAmount)" suffix=" Mo"></p>
                   </div>
                 </div>
 
                 <div class="space-y-3 mb-6 px-1">
                   <div class="flex justify-between items-end">
-                    <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Progress ({{ (getChitPaid(item.customer) / item.scheme.monthlyAmount) | number:'1.0-0' }}/{{ item.scheme.tenure }})</p>
-                    <p class="text-[10px] font-black text-purple-600 dark:text-purple-400 tracking-tighter">
-                      {{ (getChitPaid(item.customer) / (item.scheme.monthlyAmount * item.scheme.tenure)) * 100 | number:'1.0-0' }}%
-                    </p>
+                    <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Progress (<span [appCountUp]="getChitPaid(item.customer) / item.scheme.monthlyAmount"></span>/{{ item.scheme.tenure }})</p>
+                    <p class="text-[10px] font-black text-purple-600 dark:text-purple-400 tracking-tighter" [appCountUp]="(getChitPaid(item.customer) / (item.scheme.monthlyAmount * item.scheme.tenure)) * 100" suffix="%"></p>
                   </div>
                   <div class="w-full bg-gray-100 dark:bg-gray-800 h-1 rounded-full overflow-hidden">
                     <div class="bg-gradient-to-r from-purple-600 to-indigo-600 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(124,58,237,0.2)]" 
@@ -227,7 +226,7 @@ Chart.register(zoomPlugin);
                   </div>
                   <div class="text-right shrink-0">
                     <p class="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1">Outstanding</p>
-                    <p class="text-xl font-black text-red-600 tracking-tighter leading-none">₹{{ getBalance(loan) + getPendingInterest(loan) | number:'1.0-0' }}</p>
+                    <p class="text-xl font-black text-red-600 tracking-tighter leading-none" [appCountUp]="getBalance(loan) + getPendingInterest(loan)" prefix="₹"></p>
                   </div>
                 </div>
 
@@ -248,22 +247,20 @@ Chart.register(zoomPlugin);
                 <div class="grid grid-cols-2 gap-3 mb-6">
                   <div class="bg-gray-50/50 dark:bg-gray-900/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-800">
                     <p class="text-[8px] font-black text-gray-400 uppercase mb-0.5">Principal</p>
-                    <p class="text-base font-black text-gray-900 dark:text-white tracking-tighter">₹{{ getBalance(loan) | number:'1.0-0' }}</p>
+                    <p class="text-base font-black text-gray-900 dark:text-white tracking-tighter" [appCountUp]="getBalance(loan)" prefix="₹"></p>
                     <p class="text-[7px] text-gray-400 font-bold mt-1 uppercase">ROI: {{ loan.interestRate }}%</p>
                   </div>
                   <div class="bg-orange-50/50 dark:bg-orange-900/10 p-3 rounded-2xl border border-orange-100 dark:border-orange-900/20">
                     <p class="text-[8px] font-black text-orange-400 uppercase mb-0.5 text-right">Interest Due</p>
-                    <p class="text-base font-black text-orange-600 tracking-tighter text-right">₹{{ getPendingInterest(loan) | number:'1.0-0' }}</p>
+                    <p class="text-base font-black text-orange-600 tracking-tighter text-right" [appCountUp]="getPendingInterest(loan)" prefix="₹"></p>
                     <p class="text-[7px] text-orange-400 font-bold mt-1 text-right uppercase">Last Paid: {{ getLastInterestDate(loan) | date:'dd MMM' }}</p>
                   </div>
                 </div>
 
                 <div class="space-y-3 mb-6 px-1">
                   <div class="flex justify-between items-end">
-                    <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none">Principal Paid: <span class="text-green-600">₹{{ getLoanPaid(loan) | number:'1.0-0' }}</span></p>
-                    <p class="text-[10px] font-black text-blue-600 dark:text-blue-400 tracking-tighter">
-                      {{ (getLoanPaid(loan) / loan.amount * 100) | number:'1.0-0' }}% Released
-                    </p>
+                    <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none">Principal Paid: <span class="text-green-600" [appCountUp]="getLoanPaid(loan)" prefix="₹"></span></p>
+                    <p class="text-[10px] font-black text-blue-600 dark:text-blue-400 tracking-tighter" [appCountUp]="(getLoanPaid(loan) / loan.amount * 100)" suffix="% Released"></p>
                   </div>
                   <div class="w-full bg-gray-100 dark:bg-gray-800 h-1 rounded-full overflow-hidden">
                     <div class="bg-gradient-to-r from-blue-600 to-indigo-600 h-full rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(37,99,235,0.2)]" 
@@ -295,7 +292,7 @@ Chart.register(zoomPlugin);
                   </div>
                   <div class="text-right shrink-0">
                     <p class="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1">Advance Paid</p>
-                    <p class="text-xl font-black text-green-600 tracking-tighter leading-none">₹{{ house.advanceAmount | number:'1.0-0' }}</p>
+                    <p class="text-xl font-black text-green-600 tracking-tighter leading-none" [appCountUp]="house.advanceAmount" prefix="₹"></p>
                   </div>
                 </div>
 
@@ -357,18 +354,18 @@ Chart.register(zoomPlugin);
                          {{ selectedChit ? 'Total Paid' : (selectedLoan ? 'Principal Paid' : 'Security Deposit') }}
                        </p>
                        <p class="text-2xl font-black text-gray-900 dark:text-white truncate">
-                         ₹{{ selectedChit ? getChitPaid(selectedChit.customer) : (selectedLoan ? getLoanPaid(selectedLoan) : selectedHouse?.advanceAmount) | number:'1.0-0' }}
+                         <span [appCountUp]="(selectedChit ? getChitPaid(selectedChit.customer) : (selectedLoan ? getLoanPaid(selectedLoan) : selectedHouse?.advanceAmount)) || 0" prefix="₹"></span>
                        </p>
                     </div>
                     <div class="bg-gray-50 dark:bg-gray-900/50 p-4 sm:p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 flex flex-col justify-center">
                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 truncate">Balance</p>
                        <p class="text-2xl font-black text-red-600 truncate">
                          @if (selectedChit) {
-                            ₹{{ getChitPending(selectedChit.scheme, selectedChit.customer) | number:'1.0-0' }}
+                            <span [appCountUp]="getChitPending(selectedChit.scheme, selectedChit.customer)" prefix="₹"></span>
                          } @else if (selectedLoan) {
-                            ₹{{ getBalance(selectedLoan) | number:'1.0-0' }}
+                            <span [appCountUp]="getBalance(selectedLoan)" prefix="₹"></span>
                          } @else if (selectedHouse) {
-                            ₹{{ (selectedHouse.bills && selectedHouse.bills.length > 0) ? selectedHouse.bills[selectedHouse.bills.length-1].total : 0 | number:'1.0-0' }}
+                            <span [appCountUp]="(selectedHouse.bills && selectedHouse.bills.length > 0) ? selectedHouse.bills[selectedHouse.bills.length-1].total : 0" prefix="₹"></span>
                          }
                        </p>
                     </div>
@@ -428,12 +425,12 @@ Chart.register(zoomPlugin);
                                @for (bill of selectedHouse.bills; track $index) {
                                   <tr class="border-b border-gray-50 dark:border-gray-800/50">
                                      <td class="p-4 font-black text-green-600">{{ bill.billDate | date:'MMM dd, yyyy' }}</td>
-                                     <td class="p-4">₹{{ bill.rentAmount | number:'1.0-0' }}</td>
-                                     <td class="p-4">₹{{ bill.electricBill | number:'1.0-0' }}</td>
-                                     <td class="p-4">₹{{ bill.waterBill | number:'1.0-0' }}</td>
+                                     <td class="p-4" [appCountUp]="bill.rentAmount" prefix="₹"></td>
+                                     <td class="p-4" [appCountUp]="bill.electricBill" prefix="₹"></td>
+                                     <td class="p-4" [appCountUp]="bill.waterBill" prefix="₹"></td>
                                      
                                      
-                                     <td class="p-4 font-black text-gray-900 dark:text-white bg-green-50/30">₹{{ bill.total | number:'1.0-0' }}</td>
+                                     <td class="p-4 font-black text-gray-900 dark:text-white bg-green-50/30" [appCountUp]="bill.total" prefix="₹"></td>
                                       <td class="p-4">
                                          <span class="px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest"
                                             [class]="bill.status === 'Paid' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'">
@@ -462,7 +459,7 @@ Chart.register(zoomPlugin);
                                     <p class="text-[10px] text-purple-500 font-black uppercase tracking-widest mt-1">REF: {{ payment.id?.slice(-8) || 'N/A' }}</p>
                                  </div>
                                  <div class="text-right">
-                                    <p class="text-xl font-black text-gray-900 dark:text-white">+₹{{ payment.amount | number:'1.0-0' }}</p>
+                                    <p class="text-xl font-black text-gray-900 dark:text-white" [appCountUp]="payment.amount" prefix="+₹"></p>
                                  </div>
                               </div>
                            </div>
@@ -488,7 +485,7 @@ Chart.register(zoomPlugin);
                                 <div class="text-right">
                                   <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Amount Paid</p>
                                   <p class="text-xl font-black leading-none" [class]="item.type === 'interest' ? 'text-indigo-600' : 'text-green-600'">
-                                    +₹{{ item.amount | number:'1.0-0' }}
+                                    <span [appCountUp]="item.amount" prefix="+₹"></span>
                                   </p>
                                 </div>
                               </div>

@@ -7,11 +7,12 @@ import { ToastService } from '../../shared/toast.service';
 import { AuthService } from '../../services/auth.service';
 import { Subscription } from 'rxjs';
 import { numberToWords } from '../../shared/utils/number-to-words.util';
+import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
 @Component({
   selector: 'app-admin-chit-create',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, CountUpDirective],
   template: `
     <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-900 transition-colors duration-300 relative overflow-hidden">
       <!-- Background decorative glows -->
@@ -77,8 +78,7 @@ import { numberToWords } from '../../shared/utils/number-to-words.util';
                      <p class="text-xs text-purple-600/70 dark:text-purple-400 mt-1 leading-none">Tenure × Monthly Amount</p>
                   </div>
                   <div class="text-left sm:text-right">
-                     <div class="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 kpi-number">
-                        ₹{{ calculatedTotal | number:'1.0-0' }}
+                     <div class="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 kpi-number" [appCountUp]="calculatedTotal" prefix="₹">
                      </div>
                      <p class="text-[9px] sm:text-[10px] text-purple-600 dark:text-purple-400 mt-1 font-bold italic">{{ amountToWords(calculatedTotal) }}</p>
                   </div>
