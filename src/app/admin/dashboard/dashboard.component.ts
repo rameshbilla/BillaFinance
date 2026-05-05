@@ -114,6 +114,12 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
               <span class="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-500">FinServe Admin</span>
             </div>
             <div class="flex space-x-2 items-center" *ngIf="authService.userProfile$ | async as profile">
+              <!-- Game Button -->
+              <button (click)="goToGame()" class="p-2.5 text-orange-500 hover:text-orange-600 transition-all font-bold mr-1 flex items-center gap-2" title="Play Game">
+                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                 <span class="text-[10px] font-black uppercase tracking-widest hidden lg:inline">Game</span>
+              </button>
+              
               <!-- Super Admin Controls -->
               <button *ngIf="isSuperAdmin" (click)="goToManageAdmins()" class="p-2.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all mr-1 flex items-center gap-2" title="Manage Admin Members">
                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
@@ -1592,6 +1598,15 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                </div>
             }
 
+            <!-- Game (Mobile) -->
+            <div (click)="goToGame()" 
+                 class="nav-item-box">
+               <svg class="w-6 h-6 nav-icon icon-inactive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+               </svg>
+            </div>
+
             <!-- Chitties -->
             @if (showChittiTab) {
                <div (click)="scrollToTop(); activeMobileMenu = 'chitti'; activeTab = 'chitti'" 
@@ -2396,9 +2411,9 @@ export class AdminDashboardComponent implements OnInit {
 
 
   get visibleMobileTabs() {
-    const all = ['overview', 'interest', 'chitti', 'customers', 'bills', 'rentals', 'security'];
+    const all = ['overview', 'interest', 'game', 'chitti', 'customers', 'bills', 'rentals', 'security'];
     return all.filter(t => {
-      if (t === 'overview' || t === 'security') return true;
+      if (t === 'overview' || t === 'game' || t === 'security') return true;
       if (t === 'interest') return this.showInterestTab;
       if (t === 'chitti') return this.showChittiTab;
       if (t === 'customers') return this.showCustomersTab;
@@ -3332,6 +3347,10 @@ export class AdminDashboardComponent implements OnInit {
   // --- Super Admin & Security ---
   goToManageAdmins() {
     this.router.navigate(['/admin/manage-admins']);
+  }
+
+  goToGame() {
+    this.router.navigate(['/car']);
   }
 
   migrationUsername: string = '';

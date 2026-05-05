@@ -1,12 +1,14 @@
 import { Routes } from '@angular/router';
 import { authGuard, adminGuard } from './guards/auth.guard';
+import { CarGameComponent } from './car-game/car-game.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', loadComponent: () => import('./auth/login/login.component').then(m => m.LoginComponent), data: { animation: 'LoginPage' } },
   { path: 'register', loadComponent: () => import('./auth/register/register.component').then(m => m.RegisterComponent), data: { animation: 'RegisterPage' } },
-  { 
-    path: 'admin', 
+  { path: 'car', component: CarGameComponent },
+  {
+    path: 'admin',
     canActivate: [authGuard, adminGuard],
     children: [
       { path: '', loadComponent: () => import('./admin/dashboard/dashboard.component').then(m => m.AdminDashboardComponent), data: { animation: 'AdminDash' } },
@@ -19,8 +21,8 @@ export const routes: Routes = [
       { path: 'manage-admins', loadComponent: () => import('./admin/manage-admins/manage-admins.component').then(m => m.ManageAdminsComponent), data: { animation: 'ManageAdmins' } },
     ]
   },
-  { 
-    path: 'customer', 
+  {
+    path: 'customer',
     canActivate: [authGuard],
     loadComponent: () => import('./customer/dashboard/dashboard.component').then(m => m.CustomerDashboardComponent),
     data: { animation: 'CustomerDash' }

@@ -98,6 +98,11 @@ Chart.register(zoomPlugin);
               <button (click)="activeTab = 'security'; activeMobileMenu = 'security'" class="p-2 text-gray-500 hover:text-indigo-600 transition-colors hidden sm:block" title="Security & Password">
                 <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
               </button>
+              <!-- Game Button -->
+              <button (click)="goToGame()" class="p-2 text-orange-500 hover:text-orange-600 transition-colors hidden sm:flex items-center gap-2" title="Play Game">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span class="text-xs font-black uppercase tracking-widest">Game</span>
+              </button>
               <button (click)="toggleTheme()" class="p-2 text-gray-500 hover:text-purple-600 transition-colors">
                 <svg *ngIf="!isDarkMode" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
                 <svg *ngIf="isDarkMode" class="w-6 h-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
@@ -505,11 +510,11 @@ Chart.register(zoomPlugin);
          <div class="bottom-nav-pill pointer-events-auto relative flex items-center px-4">
             
             <div class="absolute inset-1 flex pointer-events-none z-0">
-               <div [style.flex-grow]="activeMobileMenu === 'home' ? 0 : 1" class="transition-all duration-500 ease-in-out"></div>
-               <div class="flex-none flex items-center justify-center" style="width: 50%">
+               <div [style.flex-grow]="activeMobileMenu === 'home' ? 0 : (activeMobileMenu === 'security' ? 2 : 1)" class="transition-all duration-500 ease-in-out"></div>
+               <div class="flex-none flex items-center justify-center" style="width: 33.333%">
                   <div class="h-full aspect-square bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-full shadow-lg shadow-purple-500/30 transition-all duration-500"></div>
                </div>
-               <div [style.flex-grow]="activeMobileMenu === 'home' ? 1 : 0" class="transition-all duration-500 ease-in-out"></div>
+               <div [style.flex-grow]="activeMobileMenu === 'home' ? 2 : (activeMobileMenu === 'security' ? 0 : 1)" class="transition-all duration-500 ease-in-out"></div>
             </div>
 
             <!-- Home -->
@@ -517,6 +522,15 @@ Chart.register(zoomPlugin);
                  class="nav-item-box">
                <svg class="w-7 h-7 nav-icon" [class]="activeMobileMenu === 'home' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+               </svg>
+            </div>
+
+            <!-- Game (Mobile) -->
+            <div (click)="goToGame()" 
+                 class="nav-item-box">
+               <svg class="w-7 h-7 nav-icon icon-inactive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                </svg>
             </div>
 
@@ -732,6 +746,10 @@ export class CustomerDashboardComponent implements OnInit {
     this.selectedChit = null;
     this.selectedLoan = null;
     this.scrollToTop();
+  }
+
+  goToGame() {
+    this.router.navigate(['/car']);
   }
 
   openIdentityProfile(type: 'chit' | 'loan', payload: any) {
