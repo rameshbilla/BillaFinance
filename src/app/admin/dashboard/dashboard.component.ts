@@ -114,6 +114,12 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
               <span class="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-500">FinServe Admin</span>
             </div>
             <div class="flex space-x-2 items-center" *ngIf="authService.userProfile$ | async as profile">
+              <!-- Game Button -->
+              <button *ngIf="!isSuperAdmin" (click)="goToGame()" class="p-2.5 text-orange-500 hover:text-orange-600 transition-all font-bold mr-1 flex items-center gap-2" title="Play Game">
+                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                 <span class="text-[10px] font-black uppercase tracking-widest hidden lg:inline">Game</span>
+              </button>
+              
               <!-- Super Admin Controls -->
               <button *ngIf="isSuperAdmin" (click)="goToManageAdmins()" class="p-2.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all mr-1 flex items-center gap-2" title="Manage Admin Members">
                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
@@ -310,8 +316,23 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
         <!-- ═══════════ SUPER ADMIN VIEW ═══════════ -->
         @if (isSuperAdmin && activeTab !== 'security') {
            <div class="space-y-10 card-animate">
-              <!-- Admin Creation Form -->
-              <section class="bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-xl border border-gray-100 dark:border-gray-800 p-8">
+              
+              <!-- Super Admin Header -->
+              <div class="flex justify-between items-center px-2">
+                 <div>
+                    <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Admin Management</h2>
+                    <p class="text-sm font-medium text-gray-500 mt-1">Manage administrative staff and module permissions.</p>
+                 </div>
+                 <button (click)="showAdminForm = !showAdminForm; isAdminEditMode = false; adminForm.reset(); adminForm.get('username')?.enable();" 
+                    class="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-1 transition-all flex items-center gap-2">
+                    <svg *ngIf="!showAdminForm" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                    <svg *ngIf="showAdminForm" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                    {{ showAdminForm ? 'Close Form' : 'Register Admin' }}
+                 </button>
+              </div>
+
+              <!-- Admin Creation Form (Togglable) -->
+              <section *ngIf="showAdminForm || isAdminEditMode" class="bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-xl border border-gray-100 dark:border-gray-800 p-8 animate-in slide-in-from-top-4 duration-500">
                  <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-6 uppercase tracking-tighter">{{ isAdminEditMode ? 'Update' : 'Register' }} Admin Member</h2>
                  <form [formGroup]="adminForm" (ngSubmit)="createAdminMember()" class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -394,20 +415,36 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                            </div>
                         </div>
                     </div>
-                    <div class="flex justify-end pt-4">
+                    <div class="flex justify-end pt-4 gap-3">
+                       <button *ngIf="isAdminEditMode" type="button" (click)="cancelAdminEdit()"
+                          class="px-8 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-200 transition-all">
+                          Cancel Edit
+                       </button>
                        <button type="submit" [disabled]="adminForm.invalid || isSaving"
-                          class="px-10 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all">
-                          {{ isSaving ? (isAdminEditMode ? 'Updating...' : 'Establishing...') : (isAdminEditMode ? 'Update Admin Account' : 'Finalize Admin Access') }}
+                          class="px-10 py-4 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all disabled:opacity-40">
+                          {{ isSaving ? (isAdminEditMode ? 'Updating...' : 'Establishing...') : (isAdminEditMode ? 'Update Account' : 'Finalize Access') }}
                        </button>
                     </div>
                  </form>
               </section>
 
               <!-- Admin Members List -->
-              <section class="space-y-4">
-                 <h3 class="text-xl font-bold text-gray-900 dark:text-white px-2">Active Administrative Staff</h3>
+              <section class="space-y-6">
+                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-2">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tighter">Active Administrative Staff</h3>
+                    
+                    <!-- Search Filter (Only if > 5 admins) -->
+                    <div *ngIf="admins.length > 5" class="w-full sm:w-64 relative">
+                       <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                       </span>
+                       <input type="text" [(ngModel)]="adminSearchQuery" placeholder="Search admins..." 
+                          class="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-gray-900 dark:text-white shadow-sm transition-all">
+                    </div>
+                 </div>
+
                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    @for (admin of admins$ | async; track admin.uid) {
+                    @for (admin of getFilteredAdmins(); track admin.uid) {
                        <div class="bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col group hover:shadow-md transition-all relative overflow-hidden">
                           <div class="flex justify-between items-start mb-4">
                              <div>
@@ -429,9 +466,15 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                           
                           <!-- Admin Identity & Password Details -->
                           <div class="mt-2 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-4">
-                             <div>
-                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 italic">Resident Address</p>
-                                <p class="text-xs text-gray-600 dark:text-gray-300 font-bold leading-relaxed">{{ admin.address || 'No address provided' }}</p>
+                             <div class="flex justify-between items-end">
+                                <div>
+                                   <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 italic">Resident Address</p>
+                                   <p class="text-xs text-gray-600 dark:text-gray-300 font-bold leading-relaxed line-clamp-1">{{ admin.address || 'No address provided' }}</p>
+                                </div>
+                                <div class="bg-indigo-50/50 dark:bg-indigo-900/20 px-3 py-1.5 rounded-xl border border-indigo-100/50 dark:border-indigo-800/30">
+                                   <p class="text-[8px] font-black text-indigo-500 uppercase tracking-widest leading-none mb-0.5">Customers</p>
+                                   <p class="text-sm font-black text-indigo-600 dark:text-indigo-400 leading-none">{{ getAdminCustomerCount(admin.uid) }}</p>
+                                </div>
                              </div>
                              
                              <div class="grid grid-cols-2 gap-4">
@@ -456,7 +499,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                           </div>
                        </div>
                     }
-                    @if ((admins$ | async)?.length === 0) {
+                    @if (getFilteredAdmins().length === 0) {
                        <div class="col-span-full py-20 text-center border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-[3rem] opacity-50">
                           <p class="text-gray-400 font-black uppercase tracking-widest text-xs">No administrative members found</p>
                        </div>
@@ -1583,7 +1626,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
             </div>
 
             <!-- Interest (Loans) -->
-            @if (showInterestTab) {
+            @if (!isSuperAdmin && showInterestTab) {
                <div (click)="scrollToTop(); activeMobileMenu = 'interest'; activeTab = 'interest'" 
                     class="nav-item-box">
                   <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'interest' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1592,8 +1635,19 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                </div>
             }
 
+            <!-- Game (Mobile) -->
+            @if (!isSuperAdmin) {
+               <div (click)="goToGame()" 
+                    class="nav-item-box">
+                 <svg class="w-6 h-6 nav-icon icon-inactive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                 </svg>
+               </div>
+            }
+
             <!-- Chitties -->
-            @if (showChittiTab) {
+            @if (!isSuperAdmin && showChittiTab) {
                <div (click)="scrollToTop(); activeMobileMenu = 'chitti'; activeTab = 'chitti'" 
                     class="nav-item-box">
                   <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'chitti' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1603,7 +1657,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
             }
 
             <!-- Customers -->
-            @if (showCustomersTab) {
+            @if (!isSuperAdmin && showCustomersTab) {
                <div (click)="scrollToTop(); activeMobileMenu = 'customers'; activeTab = 'customers'" 
                     class="nav-item-box">
                   <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'customers' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1613,7 +1667,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
             }
 
             <!-- Bills -->
-            @if (showBillsTab) {
+            @if (!isSuperAdmin && showBillsTab) {
                <div (click)="scrollToTop(); activeMobileMenu = 'bills'; activeTab = 'bills'" 
                     class="nav-item-box">
                   <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'bills' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1623,7 +1677,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
             }
 
             <!-- Rentals -->
-            @if (showRentalsTab) {
+            @if (!isSuperAdmin && showRentalsTab) {
                <div (click)="scrollToTop(); activeMobileMenu = 'rentals'; activeTab = 'rentals'" 
                     class="nav-item-box">
                   <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'rentals' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1871,6 +1925,9 @@ export class AdminDashboardComponent implements OnInit {
   loanStatusFilter: 'Active' | 'Inactive' | 'All' = 'Active';
   isBiometricEnabled = false;
   expandedLoans: { [id: string]: boolean } = {};
+  showAdminForm = false;
+  adminSearchQuery = '';
+  admins: UserProfile[] = [];
 
   // Rentals State
   houses: RentalHouse[] = [];
@@ -2204,7 +2261,6 @@ export class AdminDashboardComponent implements OnInit {
 
   passwordForm: FormGroup;
   adminForm: FormGroup;
-  admins$: Observable<UserProfile[]> | null = null;
   private firestore = inject(Firestore);
 
   constructor() {
@@ -2396,9 +2452,12 @@ export class AdminDashboardComponent implements OnInit {
 
 
   get visibleMobileTabs() {
-    const all = ['overview', 'interest', 'chitti', 'customers', 'bills', 'rentals', 'security'];
+    if (this.isSuperAdmin) {
+      return ['overview', 'security'];
+    }
+    const all = ['overview', 'interest', 'game', 'chitti', 'customers', 'bills', 'rentals', 'security'];
     return all.filter(t => {
-      if (t === 'overview' || t === 'security') return true;
+      if (t === 'overview' || t === 'game' || t === 'security') return true;
       if (t === 'interest') return this.showInterestTab;
       if (t === 'chitti') return this.showChittiTab;
       if (t === 'customers') return this.showCustomersTab;
@@ -2547,7 +2606,23 @@ export class AdminDashboardComponent implements OnInit {
 
   loadAdmins() {
     const adminQuery = query(collection(this.firestore, 'users'), where('role', '==', 'admin'));
-    this.admins$ = collectionData(adminQuery) as Observable<UserProfile[]>;
+    collectionData(adminQuery).subscribe(data => {
+      this.admins = data as UserProfile[];
+    });
+  }
+
+  getFilteredAdmins(): UserProfile[] {
+    if (!this.adminSearchQuery.trim()) return this.admins;
+    const q = this.adminSearchQuery.toLowerCase();
+    return this.admins.filter(a => 
+      (a.displayName?.toLowerCase().includes(q)) || 
+      (a.username?.toLowerCase().includes(q)) || 
+      (a.phone?.includes(q))
+    );
+  }
+
+  getAdminCustomerCount(uid: string): number {
+    return this.allCustomers.filter(c => c.createdBy === uid).length;
   }
 
   isAdminEditMode = false;
@@ -2631,6 +2706,7 @@ export class AdminDashboardComponent implements OnInit {
 
   cancelAdminEdit() {
     this.isAdminEditMode = false;
+    this.showAdminForm = false;
     this.editingAdminUid = null;
     this.adminForm.reset();
     this.adminForm.get('username')?.enable();
@@ -3332,6 +3408,10 @@ export class AdminDashboardComponent implements OnInit {
   // --- Super Admin & Security ---
   goToManageAdmins() {
     this.router.navigate(['/admin/manage-admins']);
+  }
+
+  goToGame() {
+    this.router.navigate(['/car']);
   }
 
   migrationUsername: string = '';
