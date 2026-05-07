@@ -1,5 +1,6 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, HostListener, NgZone } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, HostListener, NgZone, inject } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-car-game',
@@ -47,10 +48,16 @@ import { CommonModule, Location } from '@angular/common';
         <div class="level-up-toast" [class.show]="showLevelUp">LEVEL UP!</div>
 
         <!-- Back Button -->
-        <button class="back-btn pointer-events-auto" (click)="goBack()">
-           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-           <span>EXIT</span>
-        </button>
+        <div class="top-controls pointer-events-auto">
+          <button class="control-btn music-toggle" (click)="toggleMusic()" [title]="isMusicEnabled ? 'Mute Music' : 'Unmute Music'">
+             <svg *ngIf="isMusicEnabled" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+             <svg *ngIf="!isMusicEnabled" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>
+          </button>
+          <button class="control-btn back-btn" (click)="goBack()">
+             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+             <span>EXIT</span>
+          </button>
+        </div>
       </div>
 
       <!-- Touch Controls -->
@@ -292,19 +299,21 @@ import { CommonModule, Location } from '@angular/common';
       -webkit-tap-highlight-color: transparent;
     }
 
-    .back-btn {
+    .top-controls {
       position: absolute;
       top: 15px;
       right: 15px;
-      z-index: 60;
+      z-index: 110;
       display: flex;
-      align-items: center;
-      gap: 6px;
+      gap: 8px;
+    }
+    
+    .control-btn {
       background: rgba(10, 2, 20, 0.7);
       color: rgba(255,255,255,0.7);
       border: 1px solid rgba(255,255,255,0.2);
-      padding: 6px 12px;
-      border-radius: 4px;
+      padding: 8px;
+      border-radius: 8px;
       font-family: 'Orbitron', sans-serif;
       font-size: 10px;
       font-weight: bold;
@@ -312,19 +321,32 @@ import { CommonModule, Location } from '@angular/common';
       cursor: pointer;
       backdrop-filter: blur(8px);
       transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .back-btn {
+      padding: 8px 15px;
+      gap: 6px;
       text-transform: uppercase;
     }
 
-    .back-btn:hover {
+    .control-btn:hover {
       background: rgba(255, 0, 255, 0.2);
       color: #fff;
       border-color: #f0f;
       box-shadow: 0 0 10px rgba(255, 0, 255, 0.3);
     }
 
-    .back-btn svg {
-      width: 16px;
-      height: 16px;
+    .music-toggle {
+      width: 40px;
+      height: 40px;
+    }
+
+    .music-toggle svg {
+      width: 20px;
+      height: 20px;
     }
 
     /* Shaking animation */
@@ -404,10 +426,22 @@ export class CarGameComponent implements AfterViewInit, OnDestroy {
 
   touchDirection = 0; // -1 for left, 1 for right, 0 for none
 
-  // Cyberpunk color palette
+  private authService = inject(AuthService);
+  private musicAudio?: HTMLAudioElement;
+  isMusicEnabled = true;
+  playerName = 'Racer';
   enemyColors = ['#f0f', '#ff0055', '#ffaa00', '#00ffaa'];
 
-  constructor(private ngZone: NgZone, private location: Location) {}
+  constructor(private ngZone: NgZone, private location: Location) {
+    // Sync player name with logged in user
+    this.authService.userProfile$.subscribe(profile => {
+      if (profile?.displayName) {
+        this.playerName = profile.displayName;
+      } else if (profile?.username) {
+        this.playerName = profile.username;
+      }
+    });
+  }
 
   goBack() {
     this.location.back();
@@ -415,11 +449,13 @@ export class CarGameComponent implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit() {
     this.initCanvas();
+    this.initMusic();
     window.addEventListener('resize', this.resizeCanvas.bind(this));
     this.initStars();
   }
 
   ngOnDestroy() {
+    this.stopMusic();
     cancelAnimationFrame(this.animationId);
     window.removeEventListener('resize', this.resizeCanvas.bind(this));
   }
@@ -430,6 +466,34 @@ export class CarGameComponent implements AfterViewInit, OnDestroy {
     this.ctx = canvas.getContext('2d', { alpha: true })!;
     this.resizeCanvas();
     this.drawInitialState();
+  }
+
+  initMusic() {
+    this.musicAudio = new Audio();
+    this.musicAudio.src = 'https://cdn.pixabay.com/audio/2022/03/10/audio_7256673d32.mp3'; // Retro Synthwave
+    this.musicAudio.loop = true;
+    this.musicAudio.volume = 0.4;
+  }
+
+  toggleMusic() {
+    this.isMusicEnabled = !this.isMusicEnabled;
+    if (this.isMusicEnabled) {
+      if (this.isPlaying) this.startMusic();
+    } else {
+      this.stopMusic();
+    }
+  }
+
+  startMusic() {
+    if (this.isMusicEnabled && this.musicAudio) {
+      this.musicAudio.play().catch(e => console.log('Audio play failed:', e));
+    }
+  }
+
+  stopMusic() {
+    if (this.musicAudio) {
+      this.musicAudio.pause();
+    }
   }
 
   initStars() {
@@ -510,6 +574,8 @@ export class CarGameComponent implements AfterViewInit, OnDestroy {
     this.player.x = this.width / 2 - this.player.width / 2;
     this.player.targetX = this.player.x;
     
+    this.startMusic();
+    
     this.ngZone.runOutsideAngular(() => {
       this.gameLoop();
     });
@@ -528,6 +594,7 @@ export class CarGameComponent implements AfterViewInit, OnDestroy {
     }, 400);
 
     cancelAnimationFrame(this.animationId);
+    this.stopMusic();
     
     // Draw one last frame with explosion
     this.draw();
@@ -897,6 +964,16 @@ export class CarGameComponent implements AfterViewInit, OnDestroy {
     
     this.drawCar(this.player.x, this.player.y, this.player.width, this.player.height, this.player.glow, true, this.player.tilt);
     
+    this.ctx.restore();
+
+    // Draw Player Name
+    this.ctx.save();
+    this.ctx.font = 'bold 10px Orbitron';
+    this.ctx.fillStyle = 'rgba(0, 255, 255, 0.8)';
+    this.ctx.textAlign = 'center';
+    this.ctx.shadowBlur = 5;
+    this.ctx.shadowColor = '#0ff';
+    this.ctx.fillText(this.playerName.toUpperCase(), this.player.x + this.player.width/2, this.player.y - 15);
     this.ctx.restore();
 
     // Draw Shield Bubble
