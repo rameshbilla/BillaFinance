@@ -50,6 +50,14 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
         .chart-touch-wrapper { touch-action: none; }
       }
 
+      @keyframes neon-pulse-admin {
+        0%, 100% { color: #f97316; filter: drop-shadow(0 0 2px #f97316); transform: scale(1); }
+        25% { color: #00ffaa; filter: drop-shadow(0 0 8px #00ffaa); }
+        50% { color: #f0f; filter: drop-shadow(0 0 10px #f0f); transform: scale(1.1); }
+        75% { color: #0ff; filter: drop-shadow(0 0 8px #0ff); }
+      }
+      .game-icon-pulse { animation: neon-pulse-admin 4s infinite ease-in-out; }
+
       .bottom-nav-pill {
         display: flex;
         width: 100%;
@@ -114,10 +122,13 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
               <span class="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-500">FinServe Admin</span>
             </div>
             <div class="flex space-x-2 items-center" *ngIf="authService.userProfile$ | async as profile">
-              <!-- Game Button -->
-              <button *ngIf="!isSuperAdmin" (click)="goToGame()" class="p-2.5 text-orange-500 hover:text-orange-600 transition-all font-bold mr-1 flex items-center gap-2" title="Play Game">
-                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                 <span class="text-[10px] font-black uppercase tracking-widest hidden lg:inline">Game</span>
+              <button *ngIf="!isSuperAdmin" (click)="goToGame()" class="p-2.5 transition-all font-bold mr-1 flex items-center gap-2 group" title="Play Neon Racer">
+                 <div class="game-icon-pulse">
+                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 17h.01M5 17h.01M3 13h18M5 10l2-4h10l2 4M3 13l1 4h16l1-4m-18 0h18M5 17h.01M19 17h.01" />
+                   </svg>
+                 </div>
+                 <span class="text-[10px] font-black uppercase tracking-widest hidden lg:inline group-hover:text-orange-400 transition-colors">Racing</span>
               </button>
               
               <!-- Super Admin Controls -->
