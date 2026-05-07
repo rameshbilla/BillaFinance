@@ -10,5 +10,6 @@ export const environment = {
   },
   whatsappInstance: "YOUR_INSTANCE_ID", // UltraMsg Instance ID
   whatsappToken: "YOUR_TOKEN",        // UltraMsg Token
+  smsApiKey: "YOUR_SMS_API_KEY",      // Generic SMS Gateway API Key
   adminSecretCode: "FINSERVE_ADMIN_24"
 };

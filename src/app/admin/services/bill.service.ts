@@ -15,8 +15,9 @@ import {
   arrayUnion,
   getDoc
 } from '@angular/fire/firestore';
-import { Observable, from, of } from 'rxjs';
+import { Observable, from, of, firstValueFrom } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
+import { TspdclService } from './tspdcl.service';
 
 export interface BillPaymentRecord {
   date: string;        // ISO date string
@@ -55,8 +56,15 @@ export interface TrackedService {
   serviceType: string;
   provider: string;
   serviceNumber: string;
-  adminUid: string;
+  consumerName?: string;
+  address?: string;
+  ero?: string;
+  sectionName?: string;
+  altServiceNumber?: string;
   lastSynced?: any;
+  lastAmount?: number;
+  lastDueDate?: string;
+  adminUid: string;
 }
 
 @Injectable({
@@ -64,6 +72,7 @@ export interface TrackedService {
 })
 export class BillService {
   private firestore = inject(Firestore);
+  private tspdclService = inject(TspdclService);
   private billsCollection = collection(this.firestore, 'bills');
   private trackedServicesCollection = collection(this.firestore, 'tracked_services');
 
@@ -81,13 +90,27 @@ export class BillService {
     return deleteDoc(doc(this.firestore, `tracked_services/${id}`));
   }
 
+  updateTrackedService(id: string, data: Partial<TrackedService>): Promise<void> {
+    const serviceDoc = doc(this.firestore, `tracked_services/${id}`);
+    return updateDoc(serviceDoc, { ...data, lastSynced: serverTimestamp() });
+  }
+
   // --- Bill Operations ---
   getBills(adminUid: string): Observable<Bill[]> {
     const q = query(
       this.billsCollection,
       where('adminUid', '==', adminUid),
       where('isDeleted', '!=', true),
-      orderBy('isDeleted'),
+      orderBy('dueDate', 'desc')
+    );
+    return collectionData(q, { idField: 'id' }) as Observable<Bill[]>;
+  }
+
+  getServiceBillHistory(serviceNumber: string): Observable<Bill[]> {
+    const q = query(
+      this.billsCollection,
+      where('serviceNumber', '==', serviceNumber),
+      where('isDeleted', '!=', true),
       orderBy('dueDate', 'desc')
     );
     return collectionData(q, { idField: 'id' }) as Observable<Bill[]>;
@@ -234,29 +257,46 @@ export class BillService {
       });
 
       if (existingData.length === 0) {
-        let mockAmount = 0;
-        let mockDueDate = "";
-        let mockNotes = `Auto-generated for Service No: ${service.serviceNumber}`;
+        let billData: Partial<Bill> | null = null;
 
-        if (service.serviceNumber === '101046746') {
-          mockAmount = 504.00;
-          mockDueDate = "2026-04-18";
-          mockNotes = "Fetched from BillDesk (Sri Narahari)";
-        } else {
-          mockAmount = Math.floor(Math.random() * (2500 - 500 + 1)) + 500;
-          mockDueDate = new Date(now.getFullYear(), now.getMonth(), 28).toISOString().split('T')[0];
+        if (service.serviceType === 'electricity') {
+          try {
+            const liveBill = await firstValueFrom(this.tspdclService.fetchBillDetails(service.serviceNumber));
+            if (liveBill && liveBill.success) {
+              billData = {
+                serviceType: 'electricity',
+                provider: service.provider,
+                serviceNumber: service.serviceNumber,
+                amount: liveBill.totalAmountPayable || 0,
+                dueDate: liveBill.dueDate || new Date(now.getFullYear(), now.getMonth(), 15).toISOString().split('T')[0],
+                status: 'pending',
+                notes: `Auto-synced from TGSPDCL website for ${liveBill.consumerName}.`,
+                adminUid: adminUid
+              };
+            }
+          } catch (e) {
+            console.error('Failed to fetch live TSPDCL bill:', e);
+          }
         }
 
-        await this.addBill({
-          serviceType: service.serviceType as any,
-          provider: service.provider,
-          serviceNumber: service.serviceNumber,
-          amount: mockAmount,
-          dueDate: mockDueDate,
-          status: 'pending',
-          notes: mockNotes,
-          adminUid: adminUid
-        });
+        // Fallback or other service types
+        if (!billData) {
+          let mockAmount = Math.floor(Math.random() * (2500 - 500 + 1)) + 500;
+          let mockDueDate = new Date(now.getFullYear(), now.getMonth(), 28).toISOString().split('T')[0];
+          
+          billData = {
+            serviceType: service.serviceType as any,
+            provider: service.provider,
+            serviceNumber: service.serviceNumber,
+            amount: mockAmount,
+            dueDate: mockDueDate,
+            status: 'pending',
+            notes: `Auto-generated for Service No: ${service.serviceNumber}`,
+            adminUid: adminUid
+          };
+        }
+
+        await this.addBill(billData);
         addedCount++;
       }
     }

@@ -1,0 +1,11 @@
+{
+  "/api/tspdcl": {
+    "target": "https://www.tgsouthernpower.org",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/tspdcl": ""
+    },
+    "logLevel": "debug"
+  }
+}

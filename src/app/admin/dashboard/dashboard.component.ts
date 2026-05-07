@@ -1,15 +1,17 @@
-import { Component, inject, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, OnInit, ViewChild, Renderer2 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ChittiService, ChittiScheme } from '../services/chitti.service';
 import { InterestService, InterestScheme } from '../services/interest.service';
 import { WhatsAppService } from '../services/whatsapp.service';
 import { CustomerService, Customer } from '../services/customer.service';
+import { NotificationService } from '../services/notification.service';
 import { ToastService } from '../../shared/toast.service';
 import { AuthService, UserProfile } from '../../services/auth.service';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Firestore, collection, collectionData, query, where, deleteDoc, doc } from '@angular/fire/firestore';
-import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Observable, map, catchError, of, firstValueFrom } from 'rxjs';
 import { BiometricService } from '../../services/biometric.service';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType, Chart } from 'chart.js';
@@ -22,6 +24,7 @@ import { BillListComponent } from '../bills/bill-list/bill-list.component';
 import { BillFormComponent } from '../bills/bill-form/bill-form.component';
 import { BillPaymentModalComponent } from '../bills/bill-payment-modal/bill-payment-modal.component';
 import { RentalService, RentalHouse, RentalBill } from '../services/rental.service';
+import { TspdclService } from '../services/tspdcl.service';
 import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
 @Component({
@@ -106,7 +109,8 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
       .stepper-dot { position: absolute; left: 1rem; top: 0.25rem; transform: translateX(-50%); }
     </style>
 
-    <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-950 transition-colors duration-500 pb-32 sm:pb-0 overflow-x-hidden w-full relative">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-950 font-sans transition-colors duration-500 overflow-x-hidden"
+         [class.overflow-hidden]="showServiceDetailsModal || showLiveBillModal || showPaymentModal || showAdminForm || showServiceModal">
       <!-- Decorative Background Glows (Subtle) -->
       <div class="absolute top-0 left-0 w-96 h-96 bg-purple-500/5 rounded-full filter blur-[100px] pointer-events-none"></div>
       <div class="absolute bottom-0 right-0 w-96 h-96 bg-pink-500/5 rounded-full filter blur-[100px] pointer-events-none"></div>
@@ -180,8 +184,11 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
           </button>
           <button *ngIf="!isSuperAdmin && showBillsTab" (click)="activeTab = 'bills'; activeMobileMenu = 'bills'"
                   [class.tab-active]="activeTab === 'bills'"
-                  class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
+                  class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10 flex items-center justify-center gap-1.5">
             BILLS
+            <span *ngIf="billStats.pendingAmount > 0" class="px-1.5 py-0.5 bg-rose-500 text-white text-[8px] rounded-md animate-pulse">
+               {{ billStats.pendingAmount | currency:'INR':'symbol':'1.0-0' }}
+            </span>
           </button>
           <button *ngIf="!isSuperAdmin && showRentalsTab" (click)="activeTab = 'rentals'; activeMobileMenu = 'rentals'"
                   [class.tab-active]="activeTab === 'rentals'"
@@ -342,103 +349,6 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                  </button>
               </div>
 
-              <!-- Admin Creation Form (Togglable) -->
-              <section *ngIf="showAdminForm || isAdminEditMode" class="bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-xl border border-gray-100 dark:border-gray-800 p-8 animate-in slide-in-from-top-4 duration-500">
-                 <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-6 uppercase tracking-tighter">{{ isAdminEditMode ? 'Update' : 'Register' }} Admin Member</h2>
-                 <form [formGroup]="adminForm" (ngSubmit)="createAdminMember()" class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                       <div>
-                          <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Full Name</label>
-                          <input type="text" formControlName="name" placeholder="Enter Full Name"
-                             class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
-                       </div>
-                       <div>
-                          <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Username (Login ID)</label>
-                          <input type="text" formControlName="username" placeholder="Login username"
-                             class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-black"
-                              [ngClass]="{'bg-gray-100 dark:bg-gray-800/50 cursor-not-allowed': isAdminEditMode}">
-                       </div>
-                       <div>
-                          <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Phone Number</label>
-                          <input type="tel" formControlName="phone" placeholder="10 Digit Number"
-                             class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
-                       </div>
-                       <div>
-                          <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">
-                             {{ isAdminEditMode ? 'Reset Password (Optional)' : 'Admin Password' }}
-                          </label>
-                          <div class="relative">
-                             <input [type]="showAdminPassword ? 'text' : 'password'" formControlName="password" 
-                                [placeholder]="isAdminEditMode ? 'Leave blank to keep current' : 'Enter password (Default: admin123)'"
-                                class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold pr-14">
-                             <button type="button" (click)="showAdminPassword = !showAdminPassword" 
-                                class="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-indigo-600 transition-colors"
-                                [title]="showAdminPassword ? 'Hide Password' : 'Show Password'">
-                                <svg *ngIf="!showAdminPassword" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                <svg *ngIf="showAdminPassword" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 1.274-4.057 5.064-7 9.542-7 1.253 0 2.426.287 3.477.799m-1.763 3.064a3 3 0 11-4.243 4.243m4.242-4.242L9.88 9.88m-2.012-2.012L2.031 2.031" /></svg>
-                             </button>
-                          </div>
-                       </div>
-                        <div class="md:col-span-2">
-                           <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Full Residential Address</label>
-                           <textarea formControlName="address" rows="3" placeholder="Enter complete address"
-                              class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold resize-none"></textarea>
-                        </div>
-                        <div>
-                           <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">ID Proof Type</label>
-                           <select formControlName="idType"
-                              class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold appearance-none">
-                              <option value="">Select ID Type</option>
-                              <option value="Aadhar">Aadhar Card</option>
-                              <option value="Voter ID">Voter ID</option>
-                              <option value="PAN">PAN Card</option>
-                              <option value="Driving License">Driving License</option>
-                           </select>
-                        </div>
-                        <div>
-                           <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">ID Document Number</label>
-                           <input type="text" formControlName="idValue" placeholder="e.g. 1234 5678 9012"
-                              class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
-                        </div>
-                        <div class="md:col-span-2 pt-4 border-t border-gray-100 dark:border-gray-800">
-                           <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-4 px-1">Module Access (Show/Hide Tabs)</label>
-                           <div class="flex flex-wrap gap-4">
-                              <label class="flex items-center space-x-2 cursor-pointer">
-                                 <input type="checkbox" formControlName="tab_interest" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
-                                 <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Loans</span>
-                              </label>
-                              <label class="flex items-center space-x-2 cursor-pointer">
-                                 <input type="checkbox" formControlName="tab_chitti" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
-                                 <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Chitti</span>
-                              </label>
-                              <label class="flex items-center space-x-2 cursor-pointer">
-                                 <input type="checkbox" formControlName="tab_customers" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
-                                 <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Customers</span>
-                              </label>
-                              <label class="flex items-center space-x-2 cursor-pointer">
-                                 <input type="checkbox" formControlName="tab_bills" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
-                                 <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Bills</span>
-                              </label>
-                              <label class="flex items-center space-x-2 cursor-pointer">
-                                 <input type="checkbox" formControlName="tab_rentals" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
-                                 <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Rentals</span>
-                              </label>
-                           </div>
-                        </div>
-                    </div>
-                    <div class="flex justify-end pt-4 gap-3">
-                       <button *ngIf="isAdminEditMode" type="button" (click)="cancelAdminEdit()"
-                          class="px-8 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-200 transition-all">
-                          Cancel Edit
-                       </button>
-                       <button type="submit" [disabled]="adminForm.invalid || isSaving"
-                          class="px-10 py-4 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all disabled:opacity-40">
-                          {{ isSaving ? (isAdminEditMode ? 'Updating...' : 'Establishing...') : (isAdminEditMode ? 'Update Account' : 'Finalize Access') }}
-                       </button>
-                    </div>
-                 </form>
-              </section>
-
               <!-- Admin Members List -->
               <section class="space-y-6">
                  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-2">
@@ -531,141 +441,167 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                     <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Registered Services</h3>
                     <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Automated tracking for these numbers</p>
                   </div>
-                  <button (click)="showServiceModal = true" class="px-4 py-2 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">
-                    Register Service
-                  </button>
-               </div>
-
-               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  @for (service of trackedServices; track service.id) {
-                    <div class="bg-indigo-50/50 dark:bg-indigo-900/20 p-4 rounded-3xl border border-indigo-100/50 dark:border-indigo-800/30 group relative">
-                       <button (click)="handleRemoveService(service.id!)" class="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
-                          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-                       </button>
-                       <p class="text-[9px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-1">{{ service.serviceType }}</p>
-                       <h4 class="text-sm font-black text-gray-800 dark:text-gray-200 truncate">{{ service.provider }}</h4>
-                       <p class="text-[11px] font-bold text-gray-400 mt-0.5">#{{ service.serviceNumber }}</p>
+                  <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                    <div class="relative flex-1 sm:flex-none">
+                       <select [(ngModel)]="serviceTypeFilter" class="w-full sm:w-40 pl-4 pr-10 py-2.5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl text-xs font-bold text-gray-700 dark:text-gray-300 appearance-none focus:ring-2 focus:ring-indigo-500 outline-none">
+                          <option value="all">All Types</option>
+                          <option value="electricity">Electricity</option>
+                          <option value="water">Water</option>
+                          <option value="internet">Internet</option>
+                          <option value="mobile">Mobile</option>
+                          <option value="other">Other</option>
+                       </select>
+                       <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </div>
-                  }
-                  @if (trackedServices.length === 0) {
-                    <div class="col-span-full py-8 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-[2rem] opacity-40">
-                       <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">No services registered for auto-sync</p>
-                    </div>
-                  }
-               </div>
-            </div>
-
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 pt-8 border-t border-gray-100 dark:border-gray-800">
-              <div>
-                <h2 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Bill Tracker</h2>
-                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ bills.length }} recorded bills</p>
-              </div>
-              <div class="flex gap-3 w-full sm:w-auto">
-                <button (click)="handleSyncBills()" [disabled]="isSyncing" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-900/40 rounded-2xl hover:bg-indigo-100 transition-all text-sm">
-                  <svg class="h-4 w-4" [class.animate-spin]="isSyncing" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                  {{ isSyncing ? 'Syncing...' : 'Sync Servers' }}
-                </button>
-                <button (click)="openBillForm()" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 font-bold text-white bg-purple-600 rounded-2xl hover:shadow-lg transition-all text-sm">
-                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                  New Bill
-                </button>
-              </div>
-            </div>
-
-            <!-- Stats -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-               <div class="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
-                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Pending</p>
-                  <p class="text-2xl font-black text-amber-500" [appCountUp]="billStats.pendingAmount" prefix="₹"></p>
-               </div>
-               <div class="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
-                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Due in 7 Days</p>
-                  <p class="text-2xl font-black text-purple-600" [appCountUp]="billStats.upcomingAmount" prefix="₹"></p>
-               </div>
-               <div class="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
-                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Due Today</p>
-                  <p class="text-2xl font-black text-rose-500" [appCountUp]="billStats.dueTodayCount" suffix=" Bills"></p>
-               </div>
-               <div class="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
-                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Paid this Month</p>
-                  <p class="text-2xl font-black text-green-500" [appCountUp]="billStats.paidThisMonthAmount" prefix="₹"></p>
-               </div>
-            </div>
-
-            @if (showBillForm) {
-              <div class="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md px-4 py-8 overflow-y-auto">
-                <div class="w-full max-w-2xl animate-in zoom-in-95 duration-300">
-                  <app-bill-form [bill]="editingBill" (save)="handleSaveBill($event)" (cancel)="closeBillForm()"></app-bill-form>
-                </div>
-              </div>
-            }
-
-            <!-- Register Service Modal -->
-            @if (showServiceModal) {
-              <div class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-md px-4">
-                <div class="bg-white dark:bg-gray-900 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
-                  <div class="p-8">
-                     <div class="flex justify-between items-center mb-8">
-                        <div>
-                           <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Register Service</h3>
-                           <p class="text-sm text-gray-500 font-medium">Link a service number for auto-billing</p>
-                        </div>
-                        <button (click)="showServiceModal = false" class="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:rotate-90 transition-all text-gray-500">
-                           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
-                     </div>
-
-                     <form [formGroup]="trackedServiceForm" (ngSubmit)="handleRegisterService()" class="space-y-4">
-                        <div>
-                           <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Service Type</label>
-                           <select formControlName="serviceType" class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold appearance-none">
-                              <option value="electricity">Electricity</option>
-                              <option value="mobile">Mobile</option>
-                              <option value="water">Water</option>
-                              <option value="internet">Internet</option>
-                              <option value="other">Other</option>
-                           </select>
-                        </div>
-                        <div>
-                           <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Provider Name</label>
-                           <input type="text" formControlName="provider" placeholder="e.g. TSSPDCL, Airtel"
-                              class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold">
-                        </div>
-                        <div>
-                           <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Service Number (Unique ID)</label>
-                           <input type="text" formControlName="serviceNumber" placeholder="USCNO / Consumer ID"
-                              class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold">
-                        </div>
-                        <div class="pt-4 flex gap-3">
-                           <button type="button" (click)="showServiceModal = false" class="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 font-bold rounded-2xl">Cancel</button>
-                           <button type="submit" [disabled]="trackedServiceForm.invalid || isSaving" 
-                              class="flex-2 py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-500/20 disabled:opacity-50">
-                              {{ isSaving ? 'Registering...' : 'Link Service' }}
-                           </button>
-                        </div>
-                     </form>
+                    <button (click)="handleSyncBills()" [disabled]="isSyncing" class="px-5 py-2.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-100 transition-all flex items-center gap-2">
+                       <svg class="h-3.5 w-3.5" [class.animate-spin]="isSyncing" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                       {{ isSyncing ? 'Syncing...' : 'Sync Servers' }}
+                    </button>
+                    <button (click)="openServiceForm()" class="px-5 py-2.5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">
+                      Register Service
+                    </button>
                   </div>
-                </div>
-              </div>
-            }
+               </div>
 
-            <app-bill-list
-              [bills]="bills"
-              (filterChanged)="handleBillFilters($event)"
-              (editBill)="openBillForm($event)"
-              (deleteBill)="handleDeleteBill($event)"
-              (payBill)="openPaymentModal($event)"
-              (updateStatus)="handleUpdateBillStatus($event)">
-            </app-bill-list>
+               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <!-- Skeleton Loaders -->
+                  @if (isSyncing) {
+                    @for (i of [1,2,3]; track i) {
+                      <div class="rounded-[2rem] bg-gray-100 dark:bg-gray-800/50 p-6 h-[280px] animate-pulse">
+                         <div class="w-12 h-12 rounded-2xl bg-gray-200 dark:bg-gray-700 mb-4"></div>
+                         <div class="w-2/3 h-4 bg-gray-200 dark:bg-gray-700 rounded-full mb-2"></div>
+                         <div class="w-1/2 h-3 bg-gray-200 dark:bg-gray-700 rounded-full mb-6"></div>
+                         <div class="mt-auto h-24 bg-gray-200 dark:bg-gray-700 rounded-2xl"></div>
+                      </div>
+                    }
+                  }
+                  
+                  @for (service of filteredTrackedServices; track service.id) {
+                    <div class="group relative overflow-hidden rounded-[2rem] bg-white/40 dark:bg-gray-800/40 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 p-6 flex flex-col justify-between h-full">
+                       <!-- Individual Sync Loader Overlay -->
+                       @if (service.id && syncingServices[service.id]) {
+                          <div class="absolute inset-0 z-20 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-300">
+                             <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                             <p class="text-[9px] font-black text-indigo-600 uppercase tracking-widest mt-4">Syncing Live Data...</p>
+                          </div>
+                       }
+                       <!-- Decorative Gradient Background -->
+                       <div class="absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-br opacity-10 blur-3xl group-hover:opacity-20 transition-opacity"
+                            [ngClass]="{
+                               'from-amber-400 to-orange-600': service.serviceType === 'electricity',
+                               'from-blue-400 to-indigo-600': service.serviceType === 'water',
+                               'from-purple-400 to-pink-600': service.serviceType === 'internet',
+                               'from-emerald-400 to-teal-600': service.serviceType === 'mobile',
+                               'from-rose-400 to-red-600': service.serviceType === 'other'
+                            }"></div>
 
-            <!-- Payment Modal -->
-            @if (showPaymentModal && payingBill) {
-              <app-bill-payment-modal
-                [bill]="payingBill"
-                (paid)="onBillPaid()"
-                (cancel)="closePaymentModal()">
-              </app-bill-payment-modal>
-            }
+                       <div class="relative z-10">
+                          <div class="flex justify-between items-start mb-4">
+                             <div class="p-3 rounded-2xl bg-gradient-to-br shadow-lg group-hover:rotate-12 transition-transform duration-500"
+                                  [ngClass]="{
+                                     'from-amber-400 to-orange-500 text-white': service.serviceType === 'electricity',
+                                     'from-blue-400 to-indigo-500 text-white': service.serviceType === 'water',
+                                     'from-purple-400 to-pink-500 text-white': service.serviceType === 'internet',
+                                     'from-emerald-400 to-teal-500 text-white': service.serviceType === 'mobile',
+                                     'from-rose-400 to-red-500 text-white': service.serviceType === 'other'
+                                  }">
+                                <svg *ngIf="service.serviceType === 'electricity'" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                <svg *ngIf="service.serviceType === 'water'" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                                <svg *ngIf="service.serviceType === 'internet'" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071a10 10 0 0114.142 0M2.93 9.344a15 15 0 0121.142 0"/></svg>
+                                <svg *ngIf="service.serviceType === 'mobile'" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                             </div>
+                             
+                             <div class="flex gap-1">
+                                <button (click)="handleFetchLiveBill(service)" [disabled]="service.id && syncingServices[service.id]"
+                                        class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all" title="Quick Sync">
+                                   <svg class="w-4 h-4" [class.animate-spin]="service.id && syncingServices[service.id]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                </button>
+                                <button (click)="openServiceDetails(service)" class="p-2 text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-xl transition-all" title="View History & Insights">
+                                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                                </button>
+                                <a *ngIf="service.serviceType === 'electricity'" 
+                                   [href]="'https://www.tgsouthernpower.org/billinginfo?ukscno=' + service.serviceNumber + '&submit=SUBMIT'" 
+                                   target="_blank" 
+                                   class="p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-xl transition-all" 
+                                   [title]="'View Portal for USC: ' + service.serviceNumber">
+                                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                </a>
+                                <button (click)="openServiceForm(service)" class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all" title="Edit">
+                                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                </button>
+                                <button (click)="handleRemoveService(service.id!)" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all" title="Remove Service">
+                                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                             </div>
+                          </div>
+
+                          <p class="text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-1">{{ service.serviceType }}</p>
+                          <h4 class="text-xl font-black text-gray-900 dark:text-white truncate leading-tight mb-1">{{ service.provider }}</h4>
+                          <p class="text-sm font-bold text-gray-500 dark:text-gray-400 truncate mb-1" *ngIf="service.consumerName">{{ service.consumerName }}</p>
+                          
+                          
+                          <div class="flex items-center gap-2 mb-6">
+                             <div class="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full">
+                                <span class="text-[10px] font-black text-gray-500 dark:text-gray-400">#{{ service.serviceNumber }}</span>
+                             </div>
+                             <div *ngIf="service.lastSynced" class="flex items-center gap-1 text-[9px] font-bold text-green-500">
+                                <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                SYNCED
+                             </div>
+                          </div>
+                       </div>
+
+                       <div class="relative z-10">
+                          @if (service.lastAmount || service.lastDueDate) {
+                            <div class="bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                               <div class="flex justify-between items-end">
+                                  <div>
+                                     <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Payable Amount</p>
+                                     <p class="text-2xl font-black text-gray-900 dark:text-white">₹{{ service.lastAmount }}</p>
+                                  </div>
+                                  <div class="text-right">
+                                     <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Due Date</p>
+                                     <p class="text-xs font-black text-rose-500">{{ service.lastDueDate }}</p>
+                                  </div>
+                               </div>
+                               <div class="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                                <div class="flex-1">
+                                   <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Status</p>
+                                   <p class="text-[11px] font-black" [ngClass]="service.lastAmount ? 'text-rose-500' : 'text-emerald-500'">
+                                      {{ service.lastAmount ? 'PENDING' : 'NO DUES' }}
+                                   </p>
+                                </div>
+                                <a *ngIf="service.lastAmount && service.serviceType === 'electricity'" 
+                                   [href]="'https://www.tgsouthernpower.org/online-bill-payment?uscno=' + service.serviceNumber" 
+                                   target="_blank"
+                                   class="px-4 py-2 bg-indigo-600 text-white text-[10px] font-black rounded-xl shadow-lg shadow-indigo-600/20 uppercase tracking-widest hover:scale-105 transition-all">
+                                   Pay Now
+                                </a>
+                             </div>
+                            </div>
+                          } @else {
+                            <button (click)="handleFetchLiveBill(service)" 
+                                    class="w-full py-4 bg-indigo-600/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all group-hover:shadow-lg group-hover:shadow-indigo-600/20">
+                               Fetch Live Details
+                            </button>
+                          }
+                       </div>
+                    </div>
+                  }
+                  @if (filteredTrackedServices.length === 0 && !isSyncing) {
+                    <div class="col-span-full py-12 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-[3rem] opacity-40">
+                       <p class="text-sm font-black text-gray-400 uppercase tracking-widest">No services matching this filter</p>
+                    </div>
+                  }
+               </div>
+            </div>
+
+
+
+
+
+
+
           </div>
         }
 
@@ -828,6 +764,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                         {{ loan.borrowerName }} · 
                         <span class="text-indigo-500 font-black uppercase">{{ (getLastInterestDate(loan) | date:'dd MMM') || 'No Collection' }}</span>
                       </p>
+                      <p class="text-[8px] font-black text-gray-400 ml-3.5 mt-0.5 uppercase tracking-tighter">Started: {{ loan.startDate | date:'dd MMM yyyy' }}</p>
                     </div>
                     <div class="text-right ml-4">
                       <p class="text-xs font-black text-gray-900 dark:text-white" [appCountUp]="loan.amount" prefix="₹"></p>
@@ -854,15 +791,27 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                              @if (isLoanReminderDue(loan)) {
                                <span class="text-[8px] font-black px-2 py-0.5 bg-orange-500 text-white rounded-md uppercase animate-pulse">Reminder Due</span>
                              }
-                             <button (click)="$event.stopPropagation(); sendLoanWhatsAppReminder(loan)" class="w-7 h-7 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg shadow-green-500/30" title="Send WhatsApp Reminder">
-                                <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-                             </button>
+                              <div class="flex items-center gap-2">
+                                <a [href]="'tel:' + loan.borrowerPhone" (click)="$event.stopPropagation()" class="w-7 h-7 bg-indigo-500 hover:bg-indigo-600 rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg shadow-indigo-500/30" title="Call Borrower">
+                                   <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                                </a>
+
+                               <button (click)="$event.stopPropagation(); sendLoanReminder(loan, 'whatsapp')" class="w-7 h-7 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg shadow-green-500/30" title="Send WhatsApp via FinServe">
+                                  <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                               </button>
+                               <button (click)="$event.stopPropagation(); sendLoanReminder(loan, 'sms')" class="w-7 h-7 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg shadow-blue-500/30" title="Send SMS via FinServe">
+                                  <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+                               </button>
+                             </div>
                            </div>
                            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">Last Collection</p>
                            <p class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase leading-none">{{ (getLastInterestDate(loan) | date:'dd MMM yyyy') || 'None' }}</p>
                          </div>
                       </div>
-                      <p class="text-xs text-gray-500 font-bold mb-4">{{ loan.borrowerName }}</p>
+                       <div class="flex flex-wrap gap-x-4 gap-y-1 mb-4">
+                         <p class="text-xs text-gray-500 font-bold">{{ loan.borrowerName }}</p>
+                         <p class="text-[10px] font-black text-indigo-500/70 uppercase">Started: {{ loan.startDate | date:'dd MMM yyyy' }}</p>
+                       </div>
                       <div class="grid grid-cols-2 gap-3 mb-3">
                         <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-100/50 dark:border-gray-700/50">
                           <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Principal</p>
@@ -874,9 +823,9 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                         </div>
                       </div>
                       @if (loan.status !== 'Inactive' && getPendingInterestForLoan(loan) > 0) {
-                        <div class="mb-4 bg-indigo-50/30 dark:bg-indigo-900/10 p-3 rounded-2xl flex justify-between items-center border border-indigo-100/30 dark:border-indigo-900/20">
-                           <p class="text-[9px] font-black text-indigo-500 uppercase tracking-widest italic opacity-70">Overall Interest Due</p>
-                           <p class="text-sm font-black text-indigo-600 dark:text-indigo-400" [appCountUp]="getPendingInterestForLoan(loan)" prefix="₹"></p>
+                        <div class="mb-4 bg-rose-50/50 dark:bg-rose-900/10 p-3 rounded-2xl flex justify-between items-center border border-rose-100/30 dark:border-rose-900/20">
+                           <p class="text-[9px] font-black text-rose-500 uppercase tracking-widest italic opacity-70">Overall Interest Due</p>
+                           <p class="text-sm font-black text-rose-600 dark:text-rose-400" [appCountUp]="getPendingInterestForLoan(loan)" prefix="₹"></p>
                         </div>
                       }
                       <div class="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-gray-700/50">
@@ -1335,193 +1284,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
           </div>
         }
 
-        <!-- Rental House Registration Modal -->
-        @if (showRentalHouseForm) {
-          <div class="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-md px-4 overflow-hidden">
-             <div class="bg-white dark:bg-gray-900 w-full max-w-2xl max-h-[90vh] rounded-[2.5rem] flex flex-col shadow-2xl animate-in zoom-in-95 duration-300">
-                <!-- Header (Fixed) -->
-                <div class="p-8 pb-4 border-b border-gray-50 dark:border-gray-800 shrink-0">
-                   <div class="flex justify-between items-center">
-                      <div>
-                         <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{{ isRentalEditMode ? 'Update' : 'Register' }} Property</h3>
-                         <p class="text-sm text-gray-500 font-medium">Define house details and meter numbers</p>
-                      </div>
-                      <button (click)="showRentalHouseForm = false" class="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:rotate-90 transition-all text-gray-500">
-                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                      </button>
-                   </div>
-                </div>
 
-                <!-- Body (Scrollable) -->
-                <div class="p-8 pt-6 overflow-y-auto flex-1 no-scrollbar">
-                   <form [formGroup]="rentalHouseForm" (ngSubmit)="saveRentalHouse()" class="space-y-6">
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                         <div class="md:col-span-2">
-                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">House Name / ID</label>
-                            <input type="text" formControlName="houseName" placeholder="e.g. Dream Villa - Ground Floor"
-                               class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold"
-                               [class.ring-2]="rentalHouseForm.get('houseName')?.invalid && rentalHouseForm.get('houseName')?.touched"
-                               [class.ring-red-500]="rentalHouseForm.get('houseName')?.invalid && rentalHouseForm.get('houseName')?.touched">
-                            <p *ngIf="rentalHouseForm.get('houseName')?.invalid && rentalHouseForm.get('houseName')?.touched" class="text-[9px] text-red-500 mt-1 px-1 font-bold uppercase">House name is required</p>
-                         </div>
-                         <div>
-                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Renter Name</label>
-                            <input type="text" formControlName="renterName"
-                               class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold"
-                               [class.ring-2]="rentalHouseForm.get('renterName')?.invalid && rentalHouseForm.get('renterName')?.touched"
-                               [class.ring-red-500]="rentalHouseForm.get('renterName')?.invalid && rentalHouseForm.get('renterName')?.touched">
-                            <p *ngIf="rentalHouseForm.get('renterName')?.invalid && rentalHouseForm.get('renterName')?.touched" class="text-[9px] text-red-500 mt-1 px-1 font-bold uppercase">Renter name is required</p>
-                         </div>
-                         <div>
-                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Renter Phone</label>
-                            <input type="tel" formControlName="renterPhone" placeholder="10-digit number"
-                               class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold"
-                               [class.ring-2]="rentalHouseForm.get('renterPhone')?.invalid && rentalHouseForm.get('renterPhone')?.touched"
-                               [class.ring-red-500]="rentalHouseForm.get('renterPhone')?.invalid && rentalHouseForm.get('renterPhone')?.touched">
-                            <p *ngIf="rentalHouseForm.get('renterPhone')?.invalid && rentalHouseForm.get('renterPhone')?.touched" class="text-[9px] text-red-500 mt-1 px-1 font-bold uppercase">Valid 10-digit phone required</p>
-                            <p *ngIf="!rentalHouseForm.get('renterPhone')?.touched" class="text-[8px] text-gray-400 mt-1 px-1 font-bold">e.g. 9876543210</p>
-                         </div>
-                         <div>
-                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Advance Amount (₹)</label>
-                            <input type="number" formControlName="advanceAmount"
-                               class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold">
-                         </div>
-                         <div>
-                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Advance Months</label>
-                            <input type="number" formControlName="advanceMonths"
-                               class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold">
-                         </div>
-                         <div>
-                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Move-in Date</label>
-                            <input type="date" formControlName="arrivedDate"
-                               class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold [color-scheme:light] dark:[color-scheme:dark]">
-                         </div>
-                         <div>
-                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Monthly Rent (₹)</label>
-                            <input type="number" formControlName="monthlyRent"
-                               class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold">
-                         </div>
-                         <div>
-                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Occupancy Status</label>
-                            <select formControlName="status" class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold appearance-none">
-                               <option value="Occupied">Occupied</option>
-                               <option value="Vacant">Vacant</option>
-                            </select>
-                         </div>
-                      </div>
-
-                      <div class="pt-6 border-t border-gray-50 dark:border-gray-800">
-                         <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Meter / Service Numbers (Optional)</p>
-                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                            <div>
-                               <label class="block font-bold text-gray-400 mb-1 px-1">Electric Meter No</label>
-                               <input type="text" formControlName="electricMeterNo" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none text-gray-900 dark:text-white font-bold">
-                            </div>
-                            <div>
-                               <label class="block font-bold text-gray-400 mb-1 px-1">Water Service No</label>
-                               <input type="text" formControlName="waterBillNo" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none text-gray-900 dark:text-white font-bold">
-                            </div>
-                            <div class="sm:col-span-2">
-                               <label class="block font-bold text-gray-400 mb-1 px-1">Rent Last Increased On (Optional)</label>
-                               <input type="date" formControlName="lastRentIncreaseDate" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none text-gray-900 dark:text-white font-bold [color-scheme:light] dark:[color-scheme:dark]">
-                               <p class="text-[9px] text-gray-400 mt-1 px-1 uppercase tracking-widest font-bold">System will alert you after 1 year of this date or move-in date.</p>
-                            </div>
-                         </div>
-                      </div>
-
-                      <div class="pt-6 flex flex-col sm:flex-row gap-3">
-                         <button type="button" (click)="showRentalHouseForm = false" 
-                            class="w-full py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 font-black rounded-2xl uppercase text-[10px] tracking-widest hover:bg-gray-200 transition-all">
-                            Cancel
-                         </button>
-                         <button type="submit" [disabled]="rentalHouseForm.invalid || isSaving" 
-                            class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-indigo-500/25 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-indigo-700 transition-all">
-                            {{ isSaving ? 'Saving...' : (isRentalEditMode ? 'Update Details' : 'Finalize Registration') }}
-                         </button>
-                      </div>
-                      <p *ngIf="rentalHouseForm.invalid && rentalHouseForm.touched" class="text-[9px] font-bold text-red-500 text-center mt-2 uppercase tracking-widest">
-                         Please fill all required fields correctly
-                      </p>
-                      
-                      <!-- Debug Info -->
-                      <div *ngIf="rentalHouseForm.invalid && rentalHouseForm.touched" class="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-2xl border border-red-100 dark:border-red-800/50">
-                        <p class="text-[8px] font-black text-red-500 uppercase tracking-widest mb-2">Debugging Info (Invalid Fields):</p>
-                        <ul class="text-[8px] text-red-400 font-bold space-y-1">
-                          <li *ngIf="rentalHouseForm.get('houseName')?.invalid">• House Name is missing</li>
-                          <li *ngIf="rentalHouseForm.get('renterName')?.invalid">• Renter Name is missing</li>
-                          <li *ngIf="rentalHouseForm.get('renterPhone')?.invalid">• Renter Phone must be exactly 10 digits</li>
-                        </ul>
-                      </div>
-                   </form>
-                </div>
-             </div>
-          </div>
-        }
-
-        <!-- Monthly Bill Form Modal -->
-        @if (showMonthlyBillForm) {
-          <div class="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-md px-4 overflow-hidden">
-             <div class="bg-white dark:bg-gray-900 w-full max-w-lg max-h-[90vh] rounded-[2.5rem] flex flex-col shadow-2xl animate-in zoom-in-95 duration-300">
-                <!-- Header (Fixed) -->
-                <div class="p-8 pb-4 border-b border-gray-50 dark:border-gray-800 shrink-0">
-                   <div class="flex justify-between items-center">
-                      <div>
-                         <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{{ editingBillIndex !== null ? 'Edit' : 'New' }} Monthly Bill</h3>
-                         <p class="text-sm text-gray-500 font-medium">Record utility costs for the selected period</p>
-                      </div>
-                      <button (click)="showMonthlyBillForm = false" class="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500">
-                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                      </button>
-                   </div>
-                </div>
-
-                <!-- Body (Scrollable) -->
-                <div class="p-8 pt-6 overflow-y-auto flex-1 no-scrollbar">
-                   <form [formGroup]="monthlyBillForm" (ngSubmit)="saveMonthlyBill()" class="space-y-4">
-                      <div class="grid grid-cols-2 gap-4">
-                         <div class="col-span-2">
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 px-1">Bill Date</label>
-                            <input type="date" formControlName="billDate" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none font-bold text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]">
-                         </div>
-                         <div class="col-span-2">
-                            <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 px-1">Rent Amount</label>
-                            <input type="number" formControlName="rentAmount" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none font-bold text-indigo-600">
-                         </div>
-                         <div>
-                            <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 px-1">Electric Bill</label>
-                            <input type="number" formControlName="electricBill" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none font-bold text-gray-900 dark:text-white">
-                         </div>
-                         <div>
-                            <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 px-1">Water Bill</label>
-                            <input type="number" formControlName="waterBill" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none font-bold text-gray-900 dark:text-white">
-                         </div>
-                         <div class="col-span-2">
-                            <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 px-1">Payment Status</label>
-                            <select formControlName="status" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none font-bold appearance-none text-gray-900 dark:text-white">
-                               <option value="Pending">Pending</option>
-                               <option value="Paid">Paid</option>
-                            </select>
-                         </div>
-                      </div>
-
-                      <div class="pt-6 flex flex-col sm:flex-row gap-3">
-                         <button type="button" (click)="showMonthlyBillForm = false" 
-                            class="w-full py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 font-black rounded-2xl uppercase text-[10px] tracking-widest hover:bg-gray-200 transition-all">
-                            Cancel
-                         </button>
-                         <button type="submit" [disabled]="monthlyBillForm.invalid || isSaving" 
-                            class="w-full py-4 bg-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-purple-500/25 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-purple-700 transition-all">
-                            {{ isSaving ? 'Processing...' : (editingBillIndex !== null ? 'Update Record' : 'Save Record') }}
-                         </button>
-                      </div>
-                      <p *ngIf="monthlyBillForm.invalid && monthlyBillForm.touched" class="text-[9px] font-bold text-red-500 text-center mt-2 uppercase tracking-widest">
-                         Please fill all required fields correctly
-                      </p>
-                   </form>
-                </div>
-             </div>
-          </div>
-        }
 
         <!-- ═══════════ SECURITY & PASSWORD ═══════════ -->
         @if (activeTab === 'security') {
@@ -1706,184 +1469,545 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
          </div>
       </div>
 
-      <!-- Multiple Accounts Modal -->
-      @if (showAccountsModal) {
-          <div class="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md px-0 sm:px-4">
-             <div class="bg-white dark:bg-gray-900 w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl mobile-animate-slide duration-300">
-                <div class="p-8">
-                   <div class="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
+
+
+
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <!-- GLOBAL MODAL STACK (Root Level for z-index Integrity)             -->
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+
+      <!-- 1. Admin/Edit Profile Form Overlay -->
+      @if (showAdminForm || isAdminEditMode) {
+        <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-xl px-4 py-8 overflow-y-auto">
+          <div class="bg-white dark:bg-gray-900 w-full max-w-4xl rounded-[3rem] shadow-2xl animate-in zoom-in-95 duration-500 flex flex-col max-h-[95vh] relative">
+             <div class="p-8 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/30">
+                <div class="flex items-center gap-4">
+                   <div class="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                   </div>
+                   <div>
+                      <h3 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{{ isAdminEditMode ? 'Update Account' : 'Register Admin' }}</h3>
+                      <p class="text-sm font-medium text-gray-500 mt-1">Configure system access and administrative identity.</p>
+                   </div>
+                </div>
+                <button (click)="closeAdminForm()" class="p-3 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:rotate-90 transition-all">
+                  <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+             </div>
+             <div class="p-8 overflow-y-auto custom-scrollbar">
+                <form [formGroup]="adminForm" (ngSubmit)="createAdminMember()" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <div>
+                          <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Full Name</label>
+                          <input type="text" formControlName="name" placeholder="Enter Full Name"
+                             class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                       </div>
+                       <div>
+                          <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Username (Login ID)</label>
+                          <input type="text" formControlName="username" placeholder="Login username"
+                             class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-black"
+                              [ngClass]="{'bg-gray-100 dark:bg-gray-800/50 cursor-not-allowed': isAdminEditMode}">
+                       </div>
+                       <div>
+                          <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Phone Number</label>
+                          <input type="tel" formControlName="phone" placeholder="10 Digit Number"
+                             class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                       </div>
+                       <div>
+                          <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">
+                             {{ isAdminEditMode ? 'Reset Password (Optional)' : 'Admin Password' }}
+                          </label>
+                          <div class="relative">
+                             <input [type]="showAdminPassword ? 'text' : 'password'" formControlName="password" 
+                                [placeholder]="isAdminEditMode ? 'Leave blank to keep current' : 'Enter password'"
+                                class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold pr-14">
+                             <button type="button" (click)="showAdminPassword = !showAdminPassword" 
+                                class="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-indigo-600 transition-colors">
+                                <svg *ngIf="!showAdminPassword" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                <svg *ngIf="showAdminPassword" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 1.274-4.057-5.064-7 9.542-7 1.253 0 2.426.287 3.477.799m-1.763 3.064a3 3 0 11-4.243 4.243m4.242-4.242L9.88 9.88m-2.012-2.012L2.031 2.031" /></svg>
+                             </button>
+                          </div>
+                       </div>
+                        <div class="md:col-span-2">
+                           <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Residential Address</label>
+                           <textarea formControlName="address" rows="3" placeholder="Enter complete address"
+                              class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold resize-none"></textarea>
+                        </div>
+                        <div class="md:col-span-2 pt-4 border-t border-gray-100 dark:border-gray-800">
+                           <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-4 px-1">Module Access</label>
+                           <div class="flex flex-wrap gap-4">
+                              <label class="flex items-center space-x-2 cursor-pointer">
+                                 <input type="checkbox" formControlName="tab_interest" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
+                                 <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Loans</span>
+                              </label>
+                              <label class="flex items-center space-x-2 cursor-pointer">
+                                 <input type="checkbox" formControlName="tab_chitti" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
+                                 <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Chitti</span>
+                              </label>
+                              <label class="flex items-center space-x-2 cursor-pointer">
+                                 <input type="checkbox" formControlName="tab_customers" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
+                                 <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Customers</span>
+                              </label>
+                              <label class="flex items-center space-x-2 cursor-pointer">
+                                 <input type="checkbox" formControlName="tab_bills" class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
+                                 <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Bills</span>
+                              </label>
+                           </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 pt-6">
+                       <button type="button" (click)="closeAdminForm()" class="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-2xl font-black uppercase text-xs tracking-widest">Cancel</button>
+                       <button type="submit" [disabled]="adminForm.invalid || isSaving" class="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-500/20">
+                          {{ isSaving ? 'Saving...' : (isAdminEditMode ? 'Update Account' : 'Finalize Access') }}
+                       </button>
+                    </div>
+                </form>
+             </div>
+          </div>
+        </div>
+      }
+
+      <!-- 2. Service Registration Overlay -->
+      @if (showServiceModal) {
+        <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-xl px-4 py-8 overflow-hidden">
+          <div class="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+            <div class="h-2 bg-gradient-to-r from-indigo-500 to-purple-600"></div>
+            <div class="p-8 overflow-y-auto no-scrollbar">
+               <div class="flex justify-between items-center mb-8">
+                  <div>
+                     <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">Register Service</h3>
+                     <p class="text-sm text-gray-500 font-medium mt-2">Link a service for automated tracking.</p>
+                  </div>
+                  <button (click)="showServiceModal = false" class="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:rotate-90 transition-all text-gray-500">
+                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+               </div>
+               <form [formGroup]="trackedServiceForm" (ngSubmit)="handleRegisterService()" class="space-y-4">
+                  <div class="space-y-1.5">
+                     <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Service Category</label>
+                     <select formControlName="serviceType" class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold appearance-none">
+                        <option value="electricity">Electricity</option>
+                        <option value="mobile">Mobile</option>
+                        <option value="water">Water</option>
+                        <option value="internet">Internet</option>
+                     </select>
+                  </div>
+                  <div class="space-y-1.5">
+                     <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Service / Consumer ID</label>
+                     <input type="text" formControlName="serviceNumber" placeholder="Enter USCNO / Service Number" class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold">
+                  </div>
+                  <div class="pt-6 flex gap-3">
+                     <button type="button" (click)="showServiceModal = false" class="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 font-bold rounded-2xl uppercase text-[10px] tracking-widest">Cancel</button>
+                     <button type="submit" [disabled]="trackedServiceForm.invalid || isSaving" class="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-500/20 uppercase text-[10px] tracking-widest">
+                        {{ isSaving ? 'Registering...' : 'Link Account' }}
+                     </button>
+                  </div>
+               </form>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- 3. Service Details & Insights Overlay -->
+      @if (showServiceDetailsModal && selectedTrackedService) {
+        <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-xl px-4 py-8 overflow-hidden">
+          <div class="bg-white dark:bg-gray-900 w-full max-w-4xl rounded-[3rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-500 max-h-[95vh] flex flex-col">
+             <!-- Modal Header -->
+             <div class="p-8 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/30">
+                <div class="flex items-center gap-4">
+                   <div class="p-4 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20">
+                      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                   </div>
+                   <div>
+                      <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">{{ selectedTrackedService.provider }}</h3>
+                      <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">#{{ selectedTrackedService.serviceNumber }} • {{ selectedTrackedService.consumerName || 'Unnamed' }}</p>
+                   </div>
+                </div>
+                <button (click)="closeServiceDetailsModal()" class="p-3 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:rotate-90 transition-all">
+                  <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+             </div>
+
+             <!-- Tab Selector -->
+             <div class="px-8 pt-6 flex gap-8 border-b border-gray-100 dark:border-gray-800">
+                <button (click)="activeDetailsTab = 'current'" 
+                        [class.border-indigo-500]="activeDetailsTab === 'current'"
+                        [class.text-indigo-600]="activeDetailsTab === 'current'"
+                        class="pb-4 text-[10px] font-black uppercase tracking-[0.2em] border-b-2 border-transparent transition-all">Current Status</button>
+                <button (click)="activeDetailsTab = 'history'" 
+                        [class.border-indigo-500]="activeDetailsTab === 'history'"
+                        [class.text-indigo-600]="activeDetailsTab === 'history'"
+                        class="pb-4 text-[10px] font-black uppercase tracking-[0.2em] border-b-2 border-transparent transition-all">Payment History</button>
+             </div>
+
+             <!-- Modal Body -->
+             <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                @if (activeDetailsTab === 'current') {
+                  <div class="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                     <!-- Service Identification Card -->
+                     <div class="bg-gray-50 dark:bg-gray-800/30 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 mb-8 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                        <div class="flex flex-col">
+                           <span class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5">Service ID (Alphanumeric)</span>
+                           <span class="text-base font-black text-gray-900 dark:text-white uppercase">{{ selectedTrackedService.altServiceNumber || 'N/A' }}</span>
+                        </div>
+                        <div class="flex flex-col">
+                           <span class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5">ERO / Office</span>
+                           <span class="text-base font-black text-gray-900 dark:text-white uppercase">{{ selectedTrackedService.ero || 'N/A' }}</span>
+                        </div>
+                        <div class="flex flex-col">
+                           <span class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5">Section Name</span>
+                           <span class="text-base font-black text-gray-900 dark:text-white uppercase">{{ selectedTrackedService.sectionName || 'N/A' }}</span>
+                        </div>
+                        <div class="flex flex-col">
+                           <span class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5">Full Address</span>
+                           <span class="text-base font-black text-gray-900 dark:text-white uppercase leading-snug">{{ selectedTrackedService.address || 'N/A' }}</span>
+                        </div>
+                     </div>
+
+                     @if (selectedTrackedService.lastAmount) {
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           <div class="bg-indigo-50 dark:bg-indigo-900/20 p-8 rounded-[2rem] border border-indigo-100 dark:border-indigo-800 flex flex-col justify-center">
+                              <p class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2">Total Amount Payable</p>
+                              <p class="text-5xl font-black text-indigo-600 dark:text-indigo-400 tracking-tighter" [appCountUp]="selectedTrackedService.lastAmount" prefix="₹"></p>
+                           </div>
+                           <div class="space-y-4">
+                              <div class="p-6 bg-rose-50 dark:bg-rose-900/20 rounded-3xl border border-rose-100 dark:border-rose-800">
+                                 <p class="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Due Date</p>
+                                 <p class="text-xl font-black text-rose-600 dark:text-rose-400">{{ selectedTrackedService.lastDueDate }}</p>
+                              </div>
+                              <div class="p-6 bg-emerald-50 dark:bg-emerald-900/20 rounded-3xl border border-emerald-100 dark:border-emerald-800 flex justify-between items-center">
+                                 <div>
+                                    <p class="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Status</p>
+                                    <p class="text-xl font-black text-emerald-600 dark:text-emerald-400 uppercase">Synced</p>
+                                 </div>
+                                 <button (click)="handleFetchLiveBill(selectedTrackedService)" class="p-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm text-emerald-600 hover:rotate-180 transition-all duration-700">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                 </button>
+                              </div>
+                           </div>
+                        </div>
+                     } @else {
+                        <div class="py-20 text-center">
+                           <div class="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+                              <svg class="w-10 h-10 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                           </div>
+                           <h4 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">No Pending Bills</h4>
+                           <p class="text-sm font-medium text-gray-500 mt-2">All dues for this service have been cleared.</p>
+                        </div>
+                     }
+                  </div>
+                } @else {
+                  <div class="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-4">
+                     @for (bill of selectedServiceHistory; track bill.id) {
+                        <div class="p-6 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-800 flex justify-between items-center group hover:border-indigo-500/30 transition-all">
+                           <div>
+                              <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{{ bill.month }} {{ bill.year }}</p>
+                              <p class="text-xl font-black text-gray-900 dark:text-white">₹{{ bill.amount }}</p>
+                           </div>
+                           <div class="flex items-center gap-4">
+                              <span class="px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 text-[10px] font-black rounded-xl uppercase tracking-widest">PAID</span>
+                              <button (click)="handleDeleteBill(bill)" class="p-2.5 text-gray-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              </button>
+                           </div>
+                        </div>
+                     }
+                     @if (!selectedServiceHistory.length) {
+                        <div class="py-20 text-center opacity-40 italic text-sm">No payment history available.</div>
+                     }
+                  </div>
+                }
+             </div>
+          </div>
+        </div>
+      }
+
+      <!-- 4. Payment Overlay -->
+      @if (showPaymentModal && payingBill) {
+        <app-bill-payment-modal
+          class="fixed inset-0 z-[1000]"
+          [bill]="payingBill"
+          (paid)="onBillPaid()"
+          (cancel)="closePaymentModal()">
+        </app-bill-payment-modal>
+      }
+
+      <!-- 5. Live Bill Search Overlay -->
+      @if (showLiveBillModal && selectedLiveBill) {
+        <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-xl px-4 py-8 overflow-hidden">
+          <div class="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl animate-in zoom-in-95 duration-500 flex flex-col max-h-[90vh]">
+             <div class="p-8 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/30">
+                <div class="flex items-center gap-3">
+                   <div class="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-white shadow-lg shadow-amber-500/20">
+                      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                   </div>
+                   <div>
+                      <h3 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">Bill Summary</h3>
+                      <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Live from Provider Portal</p>
+                   </div>
+                </div>
+                <button (click)="showLiveBillModal = false" class="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:rotate-90 transition-all">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+             </div>
+             <div class="p-8 overflow-y-auto custom-scrollbar space-y-6">
+                <div class="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-800">
+                   <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Consumer Information</p>
+                   <p class="text-lg font-black text-gray-900 dark:text-white uppercase">{{ selectedLiveBill.consumerName || 'Unknown' }}</p>
+                   <p class="text-[11px] font-bold text-gray-400 mt-1">#{{ selectedLiveBill.uniqueServiceNumber }} · {{ selectedLiveBill.ero }}</p>
+                </div>
+                <div class="bg-indigo-600 p-6 rounded-3xl text-white shadow-lg shadow-indigo-600/20 relative overflow-hidden">
+                   <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+                   <div class="relative z-10 flex justify-between items-center">
                       <div>
-                         <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Select Account</h3>
-                         <p class="text-sm text-gray-500 font-medium">@if (selectedCustomerForAccounts?.name) { {{ selectedCustomerForAccounts!.name }} } @else { Customer }</p>
+                         <p class="text-[10px] font-black text-indigo-100 uppercase tracking-widest mb-1">Amount Due</p>
+                         <p class="text-3xl font-black">₹{{ selectedLiveBill.totalAmountPayable }}</p>
                       </div>
-                      <button (click)="showAccountsModal = false" class="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:rotate-90 transition-all text-gray-500 hover:text-red-500">
-                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                      </button>
+                      <div class="text-right">
+                         <p class="text-[10px] font-black text-indigo-100 uppercase tracking-widest mb-1">Due Date</p>
+                         <p class="text-base font-black">{{ selectedLiveBill.dueDate }}</p>
+                      </div>
                    </div>
-                   
-                   <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-                      @for (acc of customerAccountsList; track acc.id) {
-                         <div (click)="handleAccountSelection(acc); showAccountsModal = false;"
-                              class="p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-800 hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer transition-all group flex justify-between items-center">
-                            <div>
-                               <p class="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest">{{ acc.info }}</p>
-                               <h4 class="text-base font-black text-gray-900 dark:text-white mt-1">{{ acc.name }}</h4>
-                            </div>
-                            <div class="text-right">
-                               <p class="text-sm font-black text-gray-900 dark:text-white" [appCountUp]="acc.amount" prefix="₹"></p>
-                               <div class="mt-1 flex justify-end">
-                                  <span class="text-[10px] font-bold px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/40 group-hover:text-purple-600 dark:group-hover:text-purple-400 rounded-full transition-colors uppercase">View &rarr;</span>
-                               </div>
-                            </div>
-                         </div>
-                      }
-                   </div>
+                </div>
+                <div class="flex gap-3">
+                   <button (click)="showLiveBillModal = false" class="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 font-bold rounded-2xl uppercase text-[10px] tracking-widest">Close</button>
+                   <button (click)="handleAddToTracker()" class="flex-1 py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-600/20 uppercase text-[10px] tracking-widest">Add to Tracker</button>
                 </div>
              </div>
           </div>
+        </div>
       }
 
-      <!-- Add/Edit Customer Modal -->
+      <!-- 6. Customer Profile Overlay -->
       @if (showCustomerModal) {
-         <div class="fixed inset-0 z-[110] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md px-0 sm:px-4">
-            <div class="bg-white dark:bg-gray-900 w-full max-w-xl rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl mobile-animate-slide duration-300">
-               <div class="p-8">
-                  <div class="flex justify-between items-center mb-8">
-                     <div>
-                        <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{{ isEditModal ? 'Update Customer' : 'Add Customer' }}</h3>
-                        <p class="text-sm text-gray-500">{{ isEditModal ? 'Edit personal information' : 'Create a new customer profile' }}</p>
-                     </div>
-                     <button (click)="closeCustomerModal()" class="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:rotate-90 transition-all">
-                        <svg class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                     </button>
+        <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-xl px-4 py-8 overflow-y-auto">
+          <div class="bg-white dark:bg-gray-900 w-full max-w-2xl rounded-[3rem] shadow-2xl animate-in zoom-in-95 duration-500 flex flex-col max-h-[95vh] relative">
+             <div class="p-8 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/30">
+                <div class="flex items-center gap-4">
+                   <div class="w-12 h-12 rounded-2xl bg-purple-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
+                      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                   </div>
+                   <div>
+                      <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">{{ isEditModal ? 'Update Customer' : 'Add Customer' }}</h3>
+                      <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">{{ isEditModal ? 'Edit personal information' : 'Create a new customer profile' }}</p>
+                   </div>
+                </div>
+                <button (click)="closeCustomerModal()" class="p-3 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:rotate-90 transition-all">
+                  <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+             </div>
+
+             <div class="p-8 overflow-y-auto custom-scrollbar flex-1">
+                <!-- Tab Switcher -->
+                @if (!isEditModal) {
+                  <div class="flex border-b border-gray-100 dark:border-gray-800 mb-8">
+                    <button (click)="existingMode = false" class="flex-1 py-4 text-xs font-black uppercase tracking-widest transition-all" [class.text-purple-600]="!existingMode" [class.border-b-2]="!existingMode" [class.border-purple-600]="!existingMode" [class.text-gray-400]="existingMode">+ New Customer</button>
+                    <button (click)="existingMode = true" class="flex-1 py-4 text-xs font-black uppercase tracking-widest transition-all" [class.text-purple-600]="existingMode" [class.border-b-2]="existingMode" [class.border-purple-600]="existingMode" [class.text-gray-400]="!existingMode">Pick Existing</button>
                   </div>
+                }
 
-                  <!-- Tab Switcher (Only in Add mode) -->
-                  @if (!isEditModal) {
-                    <div class="flex border-b border-gray-100 dark:border-gray-800 mb-6">
-                      <button (click)="existingMode = false" class="flex-1 py-3 text-xs font-bold uppercase tracking-widest transition-all" [class.text-purple-600]="!existingMode" [class.border-b-2]="!existingMode" [class.border-purple-600]="!existingMode" [class.text-gray-400]="existingMode">
-                        + New Customer
-                      </button>
-                      <button (click)="existingMode = true" class="flex-1 py-3 text-xs font-bold uppercase tracking-widest transition-all" [class.text-purple-600]="existingMode" [class.border-b-2]="existingMode" [class.border-purple-600]="existingMode" [class.text-gray-400]="!existingMode">
-                        Pick Existing
-                      </button>
-                    </div>
-                  }
+                @if (existingMode && !isEditModal) {
+                  <div class="space-y-4">
+                     <input type="text" [(ngModel)]="pickerSearch" placeholder="Search by name or phone..." class="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800 rounded-2xl outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white font-bold">
+                     <div class="grid grid-cols-1 gap-3">
+                        @for (p of filteredPickerCustomers; track p.phone) {
+                           <div (click)="selectFromPicker(p)" class="p-5 rounded-[2rem] border border-gray-100 dark:border-gray-800 hover:border-purple-200 hover:bg-purple-50 dark:hover:bg-purple-900/10 cursor-pointer transition-all flex justify-between items-center group">
+                              <div>
+                                 <p class="font-black text-gray-900 dark:text-white uppercase tracking-tight">{{ p.name }}</p>
+                                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">{{ p.phone }}</p>
+                              </div>
+                              <svg class="w-5 h-5 text-gray-300 group-hover:text-purple-500 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7" /></svg>
+                           </div>
+                        }
+                     </div>
+                  </div>
+                } @else {
+                  <form [formGroup]="customerForm" (ngSubmit)="saveCustomer()" class="space-y-6">
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                           <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Full Name</label>
+                           <input type="text" formControlName="name" placeholder="John Doe" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white font-bold">
+                        </div>
+                        <div class="space-y-2">
+                           <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Username (Login)</label>
+                           <input type="text" formControlName="username" (input)="onUsernameInput()" placeholder="johndoe" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white font-bold">
+                        </div>
+                        <div class="space-y-2">
+                           <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Phone Number</label>
+                           <input type="text" formControlName="phone" placeholder="10 digit number" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white font-bold">
+                        </div>
+                        <div class="space-y-2">
+                           <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Email Address</label>
+                           <input type="email" formControlName="email" placeholder="john@example.com" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white font-bold">
+                        </div>
+                     </div>
 
-                  @if (existingMode && !isEditModal) {
-                    <!-- Existing Customer Picker -->
-                    <div class="space-y-4 max-h-[50vh] flex flex-col">
-                       <input type="text" [(ngModel)]="pickerSearch" placeholder="Search by name or phone..." class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white font-bold">
-                       <div class="overflow-y-auto flex-1 space-y-2 custom-scrollbar pr-1">
-                          @for (p of filteredPickerCustomers; track p.phone) {
-                             <div (click)="selectFromPicker(p)" class="p-4 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-purple-200 hover:bg-purple-50 dark:hover:bg-purple-900/10 cursor-pointer transition-all">
-                                <p class="font-bold text-gray-900 dark:text-white">{{ p.name }}</p>
-                                <p class="text-xs text-gray-400">{{ p.phone }} {{ p.username ? '· @' + p.username : '' }}</p>
-                             </div>
-                          }
+                     <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                           <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Scheme Type</label>
+                           <select formControlName="schemeType" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white font-bold appearance-none">
+                              <option value="chitti">Chitti</option>
+                              <option value="interest">Interest (Loan)</option>
+                              <option value="rent">Rent</option>
+                           </select>
+                        </div>
+                        <div class="space-y-2">
+                           <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Target Scheme</label>
+                           <select formControlName="schemeId" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white font-bold appearance-none">
+                              <option value="" disabled>Select Scheme</option>
+                              @if (customerForm.get('schemeType')?.value === 'chitti') {
+                                 @for (s of chittis; track s.id) { <option [value]="s.id">{{ s.name }}</option> }
+                              } @else if (customerForm.get('schemeType')?.value === 'interest') {
+                                 @for (s of interests; track s.id) { <option [value]="s.id">{{ s.name }}</option> }
+                              } @else if (customerForm.get('schemeType')?.value === 'rent') {
+                                 @for (h of houses; track h.id) { <option [value]="h.id">{{ h.houseName }}</option> }
+                              }
+                           </select>
+                        </div>
+                     </div>
+                     
+                     <div class="pt-8 flex gap-4">
+                        <button type="button" (click)="closeCustomerModal()" class="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-2xl font-black uppercase text-xs tracking-widest">Cancel</button>
+                        <button type="submit" [disabled]="customerForm.invalid || isSaving" class="flex-[2] py-4 bg-purple-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-purple-500/20">
+                           {{ isSaving ? 'Saving...' : (isEditModal ? 'Update Profile' : 'Create Profile') }}
+                        </button>
+                     </div>
+                  </form>
+                }
+             </div>
+          </div>
+        </div>
+      }
+
+      <!-- 7. Bill Entry Overlay -->
+      @if (showBillForm) {
+        <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-xl px-4 py-8 overflow-y-auto">
+          <div class="w-full max-w-2xl animate-in zoom-in-95 duration-300">
+            <app-bill-form [bill]="editingBill" (save)="handleSaveBill($event)" (cancel)="closeBillForm()"></app-bill-form>
+          </div>
+        </div>
+      }
+
+      <!-- 8. Rental House Registration Overlay -->
+      @if (showRentalHouseForm) {
+        <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-xl px-4 py-8 overflow-hidden">
+           <div class="bg-white dark:bg-gray-900 w-full max-w-2xl max-h-[90vh] rounded-[3rem] flex flex-col shadow-2xl animate-in zoom-in-95 duration-300">
+              <div class="p-8 pb-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
+                 <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-4">
+                       <div class="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white">
+                          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
                        </div>
-                    </div>
-                  } @else {
-                    <form [formGroup]="customerForm" (ngSubmit)="saveCustomer()" class="space-y-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
-                       <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Basic Information</p>
-                       
                        <div>
-                          <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Full Name</label>
-                          <input type="text" formControlName="name" placeholder="John Doe"
-                             class="w-full px-5 py-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white">
+                          <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{{ isRentalEditMode ? 'Update' : 'Register' }} Property</h3>
+                          <p class="text-sm text-gray-500 font-medium">Define house details and meter numbers</p>
                        </div>
-
+                    </div>
+                    <button (click)="showRentalHouseForm = false" class="p-3 bg-gray-100 dark:bg-gray-800 rounded-full hover:rotate-90 transition-all text-gray-500">
+                       <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                 </div>
+              </div>
+              <div class="p-8 overflow-y-auto custom-scrollbar flex-1">
+                 <form [formGroup]="rentalHouseForm" (ngSubmit)="saveRentalHouse()" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <div class="md:col-span-2">
+                          <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">House Name / ID</label>
+                          <input type="text" formControlName="houseName" placeholder="e.g. Dream Villa - Ground Floor" class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold">
+                       </div>
                        <div>
-                          <div class="flex items-center justify-between mb-2 px-1">
-                             <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest">Username (for login)</label>
-                             @if (isCheckingUsername) {
-                                <div class="flex items-center text-[10px] font-bold text-purple-400 uppercase tracking-wider">
-                                   <svg class="animate-spin h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                   Checking...
-                                </div>
-                             } @else if (usernameStatus === 'available') {
-                                <div class="text-[10px] font-black text-green-600 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded uppercase flex items-center">
-                                   <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                   Available
-                                </div>
-                             } @else if (usernameStatus === 'taken') {
-                                <div class="text-[10px] font-black text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded uppercase flex items-center">
-                                   <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                   Exists (Will Link)
-                                </div>
-                             }
-                          </div>
-                          <div class="relative">
-                             <span class="absolute left-4 top-3.5 text-gray-400 font-bold">&#64;</span>
-                             <input type="text" formControlName="username" (input)="onUsernameInput()" placeholder="johndoe"
-                                class="w-full pl-8 pr-5 py-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white">
-                          </div>
+                          <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Renter Name</label>
+                          <input type="text" formControlName="renterName" class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold">
                        </div>
-
-
-                       <div class="grid grid-cols-2 gap-4">
-                          <div>
-                             <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Phone</label>
-                             <input type="text" formControlName="phone"
-                                class="w-full px-5 py-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white">
-                          </div>
-                          <div>
-                             <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Email</label>
-                             <input type="email" formControlName="email"
-                                class="w-full px-5 py-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white">
-                          </div>
+                       <div>
+                          <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Renter Phone</label>
+                          <input type="tel" formControlName="renterPhone" class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold">
                        </div>
+                    </div>
+                    <div class="pt-8 flex gap-4">
+                       <button type="button" (click)="showRentalHouseForm = false" class="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-2xl font-black uppercase text-xs tracking-widest">Cancel</button>
+                       <button type="submit" [disabled]="rentalHouseForm.invalid || isSaving" class="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg">
+                          {{ isSaving ? 'Saving...' : (isRentalEditMode ? 'Update' : 'Register') }}
+                       </button>
+                    </div>
+                 </form>
+              </div>
+           </div>
+        </div>
+      }
 
-                       <div class="grid grid-cols-2 gap-4">
-                          <div>
-                             <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 px-1">Scheme Type</label>
-                             <select formControlName="schemeType" class="w-full px-4 py-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white text-sm appearance-none">
-                                <option value="chitti">Chitti</option>
-                                <option value="interest">Interest (Loan)</option>
-                                <option value="rent">Rent</option>
-                             </select>
-                          </div>
-                          <div>
-                             <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 px-1">Target Scheme</label>
-                             <select formControlName="schemeId" class="w-full px-4 py-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white text-sm appearance-none">
-                                <option value="" disabled>Select Scheme</option>
-                                @if (customerForm.get('schemeType')?.value === 'chitti') {
-                                   @for (s of chittis; track s.id) { <option [value]="s.id">{{ s.name }}</option> }
-                                } @else if (customerForm.get('schemeType')?.value === 'interest') {
-                                   @for (s of interests; track s.id) { <option [value]="s.id">{{ s.name }}</option> }
-                                } @else if (customerForm.get('schemeType')?.value === 'rent') {
-                                   @for (h of houses; track h.id) { <option [value]="h.id">{{ h.houseName }}</option> }
-                                }
-                             </select>
-                          </div>
+      <!-- 9. Monthly Bill Form Overlay -->
+      @if (showMonthlyBillForm) {
+        <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-xl px-4 py-8 overflow-hidden">
+           <div class="bg-white dark:bg-gray-900 w-full max-w-lg max-h-[90vh] rounded-[2.5rem] flex flex-col shadow-2xl animate-in zoom-in-95 duration-300">
+              <div class="p-8 pb-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
+                 <div class="flex justify-between items-center">
+                    <div>
+                       <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{{ editingBillIndex !== null ? 'Edit' : 'New' }} Monthly Bill</h3>
+                       <p class="text-sm text-gray-500 font-medium">Record utility costs for this period</p>
+                    </div>
+                    <button (click)="showMonthlyBillForm = false" class="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500">
+                       <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                 </div>
+              </div>
+              <div class="p-8 overflow-y-auto custom-scrollbar flex-1">
+                 <form [formGroup]="monthlyBillForm" (ngSubmit)="saveMonthlyBill()" class="space-y-4">
+                    <div class="grid grid-cols-1 gap-4">
+                       <div>
+                          <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Bill Date</label>
+                          <input type="date" formControlName="billDate" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none font-bold text-gray-900 dark:text-white">
                        </div>
+                       <div>
+                          <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Amount</label>
+                          <input type="number" formControlName="amount" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none font-bold text-gray-900 dark:text-white">
+                       </div>
+                    </div>
+                    <div class="pt-6 flex gap-4">
+                       <button type="button" (click)="showMonthlyBillForm = false" class="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-2xl font-black uppercase text-xs tracking-widest">Cancel</button>
+                       <button type="submit" [disabled]="monthlyBillForm.invalid || isSaving" class="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest">
+                          {{ isSaving ? 'Saving...' : 'Record Bill' }}
+                       </button>
+                    </div>
+                 </form>
+              </div>
+           </div>
+        </div>
+      }
 
-                       <div class="grid grid-cols-2 gap-4">
-                          <div>
-                             <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Joined Date</label>
-                             <input type="date" formControlName="joinedDate"
-                                class="w-full px-5 py-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 transition-all text-gray-900 dark:text-white text-sm [color-scheme:light] dark:[color-scheme:dark]">
-                          </div>
-                          <div>
-                             <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Status</label>
-                             <select formControlName="status" class="w-full px-4 py-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white text-sm">
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
-                             </select>
-                          </div>
-                       </div>
-
-                       <div class="flex gap-4 pt-6">
-                          <button type="button" (click)="closeCustomerModal()" class="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-2xl font-bold transition-all">Cancel</button>
-                          <button type="submit" [disabled]="customerForm.invalid || isSaving" class="flex-2 py-4 bg-purple-600 text-white rounded-2xl font-black px-8 shadow-lg shadow-purple-500/20 disabled:opacity-50 transition-all">
-                             {{ isSaving ? 'Saving...' : (isEditModal ? 'Save Changes' : 'Create Profile') }}
-                          </button>
-                       </div>
-                    </form>
-                  }
-               </div>
-            </div>
-         </div>
+      <!-- 10. Account Selection Overlay -->
+      @if (showAccountsModal) {
+          <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-xl px-4 py-8 overflow-hidden">
+             <div class="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 max-h-[90vh] flex flex-col">
+                <div class="p-8 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/30">
+                   <div class="flex items-center gap-4">
+                      <div class="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white">
+                         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04M12 2.944V12m0 0l5 5m-5-5l-5 5" /></svg>
+                      </div>
+                      <div>
+                         <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">Select Account</h3>
+                         <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">Choose associated record</p>
+                      </div>
+                   </div>
+                   <button (click)="showAccountsModal = false" class="p-3 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:rotate-90 transition-all">
+                      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                   </button>
+                </div>
+                
+                <div class="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-3">
+                   @for (acc of customerAccountsList; track acc.id) {
+                      <div (click)="handleAccountSelection(acc); showAccountsModal = false;"
+                           class="p-5 rounded-[2rem] border border-gray-100 dark:border-gray-800 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 cursor-pointer transition-all flex justify-between items-center group">
+                         <div>
+                            <p class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">{{ acc.info }}</p>
+                            <h4 class="text-base font-black text-gray-900 dark:text-white mt-1">{{ acc.name }}</h4>
+                         </div>
+                         <svg class="w-5 h-5 text-gray-300 group-hover:text-indigo-500 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7" /></svg>
+                      </div>
+                   }
+                </div>
+             </div>
+          </div>
       }
     </div>
   `
@@ -1892,6 +2016,7 @@ export class AdminDashboardComponent implements OnInit {
   public authService = inject(AuthService);
   private router = inject(Router);
   private fb = inject(FormBuilder);
+  private renderer = inject(Renderer2);
   private chittiService = inject(ChittiService);
   private interestService = inject(InterestService);
   private customerService = inject(CustomerService);
@@ -1899,6 +2024,7 @@ export class AdminDashboardComponent implements OnInit {
   private rentalService = inject(RentalService);
   private toast = inject(ToastService);
   public biometricService = inject(BiometricService);
+  private notificationService = inject(NotificationService);
 
   activeTab: 'chitti' | 'interest' | 'customers' | 'security' | 'bills' | 'overview' | 'rentals' | '' = '';
   showOverviewData = false;
@@ -1918,16 +2044,27 @@ export class AdminDashboardComponent implements OnInit {
   bills: Bill[] = [];
   billStats = {
     pendingAmount: 0,
-    upcomingAmount: 0,
     dueTodayCount: 0,
     paidThisMonthAmount: 0
   };
   isSyncing = false;
+  isFetchingLiveBill = false;
+  showLiveBillModal = false;
+  selectedLiveBill: any = null;
   showBillForm = false;
   editingBill?: Bill;
   trackedServices: TrackedService[] = [];
+  serviceTypeFilter: string = 'all';
   showServiceModal = false;
+  editingTrackedService?: TrackedService;
   trackedServiceForm: FormGroup;
+  // Comprehensive Details
+  showServiceDetailsModal = false;
+  selectedTrackedService: TrackedService | null = null;
+  selectedServiceHistory: Bill[] = [];
+  activeDetailsTab: 'current' | 'history' = 'current';
+  syncingServices: Record<string, boolean> = {};
+
   // Payment Modal
   showPaymentModal = false;
   payingBill?: Bill;
@@ -1952,6 +2089,11 @@ export class AdminDashboardComponent implements OnInit {
   readonly overviewFilters: ('All' | 'Loan Issue' | 'Interest' | 'Settlement')[] = ['All', 'Loan Issue', 'Interest', 'Settlement'];
   showMonthlyBillForm = false;
   monthlyBillForm: FormGroup;
+
+  get filteredTrackedServices() {
+    if (this.serviceTypeFilter === 'all') return this.trackedServices;
+    return this.trackedServices.filter(s => s.serviceType === this.serviceTypeFilter);
+  }
   editingBillIndex: number | null = null;
 
   get overviewTransactions() {
@@ -2272,6 +2414,7 @@ export class AdminDashboardComponent implements OnInit {
 
   passwordForm: FormGroup;
   adminForm: FormGroup;
+  private tspdclService = inject(TspdclService);
   private firestore = inject(Firestore);
 
   constructor() {
@@ -2431,19 +2574,8 @@ export class AdminDashboardComponent implements OnInit {
       // Basic status match
       let matchesStatus = this.loanStatusFilter === 'All' || loan.status === this.loanStatusFilter || (!loan.status && this.loanStatusFilter === 'Active');
 
-      // Anniversary Gap Logic for "Active" tab: 
-      // Show if overdue OR due within 10 days (unless already paid for the upcoming period)
       if (this.loanStatusFilter === 'Active' && matchesStatus) {
-        const monthsElapsed = this.getMonthsElapsed(loan.startDate);
-        const monthsPaid = this.getMonthsPaid(loan);
-        const dueSoon = this.isDueSoon(loan);
-
-        // Effective target is months already passed + the upcoming one if in the 10-day window
-        const effectiveDueTarget = monthsElapsed + (dueSoon ? 1 : 0);
-
-        if (monthsPaid >= effectiveDueTarget) {
-          matchesStatus = false;
-        }
+        // Keep all active loans visible; they will be sorted by upcoming due date below.
       }
 
       const search = this.loanSearchQuery.toLowerCase().trim();
@@ -2778,51 +2910,63 @@ export class AdminDashboardComponent implements OnInit {
 
   calculateBillStats() {
     const now = new Date();
-    // Reset hours to compare dates correctly
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const todayStr = today.toISOString().split('T')[0];
-
-    const sevenDaysLater = new Date(today);
-    sevenDaysLater.setDate(today.getDate() + 7);
-
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
+    const todayStr = now.toISOString().split('T')[0];
 
     this.billStats = {
       pendingAmount: 0,
-      upcomingAmount: 0,
       dueTodayCount: 0,
       paidThisMonthAmount: 0
     };
 
-    this.bills.forEach(bill => {
-      const bDate = new Date(bill.dueDate);
-      const dueDate = new Date(bDate.getFullYear(), bDate.getMonth(), bDate.getDate());
-
-      if (bill.status === 'pending') {
-        this.billStats.pendingAmount += bill.amount;
-        if (bill.dueDate === todayStr) {
-          this.billStats.dueTodayCount++;
-        }
-        if (dueDate >= today && dueDate <= sevenDaysLater) {
-          this.billStats.upcomingAmount += bill.amount;
-        }
-      } else if (bill.status === 'completed') {
-        if (dueDate.getMonth() === currentMonth && dueDate.getFullYear() === currentYear) {
-          this.billStats.paidThisMonthAmount += bill.amount;
+    // Use Tracked Services for Pending and Due Today as requested
+    this.trackedServices.forEach(service => {
+      if (service.lastAmount) {
+        this.billStats.pendingAmount += service.lastAmount;
+      }
+      
+      // Check if due today
+      if (service.lastDueDate) {
+        // Try to parse DD-MMM-YY or match string
+        if (service.lastDueDate === todayStr || this.isToday(service.lastDueDate)) {
+           this.billStats.dueTodayCount++;
         }
       }
     });
+
+    // Still use bills for Paid This Month (from historical records)
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    this.bills.forEach(bill => {
+       if (bill.status === 'completed') {
+          const bDate = new Date(bill.dueDate);
+          if (bDate.getMonth() === currentMonth && bDate.getFullYear() === currentYear) {
+             this.billStats.paidThisMonthAmount += bill.amount;
+          }
+       }
+    });
   }
 
-  handleBillFilters(filters: any) {
-    const profile = JSON.parse(localStorage.getItem('user_profile') || '{}');
-    if (!profile.uid) return;
+  private isToday(dateStr: string): boolean {
+    const now = new Date();
+    const today = now.getDate();
+    const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const month = monthNames[now.getMonth()];
+    const year = now.getFullYear().toString().slice(-2);
+    
+    // Check for DD-MMM-YY format
+    const expected = `${today.toString().padStart(2, '0')}-${month}-${year}`;
+    return dateStr.toUpperCase() === expected;
+  }
 
-    this.billService.getBillsByFilters(profile.uid, filters).subscribe(data => {
-      this.bills = data;
-      // Do not recalculate stats on filter, keep them based on total data? 
-      // Usually dashboard stats are overall, but list is filtered.
+  openServiceDetails(service: TrackedService) {
+    this.selectedTrackedService = service;
+    this.selectedServiceHistory = [];
+    this.activeDetailsTab = 'current';
+    this.showServiceDetailsModal = true;
+    
+    // Fetch History
+    this.billService.getServiceBillHistory(service.serviceNumber).subscribe(history => {
+      this.selectedServiceHistory = history;
     });
   }
 
@@ -2892,25 +3036,43 @@ export class AdminDashboardComponent implements OnInit {
       this.toast.error('No services registered for auto-sync.');
       return;
     }
+    
     this.isSyncing = true;
+    this.toast.info('Starting deep sync with service providers...');
+
+    // 1. Existing background sync for completed bills
     this.authService.userProfile$.subscribe(profile => {
       if (!profile?.uid) return;
       this.billService.syncBillsFromServers(profile.uid).subscribe({
         next: (async (resPromise) => {
-          const res = await resPromise;
-          if (res.count > 0) {
-            this.toast.success(`Synced ${res.count} new bills from providers.`);
-          } else {
-            this.toast.info('All bills are already up to date.');
-          }
-          this.isSyncing = false;
-        }),
-        error: () => {
-          this.toast.error('Sync failed.');
-          this.isSyncing = false;
-        }
+           await resPromise;
+        })
       });
     });
+
+    // 2. Fetch LIVE details for all thumbnails asynchronously
+    const allServices = this.filteredTrackedServices;
+    if (allServices.length === 0) {
+      this.isSyncing = false;
+      return;
+    }
+
+    allServices.forEach(service => {
+      this.handleFetchLiveBill(service);
+    });
+    
+    // Global loader stops when all triggered (individual loaders continue on cards)
+    setTimeout(() => this.isSyncing = false, 1000);
+  }
+
+  openServiceForm(service?: TrackedService) {
+    this.editingTrackedService = service;
+    if (service) {
+      this.trackedServiceForm.patchValue(service);
+    } else {
+      this.trackedServiceForm.reset({ serviceType: 'electricity' });
+    }
+    this.showServiceModal = true;
   }
 
   async handleRegisterService() {
@@ -2922,14 +3084,80 @@ export class AdminDashboardComponent implements OnInit {
 
     try {
       const data = this.trackedServiceForm.value;
-      await this.billService.registerService({ ...data, adminUid: profile.uid });
-      this.toast.success('Service number linked successfully!');
+      if (this.editingTrackedService?.id) {
+        await this.billService.updateTrackedService(this.editingTrackedService.id, data);
+        this.toast.success('Service updated successfully!');
+      } else {
+        await this.billService.registerService({ ...data, adminUid: profile.uid });
+        this.toast.success('Service number linked successfully!');
+      }
       this.showServiceModal = false;
+      this.editingTrackedService = undefined;
       this.trackedServiceForm.reset({ serviceType: 'electricity' });
     } catch (e) {
-      this.toast.error('Failed to link service.');
+      this.toast.error('Operation failed.');
     } finally {
       this.isSaving = false;
+    }
+  }
+
+  async handleAddToTracker() {
+    if (!this.selectedLiveBill) return;
+    
+    const profile = await firstValueFrom(this.authService.userProfile$);
+    if (!profile?.uid) return;
+
+    try {
+      const now = new Date();
+      const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+      
+      // Parse the date if it's in DD-MMM-YY format
+      let isoDueDate = now.toISOString().split('T')[0];
+      if (this.selectedLiveBill.dueDate && this.selectedLiveBill.dueDate !== '--') {
+        const parts = this.selectedLiveBill.dueDate.split('-');
+        if (parts.length === 3) {
+          const day = parts[0];
+          const monthIndex = monthNames.indexOf(parts[1].toUpperCase());
+          const year = "20" + parts[2]; 
+          if (monthIndex !== -1) {
+             isoDueDate = new Date(Number(year), monthIndex, Number(day)).toISOString().split('T')[0];
+          }
+        }
+      }
+
+      // 1. Create a bill record
+      const billData: any = {
+        serviceType: 'electricity',
+        provider: this.selectedLiveBill.consumerName,
+        serviceNumber: this.selectedLiveBill.uniqueServiceNumber,
+        amount: this.selectedLiveBill.totalAmountPayable,
+        dueDate: isoDueDate,
+        status: 'pending',
+        month: monthNames[now.getMonth()],
+        year: now.getFullYear(),
+        adminUid: profile.uid,
+        notes: `Synced from TGSPDCL portal (Arrears: ${this.selectedLiveBill.arrearsAmount}, Current: ${this.selectedLiveBill.currentMonthAmount})`,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      await this.billService.addBill(billData);
+
+      // 2. Update the Tracked Service card with latest info
+      const service = this.trackedServices.find(s => s.serviceNumber === this.selectedLiveBill.uniqueServiceNumber);
+      if (service?.id) {
+         await this.billService.updateTrackedService(service.id, {
+           lastAmount: this.selectedLiveBill.totalAmountPayable,
+           lastDueDate: this.selectedLiveBill.dueDate,
+           consumerName: this.selectedLiveBill.consumerName
+         });
+      }
+
+      this.toast.success('Bill added to tracker and stats updated!');
+      this.showLiveBillModal = false;
+    } catch (e) {
+      this.toast.error('Failed to add bill to tracker.');
+      console.error(e);
     }
   }
 
@@ -3270,6 +3498,19 @@ export class AdminDashboardComponent implements OnInit {
     this.isSaving = false;
     this.usernameStatus = 'none';
     this.isCheckingUsername = false;
+    this.existingMode = false;
+  }
+
+  closeAdminForm() {
+    this.showAdminForm = false;
+    this.isAdminEditMode = false;
+    this.adminForm.reset();
+  }
+
+  closeServiceDetailsModal() {
+    this.showServiceDetailsModal = false;
+    this.selectedTrackedService = null;
+    this.selectedServiceHistory = [];
   }
 
   get filteredPickerCustomers() {
@@ -3664,8 +3905,6 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
-  private whatsappApi = inject(WhatsAppService);
-
   async sendAllReminders() {
     const dueLoans = this.interests.filter(loan => this.isLoanReminderDue(loan));
     
@@ -3674,7 +3913,7 @@ export class AdminDashboardComponent implements OnInit {
       return;
     }
 
-    if (!confirm(`Are you sure you want to send automatic WhatsApp reminders to ${dueLoans.length} customers?`)) {
+    if (!confirm(`Are you sure you want to send automatic professional reminders to ${dueLoans.length} customers via FinServe account?`)) {
       return;
     }
 
@@ -3684,17 +3923,20 @@ export class AdminDashboardComponent implements OnInit {
     try {
       for (const loan of dueLoans) {
         const nextDue = this.nextLoanDueDate(loan);
-        const amountDue = this.calculateTotalPendingInterest(loan) || (this.getInterestBalance(loan) * (loan.interestRate / 100));
+        const amountDue = this.getPendingInterestForLoan(loan);
         
-        const message = `Hello ${loan.borrowerName}, this is a reminder for your interest payment for ${loan.name}. ` +
-          `Amount due: ₹${amountDue.toLocaleString('en-IN')}. ` +
-          (nextDue ? `Due date: ${nextDue.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}. ` : '') +
-          `Please pay to avoid penalties. Thank you!`;
-
-        await this.whatsappApi.sendMessage(loan.borrowerPhone, message);
-        successCount++;
+        const success = await this.notificationService.sendReminder(
+          loan.borrowerPhone,
+          loan.borrowerName,
+          loan.name,
+          amountDue,
+          nextDue,
+          'whatsapp' // Default to WhatsApp via API
+        );
+        
+        if (success) successCount++;
       }
-      this.toast.success(`Sent ${successCount} reminders successfully!`);
+      this.toast.success(`Processed ${successCount} reminders.`);
     } catch (error) {
       this.toast.error('One or more reminders failed to send.');
     } finally {
@@ -3709,7 +3951,7 @@ export class AdminDashboardComponent implements OnInit {
     if (!nextDue) return false;
 
     // Check if interest is overdue
-    if (this.calculateTotalPendingInterest(loan) > 0) return true;
+    if (this.getPendingInterestForLoan(loan) > 0) return true;
 
     const today = this.getLocalToday();
     const timeDiff = nextDue.getTime() - today.getTime();
@@ -3734,35 +3976,20 @@ export class AdminDashboardComponent implements OnInit {
     return dueDate;
   }
 
-  sendLoanWhatsAppReminder(loan: InterestScheme) {
+  sendLoanReminder(loan: InterestScheme, type: 'whatsapp' | 'sms' = 'whatsapp') {
     const nextDue = this.nextLoanDueDate(loan);
-    const amountDue = this.calculateTotalPendingInterest(loan) || (this.getInterestBalance(loan) * (loan.interestRate / 100));
+    const amountDue = this.getPendingInterestForLoan(loan);
     
-    const message = `Hello ${loan.borrowerName}, this is a reminder for your interest payment for ${loan.name}. ` +
-      `Amount due: ₹${amountDue.toLocaleString('en-IN')}. ` +
-      (nextDue ? `Due date: ${nextDue.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}. ` : '') +
-      `Please pay to avoid penalties. Thank you!`;
-
-    this.whatsappApi.sendMessage(loan.borrowerPhone, message)
-      .then(() => this.toast.success('Reminder sent successfully!'))
-      .catch(() => {
-        // Fallback to manual if API fails or not configured
-        const encodedMessage = encodeURIComponent(message);
-        const phoneNumber = loan.borrowerPhone.replace(/\D/g, '');
-        window.open(`https://wa.me/91${phoneNumber}?text=${encodedMessage}`, '_blank');
-      });
+    this.notificationService.sendReminder(
+      loan.borrowerPhone,
+      loan.borrowerName,
+      loan.name,
+      amountDue,
+      nextDue,
+      type
+    );
   }
 
-  private calculateTotalPendingInterest(loan: InterestScheme): number {
-    if (!loan.startDate) return 0;
-    const today = this.getLocalToday();
-    const accrued = this.getAccruedInterestThroughDate(loan, today);
-    const collected = (loan.interestCollections || []).reduce((sum, c) => {
-      const cDate = this.parseLocalDateForReminder(c.date);
-      return (cDate && cDate.getTime() <= today.getTime()) ? sum + c.amount : sum;
-    }, 0);
-    return Math.max(0, accrued - collected);
-  }
 
   private getAccruedInterestThroughDate(loan: InterestScheme, date: Date): number {
     const startDate = this.parseLocalDateForReminder(loan.startDate);
@@ -3799,6 +4026,41 @@ export class AdminDashboardComponent implements OnInit {
     const targetMonth = new Date(date.getFullYear(), date.getMonth() + months, 1);
     const lastDay = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0).getDate();
     return new Date(targetMonth.getFullYear(), targetMonth.getMonth(), Math.min(date.getDate(), lastDay));
+  }
+
+  handleFetchLiveBill(service: TrackedService) {
+    if (!service.id || service.serviceType !== 'electricity') return;
+    
+    this.syncingServices[service.id] = true;
+    this.isFetchingLiveBill = true;
+
+    this.tspdclService.fetchBillDetails(service.serviceNumber).subscribe({
+      next: async (details: any) => {
+        this.syncingServices[service.id!] = false;
+        this.isFetchingLiveBill = false;
+        if (details) {
+          this.selectedLiveBill = details;
+          // Update the thumbnail data in Firestore
+          await this.billService.updateTrackedService(service.id!, {
+            lastAmount: details.totalAmountPayable,
+            lastDueDate: details.dueDate,
+            consumerName: details.consumerName,
+            altServiceNumber: details.serviceNumber,
+            ero: details.ero,
+            address: details.address,
+            sectionName: details.sectionName
+          });
+          this.toast.success(`Live details updated for ${service.provider}`);
+        } else {
+          this.toast.error(`Could not reach billing server for ${service.serviceNumber}`);
+        }
+      },
+      error: () => {
+        this.syncingServices[service.id!] = false;
+        this.isFetchingLiveBill = false;
+        this.toast.error(`Connection error for ${service.provider}`);
+      }
+    });
   }
 
   lockScroll() { document.body.style.overflow = 'hidden'; }
