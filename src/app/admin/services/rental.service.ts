@@ -32,6 +32,7 @@ export interface RentalHouse {
   status: 'Occupied' | 'Vacant';
   lastRentIncreaseDate?: string;
   createdBy?: string;
+  linkedServiceIds?: string[];
 }
 
 @Injectable({

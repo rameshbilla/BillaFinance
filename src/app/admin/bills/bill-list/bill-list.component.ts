@@ -215,7 +215,8 @@ import { CountUpDirective } from '../../../shared/directives/count-up.directive'
 
     <!-- Bill Card Template -->
     <ng-template #billCard let-bill="bill" let-urgent="urgent">
-      <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group"
+      <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group cursor-pointer"
+        (click)="toggleExpansion(bill.id)"
         [ngClass]="urgent ? 'border-red-100 dark:border-red-800/30' : 'border-gray-100 dark:border-gray-700'">
         <div class="h-1" [ngClass]="{
           'bg-red-500': bill.status === 'overdue',
@@ -224,49 +225,54 @@ import { CountUpDirective } from '../../../shared/directives/count-up.directive'
           'bg-green-500': bill.status === 'completed'
         }"></div>
         <div class="p-4">
-          <div class="flex justify-between items-start mb-3">
-            <div class="flex items-center gap-2.5">
+          <div class="flex justify-between items-start" [class.mb-3]="isExpanded(bill.id)">
+            <div class="flex items-center gap-2.5 min-w-0 flex-1">
               <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0" [ngClass]="getServiceBg(bill.serviceType)">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
               </div>
-              <div>
-                <p class="font-black text-gray-900 dark:text-white capitalize text-sm leading-tight">{{ bill.serviceType }}</p>
-                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{{ bill.provider || 'N/A' }}</p>
+              <div class="min-w-0">
+                <p class="font-black text-gray-900 dark:text-white capitalize text-sm leading-tight truncate">{{ bill.serviceType }}</p>
+                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest truncate">{{ bill.provider || 'N/A' }}</p>
+                <p *ngIf="!isExpanded(bill.id)" class="text-[9px] font-black text-gray-400 mt-0.5">Due: {{ bill.dueDate | date:'dd MMM' }}</p>
               </div>
             </div>
-            <div class="text-right">
+            <div class="text-right shrink-0 ml-3">
               <p class="text-lg font-black text-gray-900 dark:text-white" [appCountUp]="bill.amount" prefix="₹"></p>
               <p class="text-[9px] font-black" [ngClass]="{'text-red-500': bill.status === 'overdue', 'text-orange-500': isDueToday(bill), 'text-amber-500': !isDueToday(bill) && bill.status === 'pending', 'text-green-500': bill.status === 'completed'}">
                 {{ bill.status === 'overdue' ? 'OVERDUE' : bill.status === 'completed' ? 'PAID' : isDueToday(bill) ? 'DUE TODAY' : 'PENDING' }}
               </p>
             </div>
           </div>
-          <div class="flex justify-between items-center text-[9px] text-gray-400 font-bold mb-3">
-            <span>Due: {{ bill.dueDate | date:'dd MMM yyyy' }}</span>
-            <span>#{{ bill.serviceNumber }}</span>
-          </div>
-          
-          <div *ngIf="bill.totalPaid && bill.totalPaid > 0 && bill.totalPaid < bill.amount" class="mb-3 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-xl">
-            <div class="flex justify-between text-[8px] font-black uppercase tracking-widest mb-1">
-              <span class="text-green-500">Paid: <span [appCountUp]="bill.totalPaid" prefix="₹"></span></span>
-              <span class="text-red-500">Left: <span [appCountUp]="bill.amount - bill.totalPaid" prefix="₹"></span></span>
-            </div>
-            <div class="h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-              <div class="h-full bg-green-500 transition-all duration-500" [style.width.%]="(bill.totalPaid / bill.amount) * 100"></div>
-            </div>
-          </div>
 
-          <div class="flex gap-2">
-            <button *ngIf="bill.status !== 'completed'" (click)="onPayNow(bill)"
-              class="flex-1 py-2.5 bg-gradient-to-r from-green-600 to-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm shadow-green-500/20 hover:shadow-green-500/40 active:scale-95 transition-all">
-              ✓ Pay Now
-            </button>
-            <button (click)="onEdit(bill)" class="p-2.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-            </button>
-            <button (click)="onDelete(bill)" class="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-            </button>
+          <!-- Expanded Content -->
+          <div *ngIf="isExpanded(bill.id)" class="animate-in fade-in slide-in-from-top-2 duration-300">
+            <div class="flex justify-between items-center text-[9px] text-gray-400 font-bold mb-3">
+              <span>Full Due Date: {{ bill.dueDate | date:'dd MMM yyyy' }}</span>
+              <span>#{{ bill.serviceNumber }}</span>
+            </div>
+            
+            <div *ngIf="bill.totalPaid && bill.totalPaid > 0 && bill.totalPaid < bill.amount" class="mb-3 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-xl">
+              <div class="flex justify-between text-[8px] font-black uppercase tracking-widest mb-1">
+                <span class="text-green-500">Paid: <span [appCountUp]="bill.totalPaid" prefix="₹"></span></span>
+                <span class="text-red-500">Left: <span [appCountUp]="bill.amount - bill.totalPaid" prefix="₹"></span></span>
+              </div>
+              <div class="h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div class="h-full bg-green-500 transition-all duration-500" [style.width.%]="(bill.totalPaid / bill.amount) * 100"></div>
+              </div>
+            </div>
+
+            <div class="flex gap-2">
+              <button *ngIf="bill.status !== 'completed'" (click)="onPayNow(bill); $event.stopPropagation()"
+                class="flex-1 py-2.5 bg-gradient-to-r from-green-600 to-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm shadow-green-500/20 hover:shadow-green-500/40 active:scale-95 transition-all">
+                ✓ Pay Now
+              </button>
+              <button (click)="onEdit(bill); $event.stopPropagation()" class="p-2.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              </button>
+              <button (click)="onDelete(bill); $event.stopPropagation()" class="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -280,6 +286,24 @@ export class BillListComponent implements OnChanges {
   @Output() payBill = new EventEmitter<Bill>();
   @Output() filterChanged = new EventEmitter<any>();
   @Output() updateStatus = new EventEmitter<{bill: Bill, status: string}>();
+
+  expandedBillIds = new Set<string>();
+
+  toggleExpansion(id?: string) {
+    if (!id) return;
+    if (this.expandedBillIds.has(id)) {
+      this.expandedBillIds.delete(id);
+    } else {
+      this.expandedBillIds.add(id);
+    }
+  }
+
+  isExpanded(id?: string): boolean {
+    if (!id) return false;
+    // Always expanded on desktop (sm: width)
+    if (window.innerWidth >= 640) return true;
+    return this.expandedBillIds.has(id);
+  }
 
   activeSubTab: 'pending' | 'history' | 'analytics' = 'pending';
   subTabs: { key: 'pending' | 'history' | 'analytics'; label: string; icon: string }[] = [

@@ -1171,7 +1171,44 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                         </div>
                       </div>
 
-                      <div class="flex items-center gap-4">
+                      <!-- Linked Utility Bills on Card -->
+                    @if (getLinkedServicesForHouse(house).length > 0) {
+                      <div class="mt-4 pt-4 border-t border-gray-50 dark:border-gray-800">
+                        <div class="flex items-center justify-between mb-2">
+                          <span class="text-[9px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse inline-block"></span>
+                            Linked Bills
+                          </span>
+                          <button (click)="syncLinkedBillsForHouse(house); $event.stopPropagation()" [disabled]="isSyncing"
+                                  class="flex items-center gap-1 text-[9px] font-black text-indigo-500 hover:text-indigo-700 uppercase tracking-widest transition-all disabled:opacity-50">
+                            <svg class="w-3 h-3" [class.animate-spin]="isSyncing" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            Sync All
+                          </button>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                          @for (s of getLinkedServicesForHouse(house); track s.id) {
+                            <div class="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700">
+                              <span class="text-xs">{{ s.serviceType === 'electricity' ? '⚡' : s.serviceType === 'water' ? '💧' : '📡' }}</span>
+                              <div>
+                                <p class="text-[8px] font-black text-gray-700 dark:text-gray-300 uppercase leading-none">{{ s.provider }}</p>
+                                @if (s.lastAmount) {
+                                  <p class="text-[8px] font-bold text-rose-500 leading-none mt-0.5">₹{{ s.lastAmount }}</p>
+                                } @else {
+                                  <p class="text-[8px] text-gray-400 leading-none mt-0.5">No data</p>
+                                }
+                              </div>
+                              <button (click)="handleFetchLiveBill(s); $event.stopPropagation()"
+                                      class="ml-0.5 p-1 rounded-lg text-gray-300 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
+                                      title="Fetch latest bill">
+                                <svg class="w-3 h-3" [class.animate-spin]="syncingServices[s.id!]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                              </button>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+
+                    <div class="flex items-center gap-4">
                         <button (click)="viewHouseBills(house.id!)" class="flex-1 py-4 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 transition-all">Billing History</button>
                         <div class="flex gap-2">
                             <button (click)="openRentalHouseForm(house)" class="w-10 h-10 flex items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-400 hover:text-indigo-600 rounded-xl transition-all"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
@@ -1924,6 +1961,43 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                           <input type="tel" formControlName="renterPhone" class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold">
                        </div>
                     </div>
+
+                    <!-- Link Utility Bills -->
+                    <div class="pt-6 border-t border-gray-100 dark:border-gray-800">
+                       <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Link Utility Bills</label>
+                       @if (trackedServices.length === 0) {
+                          <p class="text-[10px] text-gray-400 italic py-2">No tracked services found in Bills section. Add them there first to link here.</p>
+                       }
+                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          @for (s of trackedServices; track s.id) {
+                             <div (click)="toggleServiceLink(s.id!)"
+                                  class="p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between group"
+                                  [class.bg-indigo-50]="isServiceLinked(s.id!)"
+                                  [class.border-indigo-300]="isServiceLinked(s.id!)"
+                                  [class.border-gray-100]="!isServiceLinked(s.id!)"
+                                  [class.dark:border-gray-800]="!isServiceLinked(s.id!)">
+                                <div class="flex items-center gap-3">
+                                   <div class="w-9 h-9 rounded-xl bg-white dark:bg-gray-800 flex items-center justify-center text-sm shadow-sm group-hover:scale-110 transition-transform">
+                                      {{ s.serviceType === 'electricity' ? '⚡' : s.serviceType === 'water' ? '💧' : '📡' }}
+                                   </div>
+                                   <div>
+                                      <p class="text-[10px] font-black text-gray-900 dark:text-white uppercase leading-none">{{ s.provider }}</p>
+                                      <p class="text-[9px] font-bold text-gray-400 mt-0.5">#{{ s.serviceNumber }}</p>
+                                   </div>
+                                </div>
+                                <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0"
+                                     [class.bg-indigo-600]="isServiceLinked(s.id!)"
+                                     [class.border-indigo-600]="isServiceLinked(s.id!)"
+                                     [class.border-gray-300]="!isServiceLinked(s.id!)">
+                                   @if (isServiceLinked(s.id!)) {
+                                      <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"/></svg>
+                                   }
+                                </div>
+                             </div>
+                          }
+                       </div>
+                    </div>
+
                     <div class="pt-8 flex gap-4">
                        <button type="button" (click)="showRentalHouseForm = false" class="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-2xl font-black uppercase text-xs tracking-widest">Cancel</button>
                        <button type="submit" [disabled]="rentalHouseForm.invalid || isSaving" class="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg">
@@ -2457,7 +2531,8 @@ export class AdminDashboardComponent implements OnInit {
       electricMeterNo: [''],
       waterBillNo: [''],
       lastRentIncreaseDate: [''],
-      status: ['Occupied']
+      status: ['Occupied'],
+      linkedServiceIds: [[]]
     });
     this.monthlyBillForm = this.fb.group({
       billDate: [new Date().toISOString().split('T')[0], Validators.required],
@@ -3764,14 +3839,16 @@ export class AdminDashboardComponent implements OnInit {
         electricMeterNo: house.electricMeterNo || '',
         waterBillNo: house.waterBillNo || '',
         lastRentIncreaseDate: house.lastRentIncreaseDate || '',
-        status: house.status
+        status: house.status,
+        linkedServiceIds: house.linkedServiceIds || []
       });
     } else {
       this.isRentalEditMode = false;
       this.editingRentalId = null;
       this.rentalHouseForm.reset({
         advanceAmount: 0, advanceMonths: 0, monthlyRent: 0, status: 'Occupied',
-        arrivedDate: new Date().toISOString().split('T')[0]
+        arrivedDate: new Date().toISOString().split('T')[0],
+        linkedServiceIds: []
       });
     }
     this.showRentalHouseForm = true;
@@ -4065,6 +4142,39 @@ export class AdminDashboardComponent implements OnInit {
 
   lockScroll() { document.body.style.overflow = 'hidden'; }
   unlockScroll() { document.body.style.overflow = ''; }
+
+  // --- Bill Linking Logic ---
+  isServiceLinked(serviceId: string): boolean {
+    const current = this.rentalHouseForm.get('linkedServiceIds')?.value || [];
+    return current.includes(serviceId);
+  }
+
+  toggleServiceLink(serviceId: string) {
+    const current = [...(this.rentalHouseForm.get('linkedServiceIds')?.value || [])];
+    const idx = current.indexOf(serviceId);
+    if (idx > -1) {
+      current.splice(idx, 1);
+    } else {
+      current.push(serviceId);
+    }
+    this.rentalHouseForm.patchValue({ linkedServiceIds: current });
+  }
+
+  getLinkedServicesForHouse(house: RentalHouse): TrackedService[] {
+    if (!house.linkedServiceIds) return [];
+    return this.trackedServices.filter(s => house.linkedServiceIds?.includes(s.id!));
+  }
+
+  syncLinkedBillsForHouse(house: RentalHouse) {
+    const services = this.getLinkedServicesForHouse(house);
+    if (services.length === 0) {
+      this.toast.info('No bills linked to this property.');
+      return;
+    }
+    
+    this.toast.info(`Syncing ${services.length} linked bills...`);
+    services.forEach(s => this.handleFetchLiveBill(s));
+  }
 }
 
 
