@@ -53,6 +53,7 @@ export interface Bill {
 
 export interface TrackedService {
   id?: string;
+  title?: string;
   serviceType: string;
   provider: string;
   serviceNumber: string;
@@ -67,6 +68,18 @@ export interface TrackedService {
   adminUid: string;
 }
 
+export interface StoredBillRecord {
+  id?: string;
+  consumerName: string;
+  serviceNumber: string;
+  amount: number;
+  date: string;
+  year: number;
+  month: string;
+  adminUid: string;
+  createdAt?: any;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -75,6 +88,7 @@ export class BillService {
   private tspdclService = inject(TspdclService);
   private billsCollection = collection(this.firestore, 'bills');
   private trackedServicesCollection = collection(this.firestore, 'tracked_services');
+  private storedRecordsCollection = collection(this.firestore, 'stored_bill_records');
 
   // --- Tracked Services Management ---
   getTrackedServices(adminUid: string): Observable<TrackedService[]> {
@@ -310,5 +324,41 @@ export class BillService {
       'subject:(payment OR paid OR receipt OR confirmation OR bill)'
     ].filter(Boolean).join(' ');
     return `https://mail.google.com/mail/#search/${encodeURIComponent(query)}`;
+  }
+
+  // --- Stored Bill Records ---
+  getStoredRecords(adminUid: string, year?: number): Observable<StoredBillRecord[]> {
+    let constraints: any[] = [where('adminUid', '==', adminUid)];
+    if (year) constraints.push(where('year', '==', year));
+    constraints.push(orderBy('date', 'desc'));
+    
+    const q = query(this.storedRecordsCollection, ...constraints);
+    return collectionData(q, { idField: 'id' }) as Observable<StoredBillRecord[]>;
+  }
+
+  getStoredRecordsByService(serviceNumber: string): Observable<StoredBillRecord[]> {
+    const q = query(
+      this.storedRecordsCollection, 
+      where('serviceNumber', '==', serviceNumber),
+      orderBy('date', 'desc')
+    );
+    return collectionData(q, { idField: 'id' }) as Observable<StoredBillRecord[]>;
+  }
+
+  addStoredRecord(record: Partial<StoredBillRecord>): Promise<any> {
+    const date = record.date ? new Date(record.date) : new Date();
+    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    
+    const data = {
+      ...record,
+      year: date.getFullYear(),
+      month: months[date.getMonth()],
+      createdAt: serverTimestamp()
+    };
+    return addDoc(this.storedRecordsCollection, data);
+  }
+
+  deleteStoredRecord(id: string): Promise<void> {
+    return deleteDoc(doc(this.firestore, `stored_bill_records/${id}`));
   }
 }

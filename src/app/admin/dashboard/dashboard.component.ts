@@ -19,7 +19,7 @@ import zoomPlugin from 'chartjs-plugin-zoom';
 
 Chart.register(zoomPlugin);
 
-import { BillService, Bill, TrackedService } from '../services/bill.service';
+import { BillService, Bill, TrackedService, StoredBillRecord } from '../services/bill.service';
 import { BillListComponent } from '../bills/bill-list/bill-list.component';
 import { BillFormComponent } from '../bills/bill-form/bill-form.component';
 import { BillPaymentModalComponent } from '../bills/bill-payment-modal/bill-payment-modal.component';
@@ -183,6 +183,11 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                   [class.tab-active]="activeTab === 'rentals'"
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
             RENTALS
+          </button>
+          <button *ngIf="!isSuperAdmin" (click)="activeTab = 'archives'; activeMobileMenu = 'archives'; loadStoredRecords()"
+                  [class.tab-active]="activeTab === 'archives'"
+                  class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
+            ARCHIVES
           </button>
           <button (click)="activeTab = 'security'; activeMobileMenu = 'security'"
                   [class.tab-active]="activeTab === 'security'"
@@ -430,7 +435,22 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                     <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Registered Services</h3>
                     <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Automated tracking for these numbers</p>
                   </div>
-                  <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+
+                  <!-- Sub Tab Switcher -->
+                  <div class="p-1 bg-gray-100 dark:bg-gray-800/80 backdrop-blur rounded-2xl flex gap-1 border border-gray-200 dark:border-gray-700/50 shadow-inner">
+                    <button (click)="activeBillTab = 'tracking'"
+                            [class.tab-active]="activeBillTab === 'tracking'"
+                            class="px-5 py-2 text-[9px] font-black rounded-xl transition-all duration-300 text-gray-500 dark:text-gray-300 uppercase tracking-[0.2em]">
+                       LIVE TRACKING
+                    </button>
+                    <button (click)="activeBillTab = 'stored'; loadStoredRecords()"
+                            [class.tab-active]="activeBillTab === 'stored'"
+                            class="px-5 py-2 text-[9px] font-black rounded-xl transition-all duration-300 text-gray-500 dark:text-gray-300 uppercase tracking-[0.2em]">
+                       YEARLY RECORDS
+                    </button>
+                  </div>
+
+                  <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto mt-4 sm:mt-0">
                     <div class="relative flex-1 sm:flex-none">
                        <select [(ngModel)]="serviceTypeFilter" class="w-full sm:w-40 pl-4 pr-10 py-2.5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl text-xs font-bold text-gray-700 dark:text-gray-300 appearance-none focus:ring-2 focus:ring-indigo-500 outline-none">
                           <option value="all">All Types</option>
@@ -452,137 +472,184 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                   </div>
                </div>
 
-               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  <!-- Skeleton Loaders -->
-                  @if (isSyncing) {
-                    @for (i of [1,2,3]; track i) {
-                      <div class="rounded-[2rem] bg-gray-100 dark:bg-gray-800/50 p-6 h-[280px] animate-pulse">
-                         <div class="w-12 h-12 rounded-2xl bg-gray-200 dark:bg-gray-700 mb-4"></div>
-                         <div class="w-2/3 h-4 bg-gray-200 dark:bg-gray-700 rounded-full mb-2"></div>
-                         <div class="w-1/2 h-3 bg-gray-200 dark:bg-gray-700 rounded-full mb-6"></div>
-                         <div class="mt-auto h-24 bg-gray-200 dark:bg-gray-700 rounded-2xl"></div>
+               @if (activeBillTab === 'tracking') {
+                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- Skeleton Loaders -->
+                    @if (isSyncing) {
+                      @for (i of [1,2,3]; track i) {
+                        <div class="rounded-[2rem] bg-gray-100 dark:bg-gray-800/50 p-6 h-[280px] animate-pulse">
+                           <div class="w-12 h-12 rounded-2xl bg-gray-200 dark:bg-gray-700 mb-4"></div>
+                           <div class="w-2/3 h-4 bg-gray-200 dark:bg-gray-700 rounded-full mb-2"></div>
+                           <div class="w-1/2 h-3 bg-gray-200 dark:bg-gray-700 rounded-full mb-6"></div>
+                           <div class="mt-auto h-24 bg-gray-200 dark:bg-gray-700 rounded-2xl"></div>
+                        </div>
+                      }
+                    }
+                    
+                    @for (service of filteredTrackedServices; track service.id) {
+                      <div class="group relative overflow-hidden rounded-[2rem] bg-white/40 dark:bg-gray-800/40 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 p-6 flex flex-col justify-between h-full">
+                         <!-- Individual Sync Loader Overlay -->
+                         @if (service.id && syncingServices[service.id]) {
+                            <div class="absolute inset-0 z-20 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-300">
+                               <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                               <p class="text-[9px] font-black text-indigo-600 uppercase tracking-widest mt-4">Syncing Live Data...</p>
+                            </div>
+                         }
+                         <!-- Decorative Gradient Background -->
+                         <div class="absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-br opacity-10 blur-3xl group-hover:opacity-20 transition-opacity"
+                              [ngClass]="{
+                                 'from-amber-400 to-orange-600': service.serviceType === 'electricity',
+                                 'from-blue-400 to-indigo-600': service.serviceType === 'water',
+                                 'from-purple-400 to-pink-600': service.serviceType === 'internet',
+                                 'from-emerald-400 to-teal-600': service.serviceType === 'mobile',
+                                 'from-rose-400 to-red-600': service.serviceType === 'other'
+                              }"></div>
+
+                         <div class="relative z-10">
+                            <div class="flex justify-between items-start mb-4">
+                               <div class="p-3 rounded-2xl bg-gradient-to-br shadow-lg group-hover:rotate-12 transition-transform duration-500"
+                                    [ngClass]="{
+                                       'from-amber-400 to-orange-500 text-white': service.serviceType === 'electricity',
+                                       'from-blue-400 to-indigo-500 text-white': service.serviceType === 'water',
+                                       'from-purple-400 to-pink-500 text-white': service.serviceType === 'internet',
+                                       'from-emerald-400 to-teal-500 text-white': service.serviceType === 'mobile',
+                                       'from-rose-400 to-red-500 text-white': service.serviceType === 'other'
+                                    }">
+                                  <svg *ngIf="service.serviceType === 'electricity'" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                  <svg *ngIf="service.serviceType === 'water'" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                                  <svg *ngIf="service.serviceType === 'internet'" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071a10 10 0 0114.142 0M2.93 9.344a15 15 0 0121.142 0"/></svg>
+                                  <svg *ngIf="service.serviceType === 'mobile'" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                               </div>
+                               
+                               <div class="flex gap-1">
+                                  <button (click)="handleFetchLiveBill(service)" [disabled]="service.id && syncingServices[service.id]"
+                                          class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all" title="Quick Sync">
+                                     <svg class="w-4 h-4" [class.animate-spin]="service.id && syncingServices[service.id]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                  </button>
+                                  <button (click)="openServiceDetails(service)" class="p-2 text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-xl transition-all" title="View History & Insights">
+                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                                  </button>
+                                  <a *ngIf="service.serviceType === 'electricity'" 
+                                     [href]="'https://www.tgsouthernpower.org/billinginfo?ukscno=' + service.serviceNumber + '&submit=SUBMIT'" 
+                                     target="_blank" 
+                                     class="p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-xl transition-all" 
+                                     [title]="'View Portal for USC: ' + service.serviceNumber">
+                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                  </a>
+                                  <button (click)="openServiceForm(service)" class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all" title="Edit">
+                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                  </button>
+                                  <button (click)="handleRemoveService(service.id!)" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all" title="Remove Service">
+                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                  </button>
+                               </div>
+                            </div>
+
+                            <p class="text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-1">{{ service.serviceType }}</p>
+                            <h4 class="text-xl font-black text-gray-900 dark:text-white truncate leading-tight mb-1">{{ service.title || service.provider }}</h4>
+                            <p class="text-sm font-bold text-gray-500 dark:text-gray-400 truncate mb-1" *ngIf="service.consumerName">{{ service.consumerName }}</p>
+                            
+                            
+                            <div class="flex items-center gap-2 mb-6">
+                               <div class="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full">
+                                  <span class="text-[10px] font-black text-gray-500 dark:text-gray-400">#{{ service.serviceNumber }}</span>
+                               </div>
+                               <div *ngIf="service.lastSynced" class="flex items-center gap-1 text-[9px] font-bold text-green-500">
+                                  <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                  SYNCED
+                               </div>
+                            </div>
+                         </div>
+
+                         <div class="relative z-10">
+                            @if (service.lastAmount || service.lastDueDate) {
+                              <div class="bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                                 <div class="flex justify-between items-end">
+                                    <div>
+                                       <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Payable Amount</p>
+                                       <p class="text-2xl font-black text-gray-900 dark:text-white">₹{{ service.lastAmount }}</p>
+                                    </div>
+                                    <div class="text-right">
+                                       <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Due Date</p>
+                                       <p class="text-xs font-black text-rose-500">{{ service.lastDueDate }}</p>
+                                    </div>
+                                 </div>
+                                 <div class="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                                  <div class="flex-1">
+                                     <button (click)="storeBillAsRecord(service)" class="text-[9px] font-black text-indigo-500 uppercase tracking-widest hover:text-indigo-700 transition-colors flex items-center gap-1">
+                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                                        Store Record
+                                     </button>
+                                  </div>
+                                  <a *ngIf="service.lastAmount && service.serviceType === 'electricity'" 
+                                     [href]="'https://www.tgsouthernpower.org/online-bill-payment?uscno=' + service.serviceNumber" 
+                                     target="_blank"
+                                     class="px-4 py-2 bg-indigo-600 text-white text-[10px] font-black rounded-xl shadow-lg shadow-indigo-600/20 uppercase tracking-widest hover:scale-105 transition-all">
+                                     Pay Now
+                                  </a>
+                               </div>
+                              </div>
+                            } @else {
+                              <button (click)="handleFetchLiveBill(service)" 
+                                      class="w-full py-4 bg-indigo-600/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all group-hover:shadow-lg group-hover:shadow-indigo-600/20">
+                                 Fetch Live Details
+                              </button>
+                            }
+                         </div>
                       </div>
                     }
-                  }
-                  
-                  @for (service of filteredTrackedServices; track service.id) {
-                    <div class="group relative overflow-hidden rounded-[2rem] bg-white/40 dark:bg-gray-800/40 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 p-6 flex flex-col justify-between h-full">
-                       <!-- Individual Sync Loader Overlay -->
-                       @if (service.id && syncingServices[service.id]) {
-                          <div class="absolute inset-0 z-20 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-300">
-                             <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                             <p class="text-[9px] font-black text-indigo-600 uppercase tracking-widest mt-4">Syncing Live Data...</p>
+                    @if (filteredTrackedServices.length === 0 && !isSyncing) {
+                      <div class="col-span-full py-12 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-[3rem] opacity-40">
+                         <p class="text-sm font-black text-gray-400 uppercase tracking-widest">No services matching this filter</p>
+                      </div>
+                    }
+                 </div>
+               } @else {
+                 <!-- Stored Bill Records View -->
+                 <div class="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div class="flex justify-between items-center mb-6">
+                       <div class="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-2xl p-2 shadow-sm border border-gray-100 dark:border-gray-700">
+                          <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest pl-2">Filter Year</span>
+                          <select [(ngModel)]="selectedStoredYear" (ngModelChange)="loadStoredRecords()"
+                                  class="bg-transparent border-none outline-none text-xs font-black text-indigo-600 dark:text-indigo-400 pr-8 cursor-pointer uppercase">
+                             <option *ngFor="let y of [2024, 2025, 2026]" [value]="y">{{y}} Records</option>
+                          </select>
+                       </div>
+                       <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">{{ storedRecords.length }} Records Found</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                       @for (record of storedRecords; track record.id) {
+                          <div class="bg-white dark:bg-gray-900 p-6 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all flex justify-between items-center group">
+                             <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                   <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                </div>
+                                <div>
+                                   <h4 class="text-sm font-black text-gray-900 dark:text-white leading-tight truncate max-w-[150px]">{{ record.consumerName }}</h4>
+                                   <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">{{ record.date | date:'dd MMM yyyy' }} • #{{ record.serviceNumber }}</p>
+                                </div>
+                             </div>
+                             <div class="flex items-center gap-4">
+                                <div class="text-right">
+                                   <p class="text-lg font-black text-gray-900 dark:text-white tracking-tighter">₹{{ record.amount }}</p>
+                                   <span class="text-[8px] font-black text-indigo-500 uppercase tracking-widest">{{ record.month }}</span>
+                                </div>
+                                <button (click)="handleDeleteStoredRecord(record.id!)" class="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all opacity-0 group-hover:opacity-100">
+                                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                             </div>
                           </div>
                        }
-                       <!-- Decorative Gradient Background -->
-                       <div class="absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-br opacity-10 blur-3xl group-hover:opacity-20 transition-opacity"
-                            [ngClass]="{
-                               'from-amber-400 to-orange-600': service.serviceType === 'electricity',
-                               'from-blue-400 to-indigo-600': service.serviceType === 'water',
-                               'from-purple-400 to-pink-600': service.serviceType === 'internet',
-                               'from-emerald-400 to-teal-600': service.serviceType === 'mobile',
-                               'from-rose-400 to-red-600': service.serviceType === 'other'
-                            }"></div>
-
-                       <div class="relative z-10">
-                          <div class="flex justify-between items-start mb-4">
-                             <div class="p-3 rounded-2xl bg-gradient-to-br shadow-lg group-hover:rotate-12 transition-transform duration-500"
-                                  [ngClass]="{
-                                     'from-amber-400 to-orange-500 text-white': service.serviceType === 'electricity',
-                                     'from-blue-400 to-indigo-500 text-white': service.serviceType === 'water',
-                                     'from-purple-400 to-pink-500 text-white': service.serviceType === 'internet',
-                                     'from-emerald-400 to-teal-500 text-white': service.serviceType === 'mobile',
-                                     'from-rose-400 to-red-500 text-white': service.serviceType === 'other'
-                                  }">
-                                <svg *ngIf="service.serviceType === 'electricity'" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                                <svg *ngIf="service.serviceType === 'water'" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                                <svg *ngIf="service.serviceType === 'internet'" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071a10 10 0 0114.142 0M2.93 9.344a15 15 0 0121.142 0"/></svg>
-                                <svg *ngIf="service.serviceType === 'mobile'" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                             </div>
-                             
-                             <div class="flex gap-1">
-                                <button (click)="handleFetchLiveBill(service)" [disabled]="service.id && syncingServices[service.id]"
-                                        class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all" title="Quick Sync">
-                                   <svg class="w-4 h-4" [class.animate-spin]="service.id && syncingServices[service.id]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                </button>
-                                <button (click)="openServiceDetails(service)" class="p-2 text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-xl transition-all" title="View History & Insights">
-                                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                                </button>
-                                <a *ngIf="service.serviceType === 'electricity'" 
-                                   [href]="'https://www.tgsouthernpower.org/billinginfo?ukscno=' + service.serviceNumber + '&submit=SUBMIT'" 
-                                   target="_blank" 
-                                   class="p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-xl transition-all" 
-                                   [title]="'View Portal for USC: ' + service.serviceNumber">
-                                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                                </a>
-                                <button (click)="openServiceForm(service)" class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all" title="Edit">
-                                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                </button>
-                                <button (click)="handleRemoveService(service.id!)" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all" title="Remove Service">
-                                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                </button>
-                             </div>
+                       @if (storedRecords.length === 0) {
+                          <div class="col-span-full py-20 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-[3rem]">
+                             <svg class="w-12 h-12 text-gray-200 dark:text-gray-800 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+                             <p class="text-xs font-black text-gray-400 uppercase tracking-widest">No stored records for {{ selectedStoredYear }}</p>
                           </div>
-
-                          <p class="text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-1">{{ service.serviceType }}</p>
-                          <h4 class="text-xl font-black text-gray-900 dark:text-white truncate leading-tight mb-1">{{ service.provider }}</h4>
-                          <p class="text-sm font-bold text-gray-500 dark:text-gray-400 truncate mb-1" *ngIf="service.consumerName">{{ service.consumerName }}</p>
-                          
-                          
-                          <div class="flex items-center gap-2 mb-6">
-                             <div class="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full">
-                                <span class="text-[10px] font-black text-gray-500 dark:text-gray-400">#{{ service.serviceNumber }}</span>
-                             </div>
-                             <div *ngIf="service.lastSynced" class="flex items-center gap-1 text-[9px] font-bold text-green-500">
-                                <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                                SYNCED
-                             </div>
-                          </div>
-                       </div>
-
-                       <div class="relative z-10">
-                          @if (service.lastAmount || service.lastDueDate) {
-                            <div class="bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
-                               <div class="flex justify-between items-end">
-                                  <div>
-                                     <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Payable Amount</p>
-                                     <p class="text-2xl font-black text-gray-900 dark:text-white">₹{{ service.lastAmount }}</p>
-                                  </div>
-                                  <div class="text-right">
-                                     <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Due Date</p>
-                                     <p class="text-xs font-black text-rose-500">{{ service.lastDueDate }}</p>
-                                  </div>
-                               </div>
-                               <div class="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
-                                <div class="flex-1">
-                                   <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Status</p>
-                                   <p class="text-[11px] font-black" [ngClass]="service.lastAmount ? 'text-rose-500' : 'text-emerald-500'">
-                                      {{ service.lastAmount ? 'PENDING' : 'NO DUES' }}
-                                   </p>
-                                </div>
-                                <a *ngIf="service.lastAmount && service.serviceType === 'electricity'" 
-                                   [href]="'https://www.tgsouthernpower.org/online-bill-payment?uscno=' + service.serviceNumber" 
-                                   target="_blank"
-                                   class="px-4 py-2 bg-indigo-600 text-white text-[10px] font-black rounded-xl shadow-lg shadow-indigo-600/20 uppercase tracking-widest hover:scale-105 transition-all">
-                                   Pay Now
-                                </a>
-                             </div>
-                            </div>
-                          } @else {
-                            <button (click)="handleFetchLiveBill(service)" 
-                                    class="w-full py-4 bg-indigo-600/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all group-hover:shadow-lg group-hover:shadow-indigo-600/20">
-                               Fetch Live Details
-                            </button>
-                          }
-                       </div>
+                       }
                     </div>
-                  }
-                  @if (filteredTrackedServices.length === 0 && !isSyncing) {
-                    <div class="col-span-full py-12 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-[3rem] opacity-40">
-                       <p class="text-sm font-black text-gray-400 uppercase tracking-widest">No services matching this filter</p>
-                    </div>
-                  }
-               </div>
+                 </div>
+               }
             </div>
 
 
@@ -1051,10 +1118,70 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                   </div>
                }
             </div>
-            
             @if (getFilteredCustomers().length === 0) {
                <div class="py-20 text-center opacity-60 italic text-gray-500 dark:text-gray-400">No customers matching your search.</div>
             }
+          </div>
+        }
+
+        <!-- ═══════════ BILL ARCHIVES (Stored Records) ═══════════ -->
+        @if (!isSuperAdmin && activeTab === 'archives') {
+          <div class="card-animate" style="animation-delay:0.05s">
+            <div class="mb-8">
+               <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Yearly Bill Archives</h2>
+               <p class="text-sm font-medium text-gray-500 mt-1">Centralized list of all manually archived bill snapshots.</p>
+            </div>
+
+            <div class="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                   <div class="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-2xl p-2 shadow-sm border border-gray-100 dark:border-gray-700 w-full sm:w-auto">
+                      <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest pl-2">ARCHIVE YEAR</span>
+                      <select [(ngModel)]="selectedStoredYear" (ngModelChange)="loadStoredRecords()"
+                              class="bg-transparent border-none outline-none text-xs font-black text-indigo-600 dark:text-indigo-400 pr-8 cursor-pointer uppercase flex-1 sm:flex-none">
+                         <option *ngFor="let y of [2024, 2025, 2026]" [value]="y">{{y}} Records</option>
+                      </select>
+                   </div>
+                   <div class="px-6 py-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl border border-indigo-100 dark:border-indigo-800/50">
+                      <p class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">{{ storedRecords.length }} Archived Entries</p>
+                   </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                   @for (record of storedRecords; track record.id) {
+                      <div class="bg-white dark:bg-gray-900 p-8 rounded-[3rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex justify-between items-center group relative overflow-hidden">
+                         <div class="absolute -right-12 -top-12 w-24 h-24 bg-indigo-50 dark:bg-indigo-900/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+                         
+                         <div class="flex items-center gap-5 relative z-10">
+                            <div class="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-inner">
+                               <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            </div>
+                            <div>
+                               <h4 class="text-base font-black text-gray-900 dark:text-white leading-tight truncate max-w-[150px] uppercase tracking-tighter">{{ record.consumerName }}</h4>
+                               <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">{{ record.date | date:'dd MMM yyyy' }} • #{{ record.serviceNumber }}</p>
+                            </div>
+                         </div>
+                         <div class="flex items-center gap-5 relative z-10">
+                            <div class="text-right">
+                               <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter">₹{{ record.amount }}</p>
+                               <span class="text-[9px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 dark:bg-indigo-900/40 px-2 py-0.5 rounded-md">{{ record.month }}</span>
+                            </div>
+                            <button (click)="handleDeleteStoredRecord(record.id!)" class="p-3 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-2xl transition-all opacity-0 group-hover:opacity-100">
+                               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                         </div>
+                      </div>
+                   }
+                   @if (storedRecords.length === 0) {
+                      <div class="col-span-full py-32 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-[4rem] bg-gray-50/30 dark:bg-gray-800/10">
+                         <div class="w-20 h-20 bg-gray-100 dark:bg-gray-800/50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-300 dark:text-gray-700">
+                            <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+                         </div>
+                         <h4 class="text-xl font-black text-gray-300 dark:text-gray-700 uppercase tracking-tighter">No Archives Found</h4>
+                         <p class="text-xs font-black text-gray-400 uppercase tracking-widest mt-2">There are no stored records for the year {{ selectedStoredYear }}</p>
+                      </div>
+                   }
+                </div>
+             </div>
           </div>
         }
         <!-- ═══════════ RENTALS MANAGEMENT (Admin Only) ═══════════ -->
@@ -1437,6 +1564,14 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                </div>
+
+               <!-- Archives (Stored Records) -->
+               <div (click)="scrollToTop(); activeMobileMenu = 'archives'; activeTab = 'archives'; loadStoredRecords()" 
+                    class="nav-item-box">
+                  <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'archives' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                  </svg>
+               </div>
             }
 
             <!-- Rentals -->
@@ -1582,6 +1717,10 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                      </select>
                   </div>
                   <div class="space-y-1.5">
+                     <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Service Title / Name</label>
+                     <input type="text" formControlName="title" placeholder="e.g., Home Electricity, My Shop Water" class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold">
+                  </div>
+                  <div class="space-y-1.5">
                      <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Service / Consumer ID</label>
                      <input type="text" formControlName="serviceNumber" placeholder="Enter USCNO / Service Number" class="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold">
                   </div>
@@ -1664,13 +1803,18 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                                  <p class="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Due Date</p>
                                  <p class="text-xl font-black text-rose-600 dark:text-rose-400">{{ selectedTrackedService.lastDueDate }}</p>
                               </div>
-                              <div class="p-6 bg-emerald-50 dark:bg-emerald-900/20 rounded-3xl border border-emerald-100 dark:border-emerald-800 flex justify-between items-center">
-                                 <div>
-                                    <p class="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Status</p>
-                                    <p class="text-xl font-black text-emerald-600 dark:text-emerald-400 uppercase">Synced</p>
+                              <div class="flex gap-3">
+                                 <div class="flex-1 p-6 bg-emerald-50 dark:bg-emerald-900/20 rounded-3xl border border-emerald-100 dark:border-emerald-800 flex justify-between items-center">
+                                    <div>
+                                       <p class="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Status</p>
+                                       <p class="text-xl font-black text-emerald-600 dark:text-emerald-400 uppercase">Synced</p>
+                                    </div>
+                                    <button (click)="handleFetchLiveBill(selectedTrackedService)" class="p-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm text-emerald-600 hover:rotate-180 transition-all duration-700">
+                                       <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                    </button>
                                  </div>
-                                 <button (click)="handleFetchLiveBill(selectedTrackedService)" class="p-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm text-emerald-600 hover:rotate-180 transition-all duration-700">
-                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                 <button (click)="storeBillAsRecord(selectedTrackedService)" class="px-6 bg-indigo-600 text-white rounded-3xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-indigo-600/20 hover:scale-105 transition-all">
+                                    Store This Bill
                                  </button>
                               </div>
                            </div>
@@ -1686,25 +1830,59 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                      }
                   </div>
                 } @else {
-                  <div class="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-4">
-                     @for (bill of selectedServiceHistory; track bill.id) {
-                        <div class="p-6 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-800 flex justify-between items-center group hover:border-indigo-500/30 transition-all">
-                           <div>
-                              <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{{ bill.month }} {{ bill.year }}</p>
-                              <p class="text-xl font-black text-gray-900 dark:text-white">₹{{ bill.amount }}</p>
-                           </div>
-                           <div class="flex items-center gap-4">
-                              <span class="px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 text-[10px] font-black rounded-xl uppercase tracking-widest">PAID</span>
-                              <button (click)="handleDeleteBill(bill)" class="p-2.5 text-gray-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                              </button>
-                           </div>
+                   <div class="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+                      <!-- Synced Payment History -->
+                      @if (selectedServiceHistory.length) {
+                        <div>
+                          <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 pl-2">Payment History (Synced)</h4>
+                          <div class="space-y-3">
+                            @for (bill of selectedServiceHistory; track bill.id) {
+                               <div class="p-6 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-800 flex justify-between items-center group hover:border-indigo-500/30 transition-all">
+                                  <div>
+                                     <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{{ bill.month }} {{ bill.year }}</p>
+                                     <p class="text-xl font-black text-gray-900 dark:text-white">₹{{ bill.amount }}</p>
+                                  </div>
+                                  <div class="flex items-center gap-4">
+                                     <span class="px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 text-[10px] font-black rounded-xl uppercase tracking-widest">PAID</span>
+                                     <button (click)="handleDeleteBill(bill)" class="p-2.5 text-gray-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100">
+                                       <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                     </button>
+                                  </div>
+                               </div>
+                            }
+                          </div>
                         </div>
-                     }
-                     @if (!selectedServiceHistory.length) {
-                        <div class="py-20 text-center opacity-40 italic text-sm">No payment history available.</div>
-                     }
-                  </div>
+                      }
+
+                      <!-- Archived Bill Summaries (Manual Storage) -->
+                      @if (selectedStoredHistory.length) {
+                        <div>
+                          <h4 class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-4 pl-2">Archived Summaries (Stored)</h4>
+                          <div class="space-y-3">
+                            @for (record of selectedStoredHistory; track record.id) {
+                               <div class="p-5 bg-indigo-50/30 dark:bg-indigo-900/10 rounded-3xl border border-indigo-100/50 dark:border-indigo-800/50 flex justify-between items-center group hover:border-indigo-400 transition-all">
+                                  <div class="flex items-center gap-4">
+                                     <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                                     </div>
+                                     <div>
+                                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{{ record.date | date:'dd MMM yyyy' }} • {{ record.month }} {{ record.year }}</p>
+                                        <p class="text-lg font-black text-gray-900 dark:text-white">₹{{ record.amount }}</p>
+                                     </div>
+                                  </div>
+                                  <button (click)="handleDeleteStoredRecord(record.id!)" class="p-2.5 text-gray-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                  </button>
+                               </div>
+                            }
+                          </div>
+                        </div>
+                      }
+
+                      @if (!selectedServiceHistory.length && !selectedStoredHistory.length) {
+                         <div class="py-20 text-center opacity-40 italic text-sm">No historical data found for this service.</div>
+                      }
+                   </div>
                 }
              </div>
           </div>
@@ -2015,10 +2193,10 @@ export class AdminDashboardComponent implements OnInit {
   public biometricService = inject(BiometricService);
   private notificationService = inject(NotificationService);
 
-  activeTab: 'chitti' | 'interest' | 'customers' | 'security' | 'bills' | 'overview' | 'rentals' | '' = '';
+  activeTab: 'chitti' | 'interest' | 'customers' | 'security' | 'bills' | 'overview' | 'rentals' | 'archives' | '' = '';
   showOverviewData = false;
   isDarkMode = false;
-  activeMobileMenu: 'chitti' | 'interest' | 'customers' | 'security' | 'bills' | 'overview' | 'rentals' | '' = '';
+  activeMobileMenu: 'chitti' | 'interest' | 'customers' | 'security' | 'bills' | 'overview' | 'rentals' | 'archives' | '' = '';
   currentUserProfile: UserProfile | null = null;
 
   get showInterestTab() { return this.isSuperAdmin || this.currentUserProfile?.tabConfig?.interest !== false; }
@@ -2031,11 +2209,16 @@ export class AdminDashboardComponent implements OnInit {
   interests: InterestScheme[] = [];
   allCustomers: Customer[] = [];
   bills: Bill[] = [];
-  billStats = {
-    pendingAmount: 0,
-    dueTodayCount: 0,
-    paidThisMonthAmount: 0
-  };
+   billStats = {
+     pendingAmount: 0,
+     dueTodayCount: 0,
+     paidThisMonthAmount: 0
+   };
+   
+   // Stored Records
+   storedRecords: StoredBillRecord[] = [];
+   selectedStoredYear = new Date().getFullYear();
+   activeBillTab: 'tracking' | 'stored' = 'tracking';
   isSyncing = false;
   isFetchingLiveBill = false;
   showLiveBillModal = false;
@@ -2049,9 +2232,10 @@ export class AdminDashboardComponent implements OnInit {
   trackedServiceForm: FormGroup;
   // Comprehensive Details
   showServiceDetailsModal = false;
-  selectedTrackedService: TrackedService | null = null;
-  selectedServiceHistory: Bill[] = [];
-  activeDetailsTab: 'current' | 'history' = 'current';
+   selectedTrackedService: TrackedService | null = null;
+   selectedServiceHistory: Bill[] = [];
+   selectedStoredHistory: StoredBillRecord[] = [];
+   activeDetailsTab: 'current' | 'history' = 'current';
   syncingServices: Record<string, boolean> = {};
 
   // Payment Modal
@@ -2457,7 +2641,8 @@ export class AdminDashboardComponent implements OnInit {
     });
     this.trackedServiceForm = this.fb.group({
       serviceType: ['electricity', Validators.required],
-      provider: ['', Validators.required],
+      title: ['', Validators.required],
+      provider: [''],
       serviceNumber: ['', Validators.required]
     });
   }
@@ -2587,9 +2772,9 @@ export class AdminDashboardComponent implements OnInit {
     if (this.isSuperAdmin) {
       return ['overview', 'security'];
     }
-    const all = ['overview', 'interest', 'game', 'chitti', 'customers', 'bills', 'rentals', 'security'];
+    const all = ['overview', 'interest', 'game', 'chitti', 'customers', 'bills', 'archives', 'rentals', 'security'];
     return all.filter(t => {
-      if (t === 'overview' || t === 'game' || t === 'security') return true;
+      if (t === 'overview' || t === 'game' || t === 'security' || t === 'archives') return true;
       if (t === 'interest') return this.showInterestTab;
       if (t === 'chitti') return this.showChittiTab;
       if (t === 'customers') return this.showCustomersTab;
@@ -2894,6 +3079,8 @@ export class AdminDashboardComponent implements OnInit {
         this.houses = data;
         this.updateRentalAnalytics();
       });
+      
+      this.loadStoredRecords();
     });
   }
 
@@ -2950,12 +3137,18 @@ export class AdminDashboardComponent implements OnInit {
   openServiceDetails(service: TrackedService) {
     this.selectedTrackedService = service;
     this.selectedServiceHistory = [];
+    this.selectedStoredHistory = [];
     this.activeDetailsTab = 'current';
     this.showServiceDetailsModal = true;
     
     // Fetch History
     this.billService.getServiceBillHistory(service.serviceNumber).subscribe(history => {
       this.selectedServiceHistory = history;
+    });
+
+    // Fetch Stored Records History
+    this.billService.getStoredRecordsByService(service.serviceNumber).subscribe(recs => {
+      this.selectedStoredHistory = recs;
     });
   }
 
@@ -3054,6 +3247,48 @@ export class AdminDashboardComponent implements OnInit {
     setTimeout(() => this.isSyncing = false, 1000);
   }
 
+  loadStoredRecords() {
+    this.authService.userProfile$.subscribe(profile => {
+      if (!profile?.uid) return;
+      this.billService.getStoredRecords(profile.uid, this.selectedStoredYear).subscribe(recs => {
+        this.storedRecords = recs;
+      });
+    });
+  }
+
+  async storeBillAsRecord(service: TrackedService) {
+    if (!service.lastAmount) {
+      this.toast.error('No bill amount found to store.');
+      return;
+    }
+
+    const profile = await firstValueFrom(this.authService.userProfile$);
+    if (!profile?.uid) return;
+
+    try {
+      await this.billService.addStoredRecord({
+        consumerName: service.consumerName || 'Unnamed',
+        serviceNumber: service.serviceNumber,
+        amount: service.lastAmount,
+        date: new Date().toISOString().split('T')[0],
+        adminUid: profile.uid
+      });
+      this.toast.success('Bill details stored successfully!');
+    } catch (e) {
+      this.toast.error('Failed to store record.');
+    }
+  }
+
+  async handleDeleteStoredRecord(id: string) {
+    if (!confirm('Are you sure you want to permanently delete this record?')) return;
+    try {
+      await this.billService.deleteStoredRecord(id);
+      this.toast.success('Record deleted.');
+    } catch (e) {
+      this.toast.error('Failed to delete record.');
+    }
+  }
+
   openServiceForm(service?: TrackedService) {
     this.editingTrackedService = service;
     if (service) {
@@ -3072,7 +3307,9 @@ export class AdminDashboardComponent implements OnInit {
     if (!profile?.uid) return;
 
     try {
-      const data = this.trackedServiceForm.value;
+      const data = { ...this.trackedServiceForm.value };
+      if (!data.provider) data.provider = data.title; // Default provider to title if empty
+
       if (this.editingTrackedService?.id) {
         await this.billService.updateTrackedService(this.editingTrackedService.id, data);
         this.toast.success('Service updated successfully!');
