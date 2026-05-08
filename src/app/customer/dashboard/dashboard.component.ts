@@ -39,14 +39,15 @@ Chart.register(zoomPlugin);
       
       .bottom-nav-pill {
         display: flex;
-        width: 100%;
+        width: max-content;
+        min-width: 100%;
         height: 64px;
         padding-bottom: env(safe-area-inset-bottom, 0);
         z-index: 100;
       }
       .nav-item-box {
         flex: 1 1 0%;
-        min-width: 0;
+        min-width: 64px;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -423,7 +424,7 @@ Chart.register(zoomPlugin);
                   }
 
                   @if (selectedHouse) {
-                      <div class="overflow-x-auto no-scrollbar -mx-8 sm:mx-0">
+                      <div class="overflow-x-auto no-scrollbar w-full">
                          <table class="w-full text-left border-collapse min-w-[650px]">
                             <thead>
                                <tr class="bg-green-600 text-white uppercase text-[9px] font-black tracking-widest">

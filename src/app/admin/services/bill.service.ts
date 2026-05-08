@@ -287,6 +287,15 @@ export class BillService {
                 notes: `Auto-synced from TGSPDCL website for ${liveBill.consumerName}.`,
                 adminUid: adminUid
               };
+
+              // Auto-store in archives
+              await this.autoStoreBillRecord({
+                consumerName: liveBill.consumerName || service.title || 'Unnamed',
+                serviceNumber: service.serviceNumber,
+                amount: liveBill.totalAmountPayable || 0,
+                date: new Date().toISOString().split('T')[0],
+                adminUid: adminUid
+              });
             }
           } catch (e) {
             console.error('Failed to fetch live TSPDCL bill:', e);
@@ -356,6 +365,58 @@ export class BillService {
       createdAt: serverTimestamp()
     };
     return addDoc(this.storedRecordsCollection, data);
+  }
+
+  async autoStoreBillRecord(record: Partial<StoredBillRecord>): Promise<any> {
+    if (!record.serviceNumber || !record.adminUid || !record.amount) return;
+
+    const date = record.date ? new Date(record.date) : new Date();
+    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+
+    // 1. Duplicate Check (Monthly only one record per service)
+    const q = query(
+      this.storedRecordsCollection,
+      where('serviceNumber', '==', record.serviceNumber),
+      where('month', '==', month),
+      where('year', '==', year)
+    );
+    
+    const existing = await firstValueFrom(collectionData(q).pipe(map(docs => docs)));
+    if (existing && existing.length > 0) {
+      console.log('Record already exists for this month. Skipping auto-store.');
+      return;
+    }
+
+    // 2. Add the record
+    const data = {
+      ...record,
+      year,
+      month,
+      createdAt: serverTimestamp()
+    };
+    await addDoc(this.storedRecordsCollection, data);
+
+    // 3. Auto Cleanup (Last 6 months only)
+    // Find records older than 6 months
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const sixMonthsAgoStr = sixMonthsAgo.toISOString().split('T')[0];
+
+    const cleanupQ = query(
+      this.storedRecordsCollection,
+      where('serviceNumber', '==', record.serviceNumber),
+      where('adminUid', '==', record.adminUid),
+      where('date', '<', sixMonthsAgoStr)
+    );
+
+    const oldRecords = await firstValueFrom(collectionData(cleanupQ, { idField: 'id' }).pipe(map(docs => docs)));
+    if (oldRecords && oldRecords.length > 0) {
+      for (const old of oldRecords) {
+        await this.deleteStoredRecord(old.id);
+      }
+    }
   }
 
   deleteStoredRecord(id: string): Promise<void> {

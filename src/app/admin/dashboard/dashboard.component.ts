@@ -63,14 +63,16 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
       .bottom-nav-pill {
         display: flex;
-        width: 100%;
+        width: max-content;
+        min-width: 100%;
         height: 64px;
         padding-bottom: env(safe-area-inset-bottom, 0);
         z-index: 100;
       }
+      .bottom-nav-pill::-webkit-scrollbar { display: none; }
       .nav-item-box {
         flex: 1 1 0%;
-        min-width: 0;
+        min-width: 64px;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -126,14 +128,6 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
               <span class="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-500">FinServe Admin</span>
             </div>
             <div class="flex space-x-2 items-center" *ngIf="authService.userProfile$ | async as profile">
-              <button *ngIf="!isSuperAdmin" (click)="goToGame()" class="p-2.5 transition-all font-bold mr-1 flex items-center gap-2 group" title="Play Neon Racer">
-                 <div class="game-icon-pulse">
-                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 17h.01M5 17h.01M3 13h18M5 10l2-4h10l2 4M3 13l1 4h16l1-4m-18 0h18M5 17h.01M19 17h.01" />
-                   </svg>
-                 </div>
-                 <span class="text-[10px] font-black uppercase tracking-widest hidden lg:inline group-hover:text-orange-400 transition-colors">Racing</span>
-              </button>
               
               <!-- Super Admin Controls -->
               <button *ngIf="isSuperAdmin" (click)="goToManageAdmins()" class="p-2.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all mr-1 flex items-center gap-2" title="Manage Admin Members">
@@ -146,12 +140,15 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                  <svg *ngIf="!isDarkMode" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
                  <svg *ngIf="isDarkMode" class="w-5 h-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
               </button>
-              <div class="flex flex-col items-end mr-2 hidden sm:flex">
-                 <span class="text-gray-900 dark:text-white text-sm font-bold leading-tight">{{ profile.displayName || 'Admin' }}</span>
-                 <span class="text-gray-500 text-[10px] font-medium uppercase tracking-widest">{{ profile.username }}</span>
+              <div class="flex flex-col items-end mr-6 hidden sm:flex">
+                <span class="text-gray-900 dark:text-white text-[13px] font-black uppercase leading-tight">{{ profile.displayName || 'Admin' }}</span>
+                <span class="text-gray-500 text-[10px] font-black uppercase tracking-[0.15em] opacity-80">{{ profile.username }}</span>
               </div>
-              <button (click)="logout()" class="p-2.5 text-red-500 hover:text-red-600 transition-all font-bold" title="Log out">
-                 <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+              <!-- Logout Button -->
+              <button (click)="logout()" class="p-2.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all" title="Secure Logout">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
               </button>
             </div>
           </div>
@@ -195,7 +192,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
             RENTALS
           </button>
-          <button *ngIf="!isSuperAdmin" (click)="activeTab = 'archives'; activeMobileMenu = 'archives'; loadStoredRecords()"
+          <button *ngIf="!isSuperAdmin && showBillsTab" (click)="activeTab = 'archives'; activeMobileMenu = 'archives'; loadStoredRecords()"
                   [class.tab-active]="activeTab === 'archives'"
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
             ARCHIVES
@@ -447,17 +444,21 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                     <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Automated tracking for these numbers</p>
                   </div>
 
-                  <!-- Sub Tab Switcher -->
-                  <div class="p-1 bg-gray-100 dark:bg-gray-800/80 backdrop-blur rounded-2xl flex gap-1 border border-gray-200 dark:border-gray-700/50 shadow-inner">
-                    <button (click)="activeBillTab = 'tracking'"
-                            [class.tab-active]="activeBillTab === 'tracking'"
-                            class="px-5 py-2 text-[9px] font-black rounded-xl transition-all duration-300 text-gray-500 dark:text-gray-300 uppercase tracking-[0.2em]">
-                       LIVE TRACKING
+                  <!-- View Toggle -->
+                  <div class="flex items-center gap-2 bg-gray-100 dark:bg-gray-800/80 p-1 rounded-xl border border-gray-200 dark:border-gray-700/50">
+                    <button (click)="isBillListView = false" 
+                            [class.bg-white]="!isBillListView"
+                            [class.dark:bg-gray-700]="!isBillListView"
+                            [class.shadow-sm]="!isBillListView"
+                            class="p-2 rounded-lg transition-all text-gray-500" [class.text-indigo-600]="!isBillListView">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-16zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
                     </button>
-                    <button (click)="activeBillTab = 'stored'; loadStoredRecords()"
-                            [class.tab-active]="activeBillTab === 'stored'"
-                            class="px-5 py-2 text-[9px] font-black rounded-xl transition-all duration-300 text-gray-500 dark:text-gray-300 uppercase tracking-[0.2em]">
-                       YEARLY RECORDS
+                    <button (click)="isBillListView = true" 
+                            [class.bg-white]="isBillListView"
+                            [class.dark:bg-gray-700]="isBillListView"
+                            [class.shadow-sm]="isBillListView"
+                            class="p-2 rounded-lg transition-all text-gray-500" [class.text-indigo-600]="isBillListView">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
                     </button>
                   </div>
 
@@ -484,7 +485,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                </div>
 
                @if (activeBillTab === 'tracking') {
-                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                 <div class="grid grid-cols-1 gap-6">
                     <!-- Skeleton Loaders -->
                     @if (isSyncing) {
                       @for (i of [1,2,3]; track i) {
@@ -497,6 +498,8 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                       }
                     }
                     
+                @if (!isBillListView) {
+                  <div class="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-4 gap-6">
                     @for (service of filteredTrackedServices; track service.id) {
                       <div class="group relative overflow-hidden rounded-[2rem] bg-white/40 dark:bg-gray-800/40 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 p-6 flex flex-col justify-between h-full">
                          <!-- Individual Sync Loader Overlay -->
@@ -609,6 +612,38 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                          </div>
                       </div>
                     }
+                  </div>
+                } @else {
+                  <!-- List View Template -->
+                  <div class="grid gap-6 grid-cols-1 sm:grid-cols-3 xl:grid-cols-4 space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    @for (service of filteredTrackedServices; track service.id) {
+                      <div (click)="openServiceDetails(service)" 
+                           class="bg-white/60 dark:bg-gray-800/60 backdrop-blur p-5 rounded-2xl border border-gray-100 dark:border-gray-700/50 flex justify-between items-center group hover:border-indigo-500/50 transition-all cursor-pointer shadow-sm">
+                        <div class="flex items-center gap-4">
+                          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white bg-gradient-to-br"
+                               [ngClass]="{
+                                 'from-amber-400 to-orange-500': service.serviceType === 'electricity',
+                                 'from-blue-400 to-indigo-500': service.serviceType === 'water',
+                                 'from-purple-400 to-pink-500': service.serviceType === 'internet',
+                                 'from-emerald-400 to-teal-500': service.serviceType === 'mobile',
+                                 'from-rose-400 to-red-500': service.serviceType === 'other'
+                               }">
+                             <svg *ngIf="service.serviceType === 'electricity'" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                             <svg *ngIf="service.serviceType !== 'electricity'" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                          </div>
+                          <div>
+                            <h4 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">{{ service.title || service.provider }}</h4>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">#{{ service.serviceNumber }}</p>
+                          </div>
+                        </div>
+                        <div class="text-right">
+                          <p class="text-lg font-black text-gray-900 dark:text-white tracking-tighter">₹{{ service.lastAmount || 0 }}</p>
+                          <p class="text-[9px] font-black text-rose-500 uppercase tracking-widest">{{ service.lastDueDate || 'No Due' }}</p>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
                     @if (filteredTrackedServices.length === 0 && !isSyncing) {
                       <div class="col-span-full py-12 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-[3rem] opacity-40">
                          <p class="text-sm font-black text-gray-400 uppercase tracking-widest">No services matching this filter</p>
@@ -623,7 +658,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                           <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest pl-2">Filter Year</span>
                           <select [(ngModel)]="selectedStoredYear" (ngModelChange)="loadStoredRecords()"
                                   class="bg-transparent border-none outline-none text-xs font-black text-indigo-600 dark:text-indigo-400 pr-8 cursor-pointer uppercase">
-                             <option *ngFor="let y of [2024, 2025, 2026]" [value]="y">{{y}} Records</option>
+                             <option *ngFor="let y of archiveAvailableYears" [value]="y">{{y}} Records</option>
                           </select>
                        </div>
                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">{{ storedRecords.length }} Records Found</p>
@@ -1149,7 +1184,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                       <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest pl-2">ARCHIVE YEAR</span>
                       <select [(ngModel)]="selectedStoredYear" (ngModelChange)="loadStoredRecords()"
                               class="bg-transparent border-none outline-none text-xs font-black text-indigo-600 dark:text-indigo-400 pr-8 cursor-pointer uppercase flex-1 sm:flex-none">
-                         <option *ngFor="let y of [2024, 2025, 2026]" [value]="y">{{y}} Records</option>
+                         <option *ngFor="let y of archiveAvailableYears" [value]="y">{{y}} Records</option>
                       </select>
                    </div>
                    <div class="px-6 py-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl border border-indigo-100 dark:border-indigo-800/50">
@@ -1508,7 +1543,8 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
       <!-- Mobile Bottom Navigation -->
       <div class="fixed bottom-0 left-0 right-0 z-[100] sm:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-colors duration-500">
-         <div class="bottom-nav-pill pointer-events-auto relative flex items-center px-2">
+         <div class="w-full overflow-x-auto no-scrollbar" style="scroll-behavior: smooth; -webkit-overflow-scrolling: touch;">
+            <div class="bottom-nav-pill pointer-events-auto relative flex items-center px-2">
             
             <div class="absolute inset-1 flex pointer-events-none z-0">
                <div [style.flex-grow]="visibleMobileTabs.indexOf(activeMobileMenu)" class="transition-all duration-500 ease-in-out"></div>
@@ -1536,16 +1572,6 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                </div>
             }
 
-            <!-- Game (Mobile) -->
-            @if (!isSuperAdmin) {
-               <div (click)="goToGame()" 
-                    class="nav-item-box">
-                 <svg class="w-6 h-6 nav-icon icon-inactive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                 </svg>
-               </div>
-            }
 
             <!-- Chitties -->
             @if (!isSuperAdmin && showChittiTab) {
@@ -1573,14 +1599,6 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                     class="nav-item-box">
                   <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'bills' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-               </div>
-
-               <!-- Archives (Stored Records) -->
-               <div (click)="scrollToTop(); activeMobileMenu = 'archives'; activeTab = 'archives'; loadStoredRecords()" 
-                    class="nav-item-box">
-                  <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'archives' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                   </svg>
                </div>
             }
@@ -2220,16 +2238,16 @@ export class AdminDashboardComponent implements OnInit {
   interests: InterestScheme[] = [];
   allCustomers: Customer[] = [];
   bills: Bill[] = [];
-   billStats = {
-     pendingAmount: 0,
-     dueTodayCount: 0,
-     paidThisMonthAmount: 0
-   };
-   
-   // Stored Records
-   storedRecords: StoredBillRecord[] = [];
-   selectedStoredYear = new Date().getFullYear();
-   activeBillTab: 'tracking' | 'stored' = 'tracking';
+  billStats = {
+    pendingAmount: 0,
+    dueTodayCount: 0,
+    paidThisMonthAmount: 0
+  };
+
+  // Stored Records
+  storedRecords: StoredBillRecord[] = [];
+  selectedStoredYear = new Date().getFullYear();
+  activeBillTab: 'tracking' | 'stored' = 'tracking';
   isSyncing = false;
   isFetchingLiveBill = false;
   showLiveBillModal = false;
@@ -2243,10 +2261,10 @@ export class AdminDashboardComponent implements OnInit {
   trackedServiceForm: FormGroup;
   // Comprehensive Details
   showServiceDetailsModal = false;
-   selectedTrackedService: TrackedService | null = null;
-   selectedServiceHistory: Bill[] = [];
-   selectedStoredHistory: StoredBillRecord[] = [];
-   activeDetailsTab: 'current' | 'history' = 'current';
+  selectedTrackedService: TrackedService | null = null;
+  selectedServiceHistory: Bill[] = [];
+  selectedStoredHistory: StoredBillRecord[] = [];
+  activeDetailsTab: 'current' | 'history' = 'current';
   syncingServices: Record<string, boolean> = {};
 
   // Payment Modal
@@ -2422,6 +2440,8 @@ export class AdminDashboardComponent implements OnInit {
   selectedYear: number = new Date().getFullYear();
   selectedMonth: number = -1; // -1 for All
   availableYears: number[] = [new Date().getFullYear()];
+  archiveAvailableYears: number[] = [new Date().getFullYear()];
+  isBillListView: boolean = false;
   filteredTotalInterest: number = 0;
 
   rentalSelectedYear: number = new Date().getFullYear();
@@ -2783,9 +2803,9 @@ export class AdminDashboardComponent implements OnInit {
     if (this.isSuperAdmin) {
       return ['overview', 'security'];
     }
-    const all = ['overview', 'interest', 'game', 'chitti', 'customers', 'bills', 'archives', 'rentals', 'security'];
+    const all = ['overview', 'interest', 'chitti', 'customers', 'bills', 'rentals', 'security'];
     return all.filter(t => {
-      if (t === 'overview' || t === 'game' || t === 'security' || t === 'archives') return true;
+      if (t === 'overview' || t === 'security') return true;
       if (t === 'interest') return this.showInterestTab;
       if (t === 'chitti') return this.showChittiTab;
       if (t === 'customers') return this.showCustomersTab;
@@ -2942,9 +2962,9 @@ export class AdminDashboardComponent implements OnInit {
   getFilteredAdmins(): UserProfile[] {
     if (!this.adminSearchQuery.trim()) return this.admins;
     const q = this.adminSearchQuery.toLowerCase();
-    return this.admins.filter(a => 
-      (a.displayName?.toLowerCase().includes(q)) || 
-      (a.username?.toLowerCase().includes(q)) || 
+    return this.admins.filter(a =>
+      (a.displayName?.toLowerCase().includes(q)) ||
+      (a.username?.toLowerCase().includes(q)) ||
       (a.phone?.includes(q))
     );
   }
@@ -3090,7 +3110,7 @@ export class AdminDashboardComponent implements OnInit {
         this.houses = data;
         this.updateRentalAnalytics();
       });
-      
+
       this.loadStoredRecords();
     });
   }
@@ -3110,12 +3130,12 @@ export class AdminDashboardComponent implements OnInit {
       if (service.lastAmount) {
         this.billStats.pendingAmount += service.lastAmount;
       }
-      
+
       // Check if due today
       if (service.lastDueDate) {
         // Try to parse DD-MMM-YY or match string
         if (service.lastDueDate === todayStr || this.isToday(service.lastDueDate)) {
-           this.billStats.dueTodayCount++;
+          this.billStats.dueTodayCount++;
         }
       }
     });
@@ -3124,12 +3144,12 @@ export class AdminDashboardComponent implements OnInit {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     this.bills.forEach(bill => {
-       if (bill.status === 'completed') {
-          const bDate = new Date(bill.dueDate);
-          if (bDate.getMonth() === currentMonth && bDate.getFullYear() === currentYear) {
-             this.billStats.paidThisMonthAmount += bill.amount;
-          }
-       }
+      if (bill.status === 'completed') {
+        const bDate = new Date(bill.dueDate);
+        if (bDate.getMonth() === currentMonth && bDate.getFullYear() === currentYear) {
+          this.billStats.paidThisMonthAmount += bill.amount;
+        }
+      }
     });
   }
 
@@ -3139,7 +3159,7 @@ export class AdminDashboardComponent implements OnInit {
     const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
     const month = monthNames[now.getMonth()];
     const year = now.getFullYear().toString().slice(-2);
-    
+
     // Check for DD-MMM-YY format
     const expected = `${today.toString().padStart(2, '0')}-${month}-${year}`;
     return dateStr.toUpperCase() === expected;
@@ -3151,7 +3171,7 @@ export class AdminDashboardComponent implements OnInit {
     this.selectedStoredHistory = [];
     this.activeDetailsTab = 'current';
     this.showServiceDetailsModal = true;
-    
+
     // Fetch History
     this.billService.getServiceBillHistory(service.serviceNumber).subscribe(history => {
       this.selectedServiceHistory = history;
@@ -3229,7 +3249,7 @@ export class AdminDashboardComponent implements OnInit {
       this.toast.error('No services registered for auto-sync.');
       return;
     }
-    
+
     this.isSyncing = true;
     this.toast.info('Starting deep sync with service providers...');
 
@@ -3238,7 +3258,7 @@ export class AdminDashboardComponent implements OnInit {
       if (!profile?.uid) return;
       this.billService.syncBillsFromServers(profile.uid).subscribe({
         next: (async (resPromise) => {
-           await resPromise;
+          await resPromise;
         })
       });
     });
@@ -3253,7 +3273,7 @@ export class AdminDashboardComponent implements OnInit {
     allServices.forEach(service => {
       this.handleFetchLiveBill(service);
     });
-    
+
     // Global loader stops when all triggered (individual loaders continue on cards)
     setTimeout(() => this.isSyncing = false, 1000);
   }
@@ -3263,6 +3283,16 @@ export class AdminDashboardComponent implements OnInit {
       if (!profile?.uid) return;
       this.billService.getStoredRecords(profile.uid, this.selectedStoredYear).subscribe(recs => {
         this.storedRecords = recs;
+
+        // Populate archiveAvailableYears
+        this.billService.getStoredRecords(profile.uid).subscribe(allRecs => {
+          const years = new Set<number>();
+          years.add(new Date().getFullYear());
+          allRecs.forEach(r => {
+            if (r.year) years.add(r.year);
+          });
+          this.archiveAvailableYears = Array.from(years).sort((a, b) => b - a);
+        });
       });
     });
   }
@@ -3277,8 +3307,8 @@ export class AdminDashboardComponent implements OnInit {
     if (!profile?.uid) return;
 
     try {
-      await this.billService.addStoredRecord({
-        consumerName: service.consumerName || 'Unnamed',
+      await this.billService.autoStoreBillRecord({
+        consumerName: service.consumerName || service.title || 'Unnamed',
         serviceNumber: service.serviceNumber,
         amount: service.lastAmount,
         date: new Date().toISOString().split('T')[0],
@@ -3340,14 +3370,14 @@ export class AdminDashboardComponent implements OnInit {
 
   async handleAddToTracker() {
     if (!this.selectedLiveBill) return;
-    
+
     const profile = await firstValueFrom(this.authService.userProfile$);
     if (!profile?.uid) return;
 
     try {
       const now = new Date();
       const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-      
+
       // Parse the date if it's in DD-MMM-YY format
       let isoDueDate = now.toISOString().split('T')[0];
       if (this.selectedLiveBill.dueDate && this.selectedLiveBill.dueDate !== '--') {
@@ -3355,9 +3385,9 @@ export class AdminDashboardComponent implements OnInit {
         if (parts.length === 3) {
           const day = parts[0];
           const monthIndex = monthNames.indexOf(parts[1].toUpperCase());
-          const year = "20" + parts[2]; 
+          const year = "20" + parts[2];
           if (monthIndex !== -1) {
-             isoDueDate = new Date(Number(year), monthIndex, Number(day)).toISOString().split('T')[0];
+            isoDueDate = new Date(Number(year), monthIndex, Number(day)).toISOString().split('T')[0];
           }
         }
       }
@@ -3383,11 +3413,11 @@ export class AdminDashboardComponent implements OnInit {
       // 2. Update the Tracked Service card with latest info
       const service = this.trackedServices.find(s => s.serviceNumber === this.selectedLiveBill.uniqueServiceNumber);
       if (service?.id) {
-         await this.billService.updateTrackedService(service.id, {
-           lastAmount: this.selectedLiveBill.totalAmountPayable,
-           lastDueDate: this.selectedLiveBill.dueDate,
-           consumerName: this.selectedLiveBill.consumerName
-         });
+        await this.billService.updateTrackedService(service.id, {
+          lastAmount: this.selectedLiveBill.totalAmountPayable,
+          lastDueDate: this.selectedLiveBill.dueDate,
+          consumerName: this.selectedLiveBill.consumerName
+        });
       }
 
       this.toast.success('Bill added to tracker and stats updated!');
@@ -3899,9 +3929,6 @@ export class AdminDashboardComponent implements OnInit {
     this.router.navigate(['/admin/manage-admins']);
   }
 
-  goToGame() {
-    this.router.navigate(['/car']);
-  }
 
   migrationUsername: string = '';
 
@@ -3976,6 +4003,7 @@ export class AdminDashboardComponent implements OnInit {
           this.toast.success('Admin password updated successfully!');
           this.passwordForm.reset();
           this.activeTab = 'chitti';
+          this.activeMobileMenu = 'chitti';
         }
       } catch (e) {
         this.toast.error('Failed to update password.');
@@ -4144,7 +4172,7 @@ export class AdminDashboardComponent implements OnInit {
 
   async sendAllReminders() {
     const dueLoans = this.interests.filter(loan => this.isLoanReminderDue(loan));
-    
+
     if (dueLoans.length === 0) {
       this.toast.info('No reminders due at this time.');
       return;
@@ -4161,7 +4189,7 @@ export class AdminDashboardComponent implements OnInit {
       for (const loan of dueLoans) {
         const nextDue = this.nextLoanDueDate(loan);
         const amountDue = this.getPendingInterestForLoan(loan);
-        
+
         const success = await this.notificationService.sendReminder(
           loan.borrowerPhone,
           loan.borrowerName,
@@ -4170,7 +4198,7 @@ export class AdminDashboardComponent implements OnInit {
           nextDue,
           'whatsapp' // Default to WhatsApp via API
         );
-        
+
         if (success) successCount++;
       }
       this.toast.success(`Processed ${successCount} reminders.`);
@@ -4216,7 +4244,7 @@ export class AdminDashboardComponent implements OnInit {
   sendLoanReminder(loan: InterestScheme, type: 'whatsapp' | 'sms' = 'whatsapp') {
     const nextDue = this.nextLoanDueDate(loan);
     const amountDue = this.getPendingInterestForLoan(loan);
-    
+
     this.notificationService.sendReminder(
       loan.borrowerPhone,
       loan.borrowerName,
@@ -4267,7 +4295,7 @@ export class AdminDashboardComponent implements OnInit {
 
   handleFetchLiveBill(service: TrackedService) {
     if (!service.id || service.serviceType !== 'electricity') return;
-    
+
     this.syncingServices[service.id] = true;
     this.isFetchingLiveBill = true;
 
@@ -4287,7 +4315,20 @@ export class AdminDashboardComponent implements OnInit {
             address: details.address,
             sectionName: details.sectionName
           });
-          this.toast.success(`Live details updated for ${service.provider}`);
+
+          // AUTO STORE RECORD
+          const profile = await firstValueFrom(this.authService.userProfile$);
+          if (profile?.uid && details.totalAmountPayable > 0) {
+            await this.billService.autoStoreBillRecord({
+              consumerName: details.consumerName || service.title || 'Unnamed',
+              serviceNumber: service.serviceNumber,
+              amount: details.totalAmountPayable,
+              date: new Date().toISOString().split('T')[0],
+              adminUid: profile.uid
+            });
+          }
+
+          this.toast.success(`Live details updated and archived for ${service.provider}`);
         } else {
           this.toast.error(`Could not reach billing server for ${service.serviceNumber}`);
         }

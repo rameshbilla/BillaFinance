@@ -13,7 +13,7 @@ import { Router } from '@angular/router';
    standalone: true,
    imports: [CommonModule, ReactiveFormsModule, FormsModule],
    template: `
-    <div class="min-h-screen bg-slate-50 dark:bg-gray-950 transition-colors duration-500 pb-20">
+    <div class="min-h-screen bg-slate-50 dark:bg-gray-950 transition-colors duration-500 pb-20 overflow-x-hidden w-full">
       <!-- Header -->
       <nav class="sticky top-0 z-50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 animate-fade-down">
         <div class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">

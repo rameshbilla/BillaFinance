@@ -11,7 +11,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, CountUpDirective],
   template: `
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300 overflow-x-hidden w-full">
       <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700 shadow-sm px-4 sm:px-6 lg:px-8 py-4 animate-fade-down">
         <div class="flex items-center space-x-4">
            <button (click)="goBack()" class="text-gray-500 hover:text-pink-600 transition-colors">
