@@ -18,6 +18,7 @@ import {
 import { Observable, from, of, firstValueFrom } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { TspdclService } from './tspdcl.service';
+import { HmwssbService } from './hmwssb.service';
 
 export interface BillPaymentRecord {
   date: string;        // ISO date string
@@ -86,6 +87,7 @@ export interface StoredBillRecord {
 export class BillService {
   private firestore = inject(Firestore);
   private tspdclService = inject(TspdclService);
+  private hmwssbService = inject(HmwssbService);
   private billsCollection = collection(this.firestore, 'bills');
   private trackedServicesCollection = collection(this.firestore, 'tracked_services');
   private storedRecordsCollection = collection(this.firestore, 'stored_bill_records');
@@ -299,6 +301,38 @@ export class BillService {
             }
           } catch (e) {
             console.error('Failed to fetch live TSPDCL bill:', e);
+          }
+        }
+
+        // --- WATER BILL (HMWSSB) ---
+        if (service.serviceType === 'water') {
+          try {
+            const waterBill = await firstValueFrom(this.hmwssbService.fetchBillDetails(service.serviceNumber));
+            if (waterBill && waterBill.success) {
+              billData = {
+                serviceType: 'water',
+                provider: service.provider || 'HMWSSB',
+                serviceNumber: service.serviceNumber,
+                amount: waterBill.totalAmountPayable || 0,
+                dueDate: waterBill.dueDate !== '--'
+                  ? waterBill.dueDate
+                  : new Date(now.getFullYear(), now.getMonth(), 28).toISOString().split('T')[0],
+                status: 'pending',
+                notes: `Auto-synced from HMWSSB for ${waterBill.consumerName}. Arrears: ₹${waterBill.arrearsAmount}, Current: ₹${waterBill.currentMonthAmount}`,
+                adminUid: adminUid
+              };
+
+              // Auto-store in archives
+              await this.autoStoreBillRecord({
+                consumerName: waterBill.consumerName || service.title || 'Unnamed',
+                serviceNumber: service.serviceNumber,
+                amount: waterBill.totalAmountPayable || 0,
+                date: new Date().toISOString().split('T')[0],
+                adminUid: adminUid
+              });
+            }
+          } catch (e) {
+            console.error('Failed to fetch live HMWSSB water bill:', e);
           }
         }
 
