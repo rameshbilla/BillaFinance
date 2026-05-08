@@ -60,10 +60,34 @@ import { AuthService } from '../services/auth.service';
         </div>
       </div>
 
-      <!-- Touch Controls -->
-      <div class="touch-controls">
-        <div class="left-zone" (touchstart)="touchMove(-1)" (touchend)="touchMove(0)" (mousedown)="touchMove(-1)" (mouseup)="touchMove(0)"></div>
-        <div class="right-zone" (touchstart)="touchMove(1)" (touchend)="touchMove(0)" (mousedown)="touchMove(1)" (mouseup)="touchMove(0)"></div>
+      <!-- Touch Controls with Indicators -->
+      <div class="touch-controls" *ngIf="isPlaying">
+        <div class="left-zone" (touchstart)="touchMove(-1)" (touchend)="touchMove(0)" (mousedown)="touchMove(-1)" (mouseup)="touchMove(0)">
+          <div class="touch-indicator">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            <span>STEER LEFT</span>
+          </div>
+        </div>
+        <div class="right-zone" (touchstart)="touchMove(1)" (touchend)="touchMove(0)" (mousedown)="touchMove(1)" (mouseup)="touchMove(0)">
+          <div class="touch-indicator">
+            <span>STEER RIGHT</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls Intro Overlay -->
+      <div class="controls-intro" *ngIf="isPlaying && showControlsIntro">
+        <div class="intro-content">
+          <div class="intro-item">
+            <div class="tap-icon"></div>
+            <p>TAP LEFT TO STEER</p>
+          </div>
+          <div class="intro-item">
+            <div class="tap-icon"></div>
+            <p>TAP RIGHT TO STEER</p>
+          </div>
+        </div>
       </div>
 
       <!-- Scanline overlay for retro effect -->
@@ -295,11 +319,109 @@ import { AuthService } from '../services/auth.service';
 
     .left-zone, .right-zone {
       flex: 1;
-      opacity: 0;
+      position: relative;
       -webkit-tap-highlight-color: transparent;
     }
 
-    .top-controls {
+    .touch-indicator {
+      position: absolute;
+      bottom: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      color: rgba(0, 255, 255, 0.2);
+      pointer-events: none;
+      transition: all 0.3s;
+      width: 100%;
+    }
+    
+    .touch-indicator svg {
+      width: 32px;
+      height: 32px;
+      filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.3));
+    }
+
+    .touch-indicator span {
+      font-size: 8px;
+      letter-spacing: 1px;
+      font-weight: bold;
+      opacity: 0.6;
+    }
+
+    .left-zone:active .touch-indicator, .right-zone:active .touch-indicator {
+      color: #0ff;
+      transform: scale(1.1);
+      opacity: 1;
+    }
+
+    /* Controls Intro Overlay */
+    .controls-intro {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 55;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none;
+      backdrop-filter: blur(2px);
+      animation: fadeOut 3s forwards;
+    }
+
+    .intro-content {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+      padding: 0 40px;
+    }
+
+    .intro-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .tap-icon {
+      width: 60px;
+      height: 60px;
+      border: 2px solid #0ff;
+      border-radius: 50%;
+      position: relative;
+      animation: pulse 1.5s infinite;
+    }
+
+    .tap-icon::after {
+      content: '';
+      position: absolute;
+      inset: 10px;
+      border: 1px solid #f0f;
+      border-radius: 50%;
+      opacity: 0.5;
+    }
+
+    .intro-item p {
+      color: #fff;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-align: center;
+      text-shadow: 0 0 10px #0ff;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(0, 255, 255, 0.4); }
+      70% { transform: scale(1.1); opacity: 0.5; box-shadow: 0 0 0 20px rgba(0, 255, 255, 0); }
+      100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(0, 255, 255, 0); }
+    }
+
+    @keyframes fadeOut {
+      0% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    .back-btn {
       position: absolute;
       top: 15px;
       right: 15px;
@@ -381,6 +503,7 @@ export class CarGameComponent implements AfterViewInit, OnDestroy {
   score = 0;
   level = 1;
   showLevelUp = false;
+  showControlsIntro = false;
   animationId = 0;
   Math = Math; // for template
   
@@ -570,6 +693,12 @@ export class CarGameComponent implements AfterViewInit, OnDestroy {
     this.powerups = [];
     this.hasShield = false;
     this.ghostTimer = 0;
+    this.showControlsIntro = true;
+    
+    // Hide intro after 3 seconds
+    setTimeout(() => {
+      this.showControlsIntro = false;
+    }, 3000);
     
     this.player.x = this.width / 2 - this.player.width / 2;
     this.player.targetX = this.player.x;

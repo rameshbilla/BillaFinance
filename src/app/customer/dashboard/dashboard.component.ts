@@ -76,6 +76,14 @@ Chart.register(zoomPlugin);
       @media (max-width: 639px) {
         .chart-touch-wrapper { touch-action: none; }
       }
+
+      @keyframes neon-pulse {
+        0%, 100% { color: #f97316; filter: drop-shadow(0 0 2px #f97316); transform: scale(1); }
+        25% { color: #00ffaa; filter: drop-shadow(0 0 8px #00ffaa); }
+        50% { color: #f0f; filter: drop-shadow(0 0 10px #f0f); transform: scale(1.1); }
+        75% { color: #0ff; filter: drop-shadow(0 0 8px #0ff); }
+      }
+      .game-icon-pulse { animation: neon-pulse 4s infinite ease-in-out; }
     </style>
 
     <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-950 transition-colors duration-500 pb-32 sm:pb-0 relative overflow-x-hidden w-full">
@@ -98,10 +106,13 @@ Chart.register(zoomPlugin);
               <button (click)="activeTab = 'security'; activeMobileMenu = 'security'" class="p-2 text-gray-500 hover:text-indigo-600 transition-colors hidden sm:block" title="Security & Password">
                 <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
               </button>
-              <!-- Game Button -->
-              <button (click)="goToGame()" class="p-2 text-orange-500 hover:text-orange-600 transition-colors hidden sm:flex items-center gap-2" title="Play Game">
-                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <span class="text-xs font-black uppercase tracking-widest">Game</span>
+              <button (click)="goToGame()" class="p-2 transition-all hidden sm:flex items-center gap-2 group" title="Play Neon Racer">
+                <div class="game-icon-pulse">
+                  <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 17h.01M5 17h.01M3 13h18M5 10l2-4h10l2 4M3 13l1 4h16l1-4m-18 0h18M5 17h.01M19 17h.01" />
+                  </svg>
+                </div>
+                <span class="text-xs font-black uppercase tracking-widest group-hover:text-orange-400 transition-colors">Racing</span>
               </button>
               <button (click)="toggleTheme()" class="p-2 text-gray-500 hover:text-purple-600 transition-colors">
                 <svg *ngIf="!isDarkMode" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
@@ -525,13 +536,13 @@ Chart.register(zoomPlugin);
                </svg>
             </div>
 
-            <!-- Game (Mobile) -->
             <div (click)="goToGame()" 
                  class="nav-item-box">
-               <svg class="w-7 h-7 nav-icon icon-inactive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-               </svg>
+               <div class="game-icon-pulse">
+                 <svg class="w-7 h-7 nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                   <path stroke-linecap="round" stroke-linejoin="round" d="M19 17h.01M5 17h.01M3 13h18M5 10l2-4h10l2 4M3 13l1 4h16l1-4m-18 0h18M5 17h.01M19 17h.01" />
+                 </svg>
+               </div>
             </div>
 
             <!-- Security/Settings -->
