@@ -7,5 +7,14 @@
       "^/api/tspdcl": ""
     },
     "logLevel": "debug"
+  },
+  "/api/hmwssb": {
+    "target": "https://www.hyderabadwater.gov.in",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/hmwssb": ""
+    },
+    "logLevel": "debug"
   }
 }

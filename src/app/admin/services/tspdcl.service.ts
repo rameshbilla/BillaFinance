@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, catchError, of } from 'rxjs';
+import { Capacitor } from '@capacitor/core';
 
 export interface TspdclBillDetails {
   consumerName: string;
@@ -23,21 +24,35 @@ export interface TspdclBillDetails {
 })
 export class TspdclService {
   private http = inject(HttpClient);
-  // Using local proxy configured in proxy.conf.json to bypass CORS professionally
-  private localProxyPath = '/api/tspdcl/billinginfo';
+  
+  private get baseUrl() {
+    // For native platforms, we use the absolute URL. 
+    // CapacitorHttp (enabled in config) will automatically handle this call using native networking.
+    return Capacitor.getPlatform() === 'web' ? '/api/tspdcl' : 'https://www.tgsouthernpower.org';
+  }
 
   fetchBillDetails(uscNo: string): Observable<TspdclBillDetails | null> {
-    const fullUrl = `${this.localProxyPath}?ukscno=${uscNo}&submit=SUBMIT`;
+    const fullUrl = `${this.baseUrl}/billinginfo?ukscno=${uscNo}&submit=SUBMIT`;
 
-    return this.http.get(fullUrl, { responseType: 'text' }).pipe(
+    return this.http.get(fullUrl, { 
+      responseType: 'text',
+      headers: {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Cache-Control': 'no-cache'
+      }
+    }).pipe(
       map(html => {
-        if (html) {
-          return this.parseTspdclHtml(html, uscNo);
+        if (html && html.length > 100) { // Basic check for meaningful content
+          const parsed = this.parseTspdclHtml(html, uscNo);
+          if (parsed && parsed.totalAmountPayable >= 0) {
+            return parsed;
+          }
         }
+        console.error('TSPDCL: Received invalid or empty HTML response.');
         return null;
       }),
       catchError(err => {
-        console.error('TSPDCL Local Proxy Error:', err);
+        console.error('TSPDCL Connection Error:', err);
         return of(null);
       })
     );

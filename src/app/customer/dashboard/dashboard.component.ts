@@ -39,7 +39,7 @@ Chart.register(zoomPlugin);
       
       .bottom-nav-pill {
         display: flex;
-        width: max-content;
+        width: 100%;
         min-width: 100%;
         height: 64px;
         padding-bottom: env(safe-area-inset-bottom, 0);
@@ -47,7 +47,7 @@ Chart.register(zoomPlugin);
       }
       .nav-item-box {
         flex: 1 1 0%;
-        min-width: 64px;
+        min-width: 48px;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -87,7 +87,7 @@ Chart.register(zoomPlugin);
       .game-icon-pulse { animation: neon-pulse 4s infinite ease-in-out; }
     </style>
 
-    <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-950 transition-colors duration-500 pb-32 sm:pb-0 relative overflow-x-hidden w-full">
+    <div class="min-h-screen bg-[#f8fafc] dark:bg-gray-950 transition-colors duration-500 pb-32 sm:pb-0 relative overflow-x-hidden w-full max-w-full-mobile">
       <!-- Decorative Background Glows (Match Login Screen) -->
       <div class="absolute top-0 left-0 w-96 h-96 bg-purple-600/20 dark:bg-purple-600/10 rounded-full mix-blend-screen filter blur-[128px] pointer-events-none"></div>
       <div class="absolute bottom-0 right-0 w-96 h-96 bg-pink-600/20 dark:bg-pink-600/10 rounded-full mix-blend-screen filter blur-[128px] pointer-events-none"></div>
@@ -518,8 +518,8 @@ Chart.register(zoomPlugin);
       </main>
 
       <!-- Bottom Mobile Nav -->
-      <div class="fixed bottom-0 left-0 right-0 z-[100] sm:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-colors duration-500">
-         <div class="bottom-nav-pill pointer-events-auto relative flex items-center px-4">
+      <div class="fixed bottom-0 left-0 right-0 z-[100] sm:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-colors duration-500 pb-safe">
+         <div class="bottom-nav-pill pointer-events-auto relative flex items-center px-4 overflow-hidden">
             
             <div class="absolute inset-1 flex pointer-events-none z-0">
                <div [style.flex-grow]="activeMobileMenu === 'home' ? 0 : (activeMobileMenu === 'security' ? 2 : 1)" class="transition-all duration-500 ease-in-out"></div>

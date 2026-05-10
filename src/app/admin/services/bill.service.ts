@@ -18,6 +18,7 @@ import {
 import { Observable, from, of, firstValueFrom } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { TspdclService } from './tspdcl.service';
+import { HmwssbService } from './hmwssb.service';
 
 export interface BillPaymentRecord {
   date: string;        // ISO date string
@@ -86,6 +87,7 @@ export interface StoredBillRecord {
 export class BillService {
   private firestore = inject(Firestore);
   private tspdclService = inject(TspdclService);
+  private hmwssbService = inject(HmwssbService);
   private billsCollection = collection(this.firestore, 'bills');
   private trackedServicesCollection = collection(this.firestore, 'tracked_services');
   private storedRecordsCollection = collection(this.firestore, 'stored_bill_records');
@@ -299,6 +301,33 @@ export class BillService {
             }
           } catch (e) {
             console.error('Failed to fetch live TSPDCL bill:', e);
+          }
+        } else if (service.serviceType === 'water') {
+          try {
+            const liveBill = await firstValueFrom(this.hmwssbService.fetchBillDetails(service.serviceNumber));
+            if (liveBill && liveBill.success) {
+              billData = {
+                serviceType: 'water',
+                provider: service.provider,
+                serviceNumber: service.serviceNumber,
+                amount: liveBill.totalAmountPayable || 0,
+                dueDate: liveBill.dueDate || new Date(now.getFullYear(), now.getMonth(), 20).toISOString().split('T')[0],
+                status: 'pending',
+                notes: `Auto-synced from HMWSSB website for ${liveBill.consumerName}.`,
+                adminUid: adminUid
+              };
+
+              // Auto-store in archives
+              await this.autoStoreBillRecord({
+                consumerName: liveBill.consumerName || service.title || 'Unnamed',
+                serviceNumber: service.serviceNumber,
+                amount: liveBill.totalAmountPayable || 0,
+                date: new Date().toISOString().split('T')[0],
+                adminUid: adminUid
+              });
+            }
+          } catch (e) {
+            console.error('Failed to fetch live HMWSSB bill:', e);
           }
         }
 
