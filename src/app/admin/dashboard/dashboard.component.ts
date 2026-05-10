@@ -3086,7 +3086,8 @@ export class AdminDashboardComponent implements OnInit {
     this.loadData();
   }
 
-  loadAdmins() {
+    async loadAdmins() {
+
     const adminQuery = query(collection(this.firestore, 'users'), where('role', '==', 'admin'));
     collectionData(adminQuery).subscribe(data => {
       this.admins = data as UserProfile[];

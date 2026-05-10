@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Auth, signOut, user, RecaptchaVerifier, signInWithPhoneNumber } from '@angular/fire/auth';
-import { Firestore, doc, setDoc, getDoc, docData, updateDoc } from '@angular/fire/firestore';
+import { Firestore, doc, setDoc, getDoc, getDocs, docData, updateDoc } from '@angular/fire/firestore';
+import { enableNetwork, getDocFromServer, getDocsFromServer } from 'firebase/firestore';
 import { Observable, of, switchMap, BehaviorSubject, map, startWith, catchError } from 'rxjs';
 import { BiometricService } from './biometric.service';
 
@@ -44,16 +45,46 @@ export class AuthService {
     })
   );
 
-  private async getDocWithRetry(ref: any, maxRetries = 2): Promise<any> {
+  public async getDocWithRetry(ref: any, maxRetries = 2): Promise<any> {
     let lastError;
     for (let i = 0; i <= maxRetries; i++) {
       try {
+        // On second retry, try to force network
+        if (i === 1) {
+          await enableNetwork(this.firestore).catch(() => {});
+          return await getDocFromServer(ref);
+        }
         return await getDoc(ref);
       } catch (error: any) {
         lastError = error;
         const msg = error.message?.toLowerCase() || '';
         if ((msg.includes('offline') || msg.includes('network')) && i < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          // Force network re-enable
+          await enableNetwork(this.firestore).catch(() => {});
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          continue;
+        }
+        throw error;
+      }
+    }
+    throw lastError;
+  }
+
+  public async getDocsWithRetry(q: any, maxRetries = 2): Promise<any> {
+    let lastError;
+    for (let i = 0; i <= maxRetries; i++) {
+      try {
+        if (i === 1) {
+          await enableNetwork(this.firestore).catch(() => {});
+          return await getDocsFromServer(q);
+        }
+        return await getDocs(q);
+      } catch (error: any) {
+        lastError = error;
+        const msg = error.message?.toLowerCase() || '';
+        if ((msg.includes('offline') || msg.includes('network')) && i < maxRetries) {
+          await enableNetwork(this.firestore).catch(() => {});
+          await new Promise(resolve => setTimeout(resolve, 2000));
           continue;
         }
         throw error;

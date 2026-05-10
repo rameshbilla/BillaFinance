@@ -158,11 +158,22 @@ export class ManageAdminsComponent implements OnInit {
       this.loadCustomers();
    }
 
-   loadAdmins() {
+   async loadAdmins() {
       const adminQuery = query(collection(this.firestore, 'users'), where('role', '==', 'admin'));
-      collectionData(adminQuery).subscribe(data => {
-         this.admins = data as UserProfile[];
-      });
+      
+      try {
+         // Initial fetch with retry
+         const snap = await this.authService.getDocsWithRetry(adminQuery);
+         this.admins = snap.docs.map((d: any) => ({ uid: d.id, ...d.data() } as UserProfile));
+         
+         // Setup real-time listener as secondary
+         collectionData(adminQuery).subscribe(data => {
+            this.admins = data as UserProfile[];
+         });
+      } catch (e) {
+         console.error('Failed to load admins:', e);
+         this.toast.error('Could not load admin list. Please check your connection.');
+      }
    }
 
    loadCustomers() {
