@@ -546,15 +546,18 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                                      <svg class="w-4 h-4" [class.animate-spin]="service.id && syncingServices[service.id]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                   </button>
                                   <button (click)="openServiceDetails(service)" class="p-2 text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-xl transition-all" title="View History & Insights">
-                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
                                   </button>
-                                  <a *ngIf="service.serviceType === 'electricity' || service.serviceType === 'water'" 
-                                     [href]="service.serviceType === 'electricity' ? 'https://www.tgsouthernpower.org/billinginfo?ukscno=' + service.serviceNumber + '&submit=SUBMIT' : 'https://www.hyderabadwater.gov.in/en/index.php/customer-care/online-bill-payment/'" 
-                                     target="_blank" 
-                                     class="p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-xl transition-all" 
-                                     [title]="'View Portal for ' + service.serviceNumber">
-                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                  <a *ngIf="service.serviceType === 'electricity'" [href]="'https://www.tgsouthernpower.org/billinginfo?ukscno=' + service.serviceNumber + '&submit=SUBMIT'" target="_blank"
+                                     class="p-2 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-xl transition-all" [title]="'View Portal for ' + service.serviceNumber">
+                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                   </a>
+                                  @if (service.serviceType === 'water') {
+                                    <button (click)="openWaterBill(service.serviceNumber)"
+                                       class="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all" [title]="'View Portal for ' + service.serviceNumber">
+                                       <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                    </button>
+                                  }
                                   <button (click)="openServiceForm(service)" class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all" title="Edit">
                                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                   </button>
@@ -564,15 +567,13 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                                </div>
                             </div>
 
-                            <p class="text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-1">{{ service.serviceType }}</p>
-                            <h4 class="text-xl font-black text-gray-900 dark:text-white truncate leading-tight mb-1">{{ service.title || service.provider }}</h4>
-                            <p class="text-sm font-bold text-gray-500 dark:text-gray-400 truncate mb-1" *ngIf="service.consumerName">{{ service.consumerName }}</p>
-                            
-                            
+                            <h4 class="text-xl font-black text-gray-900 dark:text-white truncate leading-tight mb-0.5">{{ service.title || service.provider }}</h4>
                             <div class="flex items-center gap-2 mb-6">
-                               <div class="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full">
-                                  <span class="text-[10px] font-black text-gray-500 dark:text-gray-400">#{{ service.serviceNumber }}</span>
-                               </div>
+                               <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">{{ service.serviceNumber }}</p>
+                               @if (service.consumerName) {
+                                  <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                                  <p class="text-[9px] font-black text-indigo-500 uppercase tracking-tighter truncate max-w-[100px]">{{ service.consumerName }}</p>
+                               }
                                <div *ngIf="service.lastSynced" class="flex items-center gap-1 text-[9px] font-bold text-green-500">
                                   <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
                                   SYNCED
@@ -585,7 +586,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                               <div class="bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
                                  <div class="flex justify-between items-end">
                                     <div>
-                                       <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Payable Amount</p>
+                                       <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{{ service.serviceType === 'water' ? 'Total Arrears' : 'Payable Amount' }}</p>
                                        <p class="text-2xl font-black text-gray-900 dark:text-white">₹{{ service.lastAmount }}</p>
                                     </div>
                                     <div class="text-right">
@@ -600,10 +601,15 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                                         Store Record
                                      </button>
                                   </div>
-                                  <a *ngIf="service.lastAmount && (service.serviceType === 'electricity' || service.serviceType === 'water')" 
-                                     [href]="service.serviceType === 'electricity' ? 'https://www.tgsouthernpower.org/online-bill-payment?uscno=' + service.serviceNumber : 'https://www.hyderabadwater.gov.in/en/index.php/customer-care/online-bill-payment/'" 
-                                     target="_blank"
+                                  <button *ngIf="service.lastAmount && service.serviceType === 'water'"
+                                     (click)="openWaterBill(service.serviceNumber)"
                                      class="px-4 py-2 bg-indigo-600 text-white text-[10px] font-black rounded-xl shadow-lg shadow-indigo-600/20 uppercase tracking-widest hover:scale-105 transition-all">
+                                     Pay Now
+                                  </button>
+                                  <a *ngIf="service.lastAmount && service.serviceType === 'electricity'" 
+                                     [href]="'https://www.tgsouthernpower.org/online-bill-payment?uscno=' + service.serviceNumber" 
+                                     target="_blank"
+                                     class="px-4 py-2 bg-orange-600 text-white text-[10px] font-black rounded-xl shadow-lg shadow-orange-600/20 uppercase tracking-widest hover:scale-105 transition-all">
                                      Pay Now
                                   </a>
                                </div>
@@ -1738,7 +1744,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                        @if (selectedTrackedService.lastAmount) {
                           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <div class="bg-indigo-50 dark:bg-indigo-900/20 p-8 rounded-[2rem] border border-indigo-100 dark:border-indigo-800 flex flex-col justify-center">
-                                <p class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2">Total Amount Payable</p>
+                                <p class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2">{{ selectedTrackedService.serviceType === 'water' ? 'Total Arrears Balance' : 'Total Amount Payable' }}</p>
                                 <p class="text-5xl font-black text-indigo-600 dark:text-indigo-400 tracking-tighter" [appCountUp]="selectedTrackedService.lastAmount" prefix="₹"></p>
                              </div>
                              <div class="space-y-4">
@@ -3212,7 +3218,15 @@ export class AdminDashboardComponent implements OnInit {
 
     // Fetch History
     this.billService.getServiceBillHistory(service.serviceNumber).subscribe(history => {
-      this.selectedServiceHistory = history;
+      // Deduplicate history items by month and year to prevent duplicate rendering
+      const uniqueHistory = new Map<string, Bill>();
+      history.forEach(bill => {
+        const key = `${bill.month}-${bill.year}`;
+        if (!uniqueHistory.has(key)) {
+          uniqueHistory.set(key, bill);
+        }
+      });
+      this.selectedServiceHistory = Array.from(uniqueHistory.values());
     });
 
     // Fetch Stored Records History
@@ -4373,8 +4387,8 @@ export class AdminDashboardComponent implements OnInit {
         this.isFetchingLiveBill = false;
         if (details) {
           this.selectedLiveBill = details;
-          this.showLiveBillModal = true;
-          document.body.classList.add('modal-open');
+          // this.showLiveBillModal = true;
+          // document.body.classList.add('modal-open');
 
           const updateData: any = {
             lastAmount: details.totalAmountPayable,
@@ -4446,6 +4460,24 @@ export class AdminDashboardComponent implements OnInit {
   closeAccountsModal() {
     this.showAccountsModal = false;
     document.body.classList.remove('modal-open');
+  }
+
+  openWaterBill(can: string) {
+    // Create a hidden form to perform a POST request to BillDesk
+    // This allows us to jump directly to the 2nd screen (bill details)
+    const form = document.body.appendChild(document.createElement('form'));
+    form.method = 'POST';
+    form.action = 'https://www.billdesk.com/pgidsk/pgmerc/hmwssb/HMWSSBNPaymentoption.jsp';
+    form.target = '_blank';
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'canNumber';
+    input.value = can;
+    form.appendChild(input);
+
+    form.submit();
+    document.body.removeChild(form);
   }
 }
 

@@ -20,34 +20,39 @@ export interface HmwssbBillDetails {
 export class HmwssbService {
   private http = inject(HttpClient);
   
-  private get baseUrl() {
-    // For native platforms, we use the absolute URL. 
-    // CapacitorHttp (enabled in config) will automatically handle this call using native networking.
-    return Capacitor.getPlatform() === 'web' ? '/api/hmwssb' : 'https://www.hyderabadwater.gov.in';
+  private get billdeskUrl() {
+    return Capacitor.getPlatform() === 'web' ? '/api/billdesk' : 'https://www.billdesk.com';
   }
 
   fetchBillDetails(can: string): Observable<HmwssbBillDetails | null> {
-    const fullUrl = `${this.baseUrl}/en/index.php/customer-care/online-bill-payment/?can=${can}`;
+    // New specific endpoint approach to resolve proxy 404s
+    const fullUrl = Capacitor.getPlatform() === 'web' 
+      ? '/api/billdesk-water' 
+      : 'https://billdesk.com/pgidsk/pgmerc/hmwssb/HMWSSBNPaymentoption.jsp';
+      
+    const body = new URLSearchParams();
+    body.set('canNumber', can);
 
-    return this.http.get(fullUrl, { 
+    return this.http.post(fullUrl, body.toString(), { 
       responseType: 'text',
       headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
         'Cache-Control': 'no-cache'
       }
     }).pipe(
       map(html => {
-        if (html && html.length > 200) { // HMWSSB page is usually larger
+        if (html && html.length > 200) { 
           const parsed = this.parseHmwssbHtml(html, can);
-          if (parsed && parsed.totalAmountPayable >= 0) {
+          if (parsed && (parsed.totalAmountPayable >= 0 || (parsed.consumerName && parsed.consumerName !== 'Unknown'))) {
             return parsed;
           }
         }
-        console.error('HMWSSB: Received invalid or empty HTML response.');
+        console.error('HMWSSB: Received invalid response from BillDesk Payment Option page.');
         return null;
       }),
       catchError(err => {
-        console.error('HMWSSB Connection Error:', err);
+        console.error('HMWSSB BillDesk Fetch Error:', err);
         return of(null);
       })
     );
@@ -57,8 +62,10 @@ export class HmwssbService {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     
-    if (html.includes('Invalid') || html.includes('not found')) {
-      return null;
+    // Target the specific container provided by the user
+    const container = doc.querySelector('.content-container');
+    if (!container) {
+      console.warn('HMWSSB: .content-container not found in response. Falling back to body search.');
     }
 
     try {
@@ -68,31 +75,50 @@ export class HmwssbService {
         can: can,
         address: '',
         totalAmountPayable: 0,
-        dueDate: '--',
+        dueDate: 'Check Portal',
         success: true
       };
 
-      const rows = Array.from(doc.querySelectorAll('tr, div, span'));
+      // Search for specific label/content pairs
+      const searchScope = container || doc.body;
+      const labels = Array.from(searchScope.querySelectorAll('.label.col'));
       
-      rows.forEach(row => {
-        const text = row.textContent?.trim() || '';
-        const lowerText = text.toLowerCase();
+      labels.forEach(labelEl => {
+        const labelText = labelEl.textContent?.trim().toLowerCase() || '';
+        const contentEl = labelEl.nextElementSibling;
+        if (!contentEl) return;
+        
+        const contentText = contentEl.textContent?.trim() || '';
 
-        if (lowerText.includes('consumer name')) {
-          details.consumerName = this.extractValueAfterColon(text) || details.consumerName;
-        }
-        if (lowerText.includes('total payable') || lowerText.includes('amount payable') || lowerText.includes('total amount')) {
-          const amtStr = text.replace(/[^\d.]/g, '');
-          const amt = parseFloat(amtStr);
+        if (labelText.includes('name')) {
+          details.consumerName = contentText || details.consumerName;
+        } else if (labelText.includes('total arrears')) {
+          const amt = parseFloat(contentText.replace(/[^\d.]/g, ''));
           if (!isNaN(amt)) details.totalAmountPayable = amt;
-        }
-        if (lowerText.includes('due date')) {
-          details.dueDate = this.extractValueAfterColon(text) || details.dueDate;
-        }
-        if (lowerText.includes('address')) {
-          details.address = this.extractValueAfterColon(text) || details.address;
+        } else if (labelText.includes('address')) {
+          details.address = contentText || details.address;
+        } else if (labelText.includes('due date')) {
+          details.dueDate = contentText || details.dueDate;
         }
       });
+
+      // Secondary fallback if specific classes failed
+      if (details.consumerName === 'Unknown' || details.totalAmountPayable === 0) {
+        const allElements = Array.from(searchScope.querySelectorAll('div, td, span'));
+        allElements.forEach(el => {
+          const text = el.textContent?.trim() || '';
+          const lowerText = text.toLowerCase();
+          
+          if (details.consumerName === 'Unknown' && lowerText.includes('name :')) {
+            details.consumerName = this.extractValueAfterColon(text);
+          }
+          if (details.totalAmountPayable === 0 && (lowerText.includes('total arrears :') || lowerText.includes('total amount :'))) {
+            const val = this.extractValueAfterColon(text);
+            const amt = parseFloat(val.replace(/[^\d.]/g, ''));
+            if (!isNaN(amt)) details.totalAmountPayable = amt;
+          }
+        });
+      }
 
       return details;
     } catch (e) {

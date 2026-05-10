@@ -169,15 +169,33 @@ export class BillService {
     return collectionData(q, { idField: 'id' }) as Observable<Bill[]>;
   }
 
-  addBill(bill: Partial<Bill>): Promise<any> {
+  async addBill(bill: Partial<Bill>): Promise<any> {
     const date = new Date(bill.dueDate!);
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+
+    // Prevent duplicate entries for the same service and month/year
+    if (bill.serviceNumber) {
+      const q = query(
+        this.billsCollection,
+        where('serviceNumber', '==', bill.serviceNumber),
+        where('month', '==', month),
+        where('year', '==', year),
+        where('isDeleted', '!=', true)
+      );
+      const existing = await firstValueFrom(collectionData(q, { idField: 'id' }).pipe(map(docs => docs)));
+      if (existing && existing.length > 0) {
+        console.warn('Bill already exists for this month. Skipping duplicate creation.');
+        return { success: false, id: existing[0]['id'], duplicate: true };
+      }
+    }
 
     const newBill = {
       ...bill,
       status: bill.status || 'pending',
-      year: date.getFullYear(),
-      month: months[date.getMonth()],
+      year: year,
+      month: month,
       isDeleted: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
