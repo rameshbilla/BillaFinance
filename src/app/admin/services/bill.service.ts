@@ -65,7 +65,10 @@ export interface TrackedService {
   altServiceNumber?: string;
   lastSynced?: any;
   lastAmount?: number;
+  lastAmountLabel?: string;
   lastDueDate?: string;
+  lastPaidDate?: string;
+  lastBillStatus?: 'paid' | 'pending';
   adminUid: string;
 }
 
@@ -284,26 +287,57 @@ export class BillService {
       );
 
       const existingData = await new Promise<any[]>(res => {
-         const sub = collectionData(existingQ).subscribe(data => {
+         const sub = collectionData(existingQ, { idField: 'id' }).subscribe(data => {
            res(data);
            sub.unsubscribe();
          });
       });
 
+      let liveBill: any = null;
+      if (service.serviceType === 'electricity') {
+        try {
+          liveBill = await firstValueFrom(this.tspdclService.fetchBillDetails(service.serviceNumber));
+        } catch (e) {
+          console.error('Failed to fetch live TSPDCL bill:', e);
+        }
+      } else if (service.serviceType === 'water') {
+        try {
+          liveBill = await firstValueFrom(this.hmwssbService.fetchBillDetails(service.serviceNumber));
+        } catch (e) {
+          console.error('Failed to fetch live HMWSSB bill:', e);
+        }
+      }
+
+      if (existingData.length > 0) {
+        const existingBill = existingData[0] as Bill;
+        if (existingBill.id && liveBill?.isPaid && liveBill.paidAmount !== undefined) {
+          await this.updateBill(existingBill.id, {
+            status: 'completed',
+            paidDate: this.toIsoBillDate(liveBill.paidDate) || new Date().toISOString().split('T')[0],
+            paidAmount: liveBill.paidAmount,
+            totalPaid: liveBill.paidAmount,
+            amount: liveBill.paidAmount || existingBill.amount,
+            notes: `${existingBill.notes || ''} Paid status confirmed from live billing portal.`.trim()
+          });
+        }
+        continue;
+      }
+
       if (existingData.length === 0) {
         let billData: Partial<Bill> | null = null;
 
         if (service.serviceType === 'electricity') {
-          try {
-            const liveBill = await firstValueFrom(this.tspdclService.fetchBillDetails(service.serviceNumber));
             if (liveBill && liveBill.success) {
               billData = {
                 serviceType: 'electricity',
                 provider: service.provider,
                 serviceNumber: service.serviceNumber,
                 amount: liveBill.totalAmountPayable || 0,
-                dueDate: liveBill.dueDate || new Date(now.getFullYear(), now.getMonth(), 15).toISOString().split('T')[0],
-                status: 'pending',
+                dueDate: this.toIsoBillDate(liveBill.dueDate) || new Date(now.getFullYear(), now.getMonth(), 15).toISOString().split('T')[0],
+                status: liveBill.isPaid ? 'completed' : 'pending',
+                paidDate: liveBill.isPaid ? (this.toIsoBillDate(liveBill.paidDate) || new Date().toISOString().split('T')[0]) : undefined,
+                paidAmount: liveBill.isPaid ? liveBill.paidAmount || liveBill.totalAmountPayable || 0 : undefined,
+                totalPaid: liveBill.isPaid ? liveBill.paidAmount || liveBill.totalAmountPayable || 0 : undefined,
                 notes: `Auto-synced from TGSPDCL website for ${liveBill.consumerName}.`,
                 adminUid: adminUid
               };
@@ -317,20 +351,18 @@ export class BillService {
                 adminUid: adminUid
               });
             }
-          } catch (e) {
-            console.error('Failed to fetch live TSPDCL bill:', e);
-          }
         } else if (service.serviceType === 'water') {
-          try {
-            const liveBill = await firstValueFrom(this.hmwssbService.fetchBillDetails(service.serviceNumber));
             if (liveBill && liveBill.success) {
               billData = {
                 serviceType: 'water',
                 provider: service.provider,
                 serviceNumber: service.serviceNumber,
                 amount: liveBill.totalAmountPayable || 0,
-                dueDate: liveBill.dueDate || new Date(now.getFullYear(), now.getMonth(), 20).toISOString().split('T')[0],
-                status: 'pending',
+                dueDate: this.toIsoBillDate(liveBill.dueDate) || new Date(now.getFullYear(), now.getMonth(), 20).toISOString().split('T')[0],
+                status: liveBill.isPaid ? 'completed' : 'pending',
+                paidDate: liveBill.isPaid ? (this.toIsoBillDate(liveBill.paidDate) || new Date().toISOString().split('T')[0]) : undefined,
+                paidAmount: liveBill.isPaid ? liveBill.paidAmount || liveBill.totalAmountPayable || 0 : undefined,
+                totalPaid: liveBill.isPaid ? liveBill.paidAmount || liveBill.totalAmountPayable || 0 : undefined,
                 notes: `Auto-synced from HMWSSB website for ${liveBill.consumerName}.`,
                 adminUid: adminUid
               };
@@ -344,9 +376,6 @@ export class BillService {
                 adminUid: adminUid
               });
             }
-          } catch (e) {
-            console.error('Failed to fetch live HMWSSB bill:', e);
-          }
         }
 
         // Fallback or other service types
@@ -380,6 +409,27 @@ export class BillService {
       'subject:(payment OR paid OR receipt OR confirmation OR bill)'
     ].filter(Boolean).join(' ');
     return `https://mail.google.com/mail/#search/${encodeURIComponent(query)}`;
+  }
+
+  private toIsoBillDate(value?: string): string | undefined {
+    if (!value || value === '--' || value === 'Check Portal') return undefined;
+
+    const trimmed = value.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+
+    const match = trimmed.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{2}|\d{4})$/);
+    if (!match) return undefined;
+
+    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const monthIndex = months.indexOf(match[2].toUpperCase());
+    if (monthIndex === -1) return undefined;
+
+    const year = match[3].length === 2 ? Number(`20${match[3]}`) : Number(match[3]);
+    const day = Number(match[1]);
+    const date = new Date(year, monthIndex, day);
+    if (Number.isNaN(date.getTime())) return undefined;
+
+    return `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   }
 
   // --- Stored Bill Records ---

@@ -24,6 +24,7 @@ export interface RentalHouse {
   renterName: string;
   renterPhone: string;
   arrivedDate: string;
+  fullAddress?: string;
   
   electricMeterNo?: string;
   waterBillNo?: string;

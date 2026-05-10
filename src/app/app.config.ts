@@ -8,8 +8,10 @@ import { routes } from './app.routes';
 import { environment } from '../environments/environment';
 import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { provideAuth, getAuth } from '@angular/fire/auth';
-import { provideFirestore, getFirestore } from '@angular/fire/firestore';
+import { provideFirestore, getFirestore, initializeFirestore } from '@angular/fire/firestore';
+import { persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { provideStorage, getStorage } from '@angular/fire/storage';
+import { Capacitor } from '@capacitor/core';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -18,7 +20,18 @@ export const appConfig: ApplicationConfig = {
     provideAnimations(),
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     provideAuth(() => getAuth()),
-    provideFirestore(() => getFirestore()),
+    provideFirestore(() => {
+      if (Capacitor.isNativePlatform()) {
+        return initializeFirestore(getAuth().app, {
+          experimentalForceLongPolling: true,
+          localCache: persistentLocalCache({
+            tabManager: persistentMultipleTabManager()
+          })
+        });
+      }
+
+      return getFirestore();
+    }),
     provideStorage(() => getStorage()),
     provideHttpClient(),
     provideCharts(withDefaultRegisterables())

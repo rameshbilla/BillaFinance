@@ -192,11 +192,6 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
             RENTALS
           </button>
-          <button *ngIf="!isSuperAdmin && showBillsTab" (click)="activeTab = 'archives'; activeMobileMenu = 'archives'; loadStoredRecords()"
-                  [class.tab-active]="activeTab === 'archives'"
-                  class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
-            ARCHIVES
-          </button>
           <button (click)="activeTab = 'security'; activeMobileMenu = 'security'"
                   [class.tab-active]="activeTab === 'security'"
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
@@ -436,6 +431,26 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
         @if (!isSuperAdmin && activeTab === 'bills' && showBillsTab) {
           <div class="card-animate" style="animation-delay:0.05s">
             
+            <!-- Bills KPI Grid -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+               <div class="bg-indigo-50/50 dark:bg-indigo-900/20 p-6 rounded-[2rem] border border-indigo-100/50 dark:border-indigo-800/30">
+                  <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Total Pending</p>
+                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none">₹{{ billStats.pendingAmount }}</p>
+               </div>
+               <div class="bg-amber-50/50 dark:bg-amber-900/20 p-6 rounded-[2rem] border border-amber-100/50 dark:border-amber-800/30">
+                  <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">Electricity Total</p>
+                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none">₹{{ billStats.electricityTotal }}</p>
+               </div>
+               <div class="bg-blue-50/50 dark:bg-blue-900/20 p-6 rounded-[2rem] border border-blue-100/50 dark:border-blue-800/30">
+                  <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Water Arrears</p>
+                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none">₹{{ billStats.waterTotal }}</p>
+               </div>
+               <div class="bg-emerald-50/50 dark:bg-emerald-900/20 p-6 rounded-[2rem] border border-emerald-100/50 dark:border-emerald-800/30">
+                  <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Paid Bills</p>
+                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none">₹{{ billStats.paidThisMonthAmount }}</p>
+               </div>
+            </div>
+            
             <!-- Tracked Services Summary -->
             <div class="mb-12">
                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 px-2">
@@ -478,6 +493,30 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                           <option value="other">Other</option>
                        </select>
                        <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+
+                    <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/80 p-1 rounded-xl border border-gray-200 dark:border-gray-700/50">
+                      <button type="button" (click)="billStatusFilter = 'all'"
+                              class="px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+                              [class.bg-white]="billStatusFilter === 'all'"
+                              [class.dark:bg-gray-700]="billStatusFilter === 'all'"
+                              [class.shadow-sm]="billStatusFilter === 'all'"
+                              [class.text-indigo-600]="billStatusFilter === 'all'"
+                              [class.text-gray-500]="billStatusFilter !== 'all'">All</button>
+                      <button type="button" (click)="billStatusFilter = 'unpaid'"
+                              class="px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+                              [class.bg-white]="billStatusFilter === 'unpaid'"
+                              [class.dark:bg-gray-700]="billStatusFilter === 'unpaid'"
+                              [class.shadow-sm]="billStatusFilter === 'unpaid'"
+                              [class.text-rose-600]="billStatusFilter === 'unpaid'"
+                              [class.text-gray-500]="billStatusFilter !== 'unpaid'">Unpaid</button>
+                      <button type="button" (click)="billStatusFilter = 'paid'"
+                              class="px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+                              [class.bg-white]="billStatusFilter === 'paid'"
+                              [class.dark:bg-gray-700]="billStatusFilter === 'paid'"
+                              [class.shadow-sm]="billStatusFilter === 'paid'"
+                              [class.text-emerald-600]="billStatusFilter === 'paid'"
+                              [class.text-gray-500]="billStatusFilter !== 'paid'">Paid</button>
                     </div>
                     <button (click)="handleSyncBills()" [disabled]="isSyncing" class="px-5 py-2.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-100 transition-all flex items-center gap-2">
                        <svg class="h-3.5 w-3.5" [class.animate-spin]="isSyncing" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -586,12 +625,14 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                               <div class="bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
                                  <div class="flex justify-between items-end">
                                     <div>
-                                       <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{{ service.serviceType === 'water' ? 'Total Arrears' : 'Payable Amount' }}</p>
-                                       <p class="text-2xl font-black text-gray-900 dark:text-white">₹{{ service.lastAmount }}</p>
+                                       <p class="text-[9px] font-black uppercase tracking-widest mb-1"
+                                          [class]="isTrackedServicePaid(service) ? 'text-emerald-500' : 'text-gray-400'">{{ service.lastAmountLabel || (service.serviceType === 'water' ? 'Total Arrears' : 'Payable Amount') }}</p>
+                                       <p class="text-2xl font-black"
+                                          [class]="isTrackedServicePaid(service) ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white'">₹{{ service.lastAmount }}</p>
                                     </div>
                                     <div class="text-right">
-                                       <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Due Date</p>
-                                       <p class="text-xs font-black text-rose-500">{{ service.lastDueDate }}</p>
+                                       <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{{ isTrackedServicePaid(service) ? 'Paid Date' : 'Due Date' }}</p>
+                                       <p class="text-xs font-black" [class]="isTrackedServicePaid(service) ? 'text-emerald-500' : 'text-rose-500'">{{ getTrackedServiceDisplayDate(service) }}</p>
                                     </div>
                                  </div>
                                  <div class="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
@@ -601,17 +642,11 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                                         Store Record
                                      </button>
                                   </div>
-                                  <button *ngIf="service.lastAmount && service.serviceType === 'water'"
-                                     (click)="openWaterBill(service.serviceNumber)"
-                                     class="px-4 py-2 bg-indigo-600 text-white text-[10px] font-black rounded-xl shadow-lg shadow-indigo-600/20 uppercase tracking-widest hover:scale-105 transition-all">
-                                     Pay Now
-                                  </button>
-                                  <a *ngIf="service.lastAmount && service.serviceType === 'electricity'" 
-                                     [href]="'https://www.tgsouthernpower.org/online-bill-payment?uscno=' + service.serviceNumber" 
-                                     target="_blank"
-                                     class="px-4 py-2 bg-orange-600 text-white text-[10px] font-black rounded-xl shadow-lg shadow-orange-600/20 uppercase tracking-widest hover:scale-105 transition-all">
-                                     Pay Now
-                                  </a>
+                                  <button *ngIf="service.lastAmount && !isTrackedServicePaid(service)"
+                                      (click)="handlePayNow(service)"
+                                      [class]="service.serviceType === 'water' ? 'px-4 py-2 bg-indigo-600 text-white text-[10px] font-black rounded-xl shadow-lg shadow-indigo-600/20 uppercase tracking-widest hover:scale-105 transition-all' : 'px-4 py-2 bg-orange-600 text-white text-[10px] font-black rounded-xl shadow-lg shadow-orange-600/20 uppercase tracking-widest hover:scale-105 transition-all'">
+                                      Pay Now
+                                   </button>
                                </div>
                               </div>
                             } @else {
@@ -648,8 +683,10 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                           </div>
                         </div>
                         <div class="text-right">
-                          <p class="text-lg font-black text-gray-900 dark:text-white tracking-tighter">₹{{ service.lastAmount || 0 }}</p>
-                          <p class="text-[9px] font-black text-rose-500 uppercase tracking-widest">{{ service.lastDueDate || 'No Due' }}</p>
+                          <p class="text-lg font-black tracking-tighter"
+                             [class]="isTrackedServicePaid(service) ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white'">₹{{ service.lastAmount || 0 }}</p>
+                          <p class="text-[9px] font-black uppercase tracking-widest"
+                             [class]="isTrackedServicePaid(service) ? 'text-emerald-500' : 'text-rose-500'">{{ getTrackedServiceDisplayDate(service) }}</p>
                         </div>
                       </div>
                     }
@@ -1181,66 +1218,6 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
           </div>
         }
 
-        <!-- ═══════════ BILL ARCHIVES (Stored Records) ═══════════ -->
-        @if (!isSuperAdmin && activeTab === 'archives') {
-          <div class="card-animate" style="animation-delay:0.05s">
-            <div class="mb-8">
-               <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Yearly Bill Archives</h2>
-               <p class="text-sm font-medium text-gray-500 mt-1">Centralized list of all manually archived bill snapshots.</p>
-            </div>
-
-            <div class="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                   <div class="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-2xl p-2 shadow-sm border border-gray-100 dark:border-gray-700 w-full sm:w-auto">
-                      <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest pl-2">ARCHIVE YEAR</span>
-                      <select [(ngModel)]="selectedStoredYear" (ngModelChange)="loadStoredRecords()"
-                              class="bg-transparent border-none outline-none text-xs font-black text-indigo-600 dark:text-indigo-400 pr-8 cursor-pointer uppercase flex-1 sm:flex-none">
-                         <option *ngFor="let y of archiveAvailableYears" [value]="y">{{y}} Records</option>
-                      </select>
-                   </div>
-                   <div class="px-6 py-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl border border-indigo-100 dark:border-indigo-800/50">
-                      <p class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">{{ storedRecords.length }} Archived Entries</p>
-                   </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                   @for (record of storedRecords; track record.id) {
-                      <div class="bg-white dark:bg-gray-900 p-8 rounded-[3rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex justify-between items-center group relative overflow-hidden">
-                         <div class="absolute -right-12 -top-12 w-24 h-24 bg-indigo-50 dark:bg-indigo-900/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
-                         
-                         <div class="flex items-center gap-5 relative z-10">
-                            <div class="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-inner">
-                               <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                            </div>
-                            <div>
-                               <h4 class="text-base font-black text-gray-900 dark:text-white leading-tight truncate max-w-[150px] uppercase tracking-tighter">{{ record.consumerName }}</h4>
-                               <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">{{ record.date | date:'dd MMM yyyy' }} • #{{ record.serviceNumber }}</p>
-                            </div>
-                         </div>
-                         <div class="flex items-center gap-5 relative z-10">
-                            <div class="text-right">
-                               <p class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter">₹{{ record.amount }}</p>
-                               <span class="text-[9px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 dark:bg-indigo-900/40 px-2 py-0.5 rounded-md">{{ record.month }}</span>
-                            </div>
-                            <button (click)="handleDeleteStoredRecord(record.id!)" class="p-3 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-2xl transition-all opacity-0 group-hover:opacity-100">
-                               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                            </button>
-                         </div>
-                      </div>
-                   }
-                   @if (storedRecords.length === 0) {
-                      <div class="col-span-full py-32 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-[4rem] bg-gray-50/30 dark:bg-gray-800/10">
-                         <div class="w-20 h-20 bg-gray-100 dark:bg-gray-800/50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-300 dark:text-gray-700">
-                            <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
-                         </div>
-                         <h4 class="text-xl font-black text-gray-300 dark:text-gray-700 uppercase tracking-tighter">No Archives Found</h4>
-                         <p class="text-xs font-black text-gray-400 uppercase tracking-widest mt-2">There are no stored records for the year {{ selectedStoredYear }}</p>
-                      </div>
-                   }
-                </div>
-             </div>
-          </div>
-        }
         <!-- ═══════════ RENTALS MANAGEMENT (Admin Only) ═══════════ -->
         @if (!isSuperAdmin && activeTab === 'rentals' && showRentalsTab) {
           <div class="card-animate space-y-8" style="animation-delay:0.05s">
@@ -1300,56 +1277,71 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
               </div>
 
               <!-- House Grid -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 @for (house of houses; track house.id) {
-                  <div class="bg-white dark:bg-gray-800 p-6 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
+                  <div class="bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all group relative overflow-hidden h-full flex flex-col"
                         [class.ring-2]="activeHouseId === house.id" [class.ring-indigo-500]="activeHouseId === house.id">
                       
-                      <div class="absolute top-0 right-0 p-4 flex gap-2">
+                      <!-- Status Badges -->
+                      <div class="absolute top-5 right-5 flex gap-1.5">
                         @if (isRentIncreaseDue(house)) {
-                            <span class="text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-tighter bg-amber-50 text-amber-600 border border-amber-100 animate-pulse">
-                              Increase Due
+                            <span class="text-[7px] font-black px-2 py-1 rounded-lg uppercase tracking-widest bg-amber-500 text-white shadow-lg shadow-amber-500/20 animate-pulse">
+                              Increase
                             </span>
                         }
-                        <span class="text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-tighter"
-                              [ngClass]="house.status === 'Occupied' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'">
+                        <span class="text-[7px] font-black px-2 py-1 rounded-lg uppercase tracking-widest shadow-sm"
+                              [ngClass]="house.status === 'Occupied' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-500'">
                             {{ house.status }}
                         </span>
                       </div>
 
-                      <h3 class="text-xl font-black text-gray-900 dark:text-white mb-2">{{ house.houseName }}</h3>
-                      <div class="space-y-4 mb-6">
-                        <div class="flex items-center justify-between pb-3 border-b border-gray-50 dark:border-gray-800/50">
-                            <div class="flex items-center gap-2">
-                              <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                              <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Rent Collected</span>
-                            </div>
-                            <span class="text-xs font-black text-gray-900 dark:text-white" [appCountUp]="getHouseStats(house).collected" prefix="₹"></span>
+                      <!-- Icon & Title -->
+                      <div class="flex items-start gap-3 mb-4 pr-24 min-h-[74px]">
+                        <div class="w-11 h-11 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
+                          <svg class="w-5.5 h-5.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                         </div>
-                        
-                        <div class="flex items-center justify-between pb-3 border-b border-gray-50 dark:border-gray-800/50">
-                            <div class="flex items-center gap-2">
-                              <div class="w-2 h-2 rounded-full bg-blue-500"></div>
-                              <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Occupancy</span>
-                            </div>
-                            <span class="text-xs font-black text-gray-900 dark:text-white">{{ getHouseStats(house).months }} Mons</span>
-                        </div>
-
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                              <div class="w-2 h-2 rounded-full bg-red-500"></div>
-                              <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Pending</span>
-                            </div>
-                            <span class="text-xs font-black text-red-600" [appCountUp]="getHouseStats(house).pending" prefix="₹"></span>
+                        <div class="min-w-0 flex-1">
+                          <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none truncate">{{ house.houseName }}</h3>
+                          <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1.5 leading-snug overflow-hidden" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;" [title]="house.fullAddress || ''">{{ house.fullAddress || 'Address Not Set' }}</p>
+                          <p class="text-[8px] font-black text-indigo-500/60 uppercase tracking-widest mt-1.5">Arrived: {{ house.arrivedDate | date:'dd MMM yyyy' }}</p>
                         </div>
                       </div>
 
-                      <div class="flex items-center gap-4">
-                        <button (click)="viewHouseBills(house.id!)" class="flex-1 py-4 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 transition-all">Billing History</button>
-                        <div class="flex gap-2">
-                            <button (click)="openRentalHouseForm(house)" class="w-10 h-10 flex items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-400 hover:text-indigo-600 rounded-xl transition-all"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
-                            <button (click)="deleteRentalHouse(house.id!)" class="w-10 h-10 flex items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-400 hover:text-red-500 rounded-xl transition-all"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                      <div class="grid grid-cols-2 gap-2 mb-4 bg-gray-50/70 dark:bg-gray-900/30 p-3 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div class="min-w-0">
+                            <span class="block text-[8px] font-black text-gray-400 uppercase tracking-widest truncate">Electric</span>
+                            <span class="block text-sm font-black leading-tight"
+                                  [class]="isHouseUtilityPaid(house, 'electricity') ? 'text-emerald-500' : 'text-amber-500'">₹{{ getHouseUtilityBill(house, 'electricity') }}</span>
+                            @if (getHouseUtilityPaidDate(house, 'electricity')) {
+                              <span class="block text-[7px] font-black text-emerald-500 uppercase tracking-widest truncate">Paid {{ getHouseUtilityPaidDate(house, 'electricity') }}</span>
+                            }
                         </div>
+                        <div class="min-w-0">
+                            <span class="block text-[8px] font-black text-gray-400 uppercase tracking-widest truncate">Water</span>
+                            <span class="block text-sm font-black leading-tight"
+                                  [class]="isHouseUtilityPaid(house, 'water') ? 'text-emerald-500' : 'text-blue-500'">₹{{ getHouseUtilityBill(house, 'water') }}</span>
+                            @if (getHouseUtilityPaidDate(house, 'water')) {
+                              <span class="block text-[7px] font-black text-emerald-500 uppercase tracking-widest truncate">Paid {{ getHouseUtilityPaidDate(house, 'water') }}</span>
+                            }
+                        </div>
+                        <div class="min-w-0 pt-2 border-t border-gray-100 dark:border-gray-800">
+                            <span class="block text-[8px] font-black text-gray-400 uppercase tracking-widest truncate">Pending</span>
+                            <span class="block text-sm font-black text-rose-500 leading-tight" [appCountUp]="getHouseStats(house).pending" prefix="₹"></span>
+                        </div>
+                        <div class="min-w-0 pt-2 border-t border-gray-100 dark:border-gray-800">
+                            <span class="block text-[8px] font-black text-gray-400 uppercase tracking-widest truncate">Collected</span>
+                            <span class="block text-sm font-black text-green-500 leading-tight" [appCountUp]="getHouseStats(house).collected" prefix="₹"></span>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center gap-2 mt-auto">
+                        <button (click)="viewHouseBills(house.id!)" class="flex-1 py-3 bg-gray-900 dark:bg-white dark:text-gray-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg transition-all hover:opacity-90">Ledger</button>
+                        <button (click)="openRentalHouseForm(house)" class="p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-100 transition-all">
+                          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        </button>
+                        <button (click)="deleteRentalHouse(house.id!)" class="p-3 bg-rose-50 dark:bg-rose-900/20 text-rose-500 rounded-xl hover:bg-rose-100 transition-all">
+                          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
                       </div>
                   </div>
                 }
@@ -1696,7 +1688,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                      </div>
                      <div>
-                        <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">{{ selectedTrackedService.provider }}</h3>
+                        <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">{{ selectedTrackedService.title || selectedTrackedService.provider }}</h3>
                         <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">#{{ selectedTrackedService.serviceNumber }} • {{ selectedTrackedService.consumerName || 'Unnamed' }}</p>
                      </div>
                   </div>
@@ -1723,19 +1715,21 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                     <div class="">
                        <!-- Service Identification Card -->
                        <div class="bg-gray-50 dark:bg-gray-800/30 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 mb-8 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-                          <div class="flex flex-col">
-                             <span class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5">Service ID (Alphanumeric)</span>
-                             <span class="text-base font-black text-gray-900 dark:text-white uppercase">{{ selectedTrackedService.altServiceNumber || 'N/A' }}</span>
-                          </div>
-                          <div class="flex flex-col">
-                             <span class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5">ERO / Office</span>
-                             <span class="text-base font-black text-gray-900 dark:text-white uppercase">{{ selectedTrackedService.ero || 'N/A' }}</span>
-                          </div>
-                          <div class="flex flex-col">
-                             <span class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5">Section Name</span>
-                             <span class="text-base font-black text-gray-900 dark:text-white uppercase">{{ selectedTrackedService.sectionName || 'N/A' }}</span>
-                          </div>
-                          <div class="flex flex-col">
+                          @if (selectedTrackedService.serviceType !== 'water') {
+                             <div class="flex flex-col">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5">Service ID (Alphanumeric)</span>
+                                <span class="text-base font-black text-gray-900 dark:text-white uppercase">{{ selectedTrackedService.altServiceNumber || 'N/A' }}</span>
+                             </div>
+                             <div class="flex flex-col">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5">ERO / Office</span>
+                                <span class="text-base font-black text-gray-900 dark:text-white uppercase">{{ selectedTrackedService.ero || 'N/A' }}</span>
+                             </div>
+                             <div class="flex flex-col">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5">Section Name</span>
+                                <span class="text-base font-black text-gray-900 dark:text-white uppercase">{{ selectedTrackedService.sectionName || 'N/A' }}</span>
+                             </div>
+                          }
+                          <div class="flex flex-col {{ selectedTrackedService.serviceType === 'water' ? 'md:col-span-2' : '' }}">
                              <span class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1.5">Full Address</span>
                              <span class="text-base font-black text-gray-900 dark:text-white uppercase leading-snug">{{ selectedTrackedService.address || 'N/A' }}</span>
                           </div>
@@ -1743,14 +1737,21 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
                        @if (selectedTrackedService.lastAmount) {
                           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             <div class="bg-indigo-50 dark:bg-indigo-900/20 p-8 rounded-[2rem] border border-indigo-100 dark:border-indigo-800 flex flex-col justify-center">
-                                <p class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2">{{ selectedTrackedService.serviceType === 'water' ? 'Total Arrears Balance' : 'Total Amount Payable' }}</p>
-                                <p class="text-5xl font-black text-indigo-600 dark:text-indigo-400 tracking-tighter" [appCountUp]="selectedTrackedService.lastAmount" prefix="₹"></p>
+                             <div class="p-8 rounded-[2rem] flex flex-col justify-center"
+                                  [class]="isTrackedServicePaid(selectedTrackedService) ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800' : 'bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800'">
+                                <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-2"
+                                   [class]="isTrackedServicePaid(selectedTrackedService) ? 'text-emerald-400' : 'text-indigo-400'">{{ selectedTrackedService.lastAmountLabel || (selectedTrackedService.serviceType === 'water' ? 'Total Arrears Balance' : 'Total Amount Payable') }}</p>
+                                <p class="text-5xl font-black tracking-tighter"
+                                   [class]="isTrackedServicePaid(selectedTrackedService) ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'"
+                                   [appCountUp]="selectedTrackedService.lastAmount" prefix="₹"></p>
                              </div>
                              <div class="space-y-4">
-                                <div class="p-6 bg-rose-50 dark:bg-rose-900/20 rounded-3xl border border-rose-100 dark:border-rose-800">
-                                   <p class="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Due Date</p>
-                                   <p class="text-xl font-black text-rose-600 dark:text-rose-400">{{ selectedTrackedService.lastDueDate }}</p>
+                                <div class="p-6 rounded-3xl"
+                                     [class]="isTrackedServicePaid(selectedTrackedService) ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800' : 'bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800'">
+                                   <p class="text-[9px] font-black uppercase tracking-widest mb-1"
+                                      [class]="isTrackedServicePaid(selectedTrackedService) ? 'text-emerald-400' : 'text-rose-400'">{{ isTrackedServicePaid(selectedTrackedService) ? 'Paid Date' : 'Due Date' }}</p>
+                                   <p class="text-xl font-black"
+                                      [class]="isTrackedServicePaid(selectedTrackedService) ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">{{ getTrackedServiceDisplayDate(selectedTrackedService) }}</p>
                                 </div>
                                 <div class="flex gap-3">
                                    <div class="flex-1 p-6 bg-emerald-50 dark:bg-emerald-900/20 rounded-3xl border border-emerald-100 dark:border-emerald-800 flex justify-between items-center">
@@ -1875,16 +1876,17 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                        @if (selectedLiveBill.ero) { · {{ selectedLiveBill.ero }} }
                      </p>
                   </div>
-                  <div class="bg-indigo-600 p-6 rounded-3xl text-white shadow-lg shadow-indigo-600/20 relative overflow-hidden">
+                  <div class="p-6 rounded-3xl text-white shadow-lg relative overflow-hidden"
+                       [class]="isLiveBillPaid(selectedLiveBill) ? 'bg-emerald-600 shadow-emerald-600/20' : 'bg-indigo-600 shadow-indigo-600/20'">
                      <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
                      <div class="relative z-10 flex justify-between items-center">
                         <div>
-                           <p class="text-[10px] font-black text-indigo-100 uppercase tracking-widest mb-1">Amount Due</p>
+                           <p class="text-[10px] font-black text-white/80 uppercase tracking-widest mb-1">{{ selectedLiveBill.amountLabel || 'Amount Due' }}</p>
                            <p class="text-3xl font-black">₹{{ selectedLiveBill.totalAmountPayable }}</p>
                         </div>
                         <div class="text-right">
-                           <p class="text-[10px] font-black text-indigo-100 uppercase tracking-widest mb-1">Due Date</p>
-                           <p class="text-base font-black">{{ selectedLiveBill.dueDate }}</p>
+                           <p class="text-[10px] font-black text-white/80 uppercase tracking-widest mb-1">{{ isLiveBillPaid(selectedLiveBill) ? 'Paid Date' : 'Due Date' }}</p>
+                           <p class="text-base font-black">{{ getLiveBillDisplayDate(selectedLiveBill) }}</p>
                         </div>
                      </div>
                   </div>
@@ -2064,6 +2066,10 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                                 <option value="Occupied">Occupied</option>
                                 <option value="Vacant">Vacant</option>
                              </select>
+                          </div>
+                          <div class="space-y-2 md:col-span-2">
+                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Full Address</label>
+                             <textarea formControlName="fullAddress" rows="3" placeholder="Enter complete property address" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold resize-none"></textarea>
                           </div>
                        </div>
 
@@ -2264,10 +2270,10 @@ export class AdminDashboardComponent implements OnInit {
   public biometricService = inject(BiometricService);
   private notificationService = inject(NotificationService);
 
-  activeTab: 'chitti' | 'interest' | 'customers' | 'security' | 'bills' | 'overview' | 'rentals' | 'archives' | '' = '';
+  activeTab: 'chitti' | 'interest' | 'customers' | 'security' | 'bills' | 'overview' | 'rentals' | '' = '';
   showOverviewData = false;
   isDarkMode = false;
-  activeMobileMenu: 'chitti' | 'interest' | 'customers' | 'security' | 'bills' | 'overview' | 'rentals' | 'archives' | '' = '';
+  activeMobileMenu: 'chitti' | 'interest' | 'customers' | 'security' | 'bills' | 'overview' | 'rentals' | '' = '';
   currentUserProfile: UserProfile | null = null;
 
   get showInterestTab() { return this.isSuperAdmin || this.currentUserProfile?.tabConfig?.interest !== false; }
@@ -2283,7 +2289,9 @@ export class AdminDashboardComponent implements OnInit {
   billStats = {
     pendingAmount: 0,
     dueTodayCount: 0,
-    paidThisMonthAmount: 0
+    paidThisMonthAmount: 0,
+    electricityTotal: 0,
+    waterTotal: 0
   };
 
   // Stored Records
@@ -2298,6 +2306,7 @@ export class AdminDashboardComponent implements OnInit {
   editingBill?: Bill;
   trackedServices: TrackedService[] = [];
   serviceTypeFilter: string = 'all';
+  billStatusFilter: 'all' | 'paid' | 'unpaid' = 'all';
   showServiceModal = false;
   editingTrackedService?: TrackedService;
   trackedServiceForm: FormGroup;
@@ -2329,14 +2338,29 @@ export class AdminDashboardComponent implements OnInit {
   editingRentalId: string | null = null;
   activeHouseId: string | null = null;
   rentalView: 'houses' | 'ledger' = 'houses';
+  rentalUtilityBills: Record<string, {
+    electricity?: number;
+    water?: number;
+    electricityPaid?: boolean;
+    waterPaid?: boolean;
+    electricityPaidDate?: string;
+    waterPaidDate?: string;
+  }> = {};
   overviewFilter: 'All' | 'Loan Issue' | 'Interest' | 'Settlement' = 'All';
   readonly overviewFilters: ('All' | 'Loan Issue' | 'Interest' | 'Settlement')[] = ['All', 'Loan Issue', 'Interest', 'Settlement'];
   showMonthlyBillForm = false;
   monthlyBillForm: FormGroup;
 
   get filteredTrackedServices() {
-    if (this.serviceTypeFilter === 'all') return this.trackedServices;
-    return this.trackedServices.filter(s => s.serviceType === this.serviceTypeFilter);
+    return this.trackedServices.filter(service => {
+      const matchesType = this.serviceTypeFilter === 'all' || service.serviceType === this.serviceTypeFilter;
+      const isPaid = this.isTrackedServicePaid(service);
+      const matchesStatus = this.billStatusFilter === 'all'
+        || (this.billStatusFilter === 'paid' && isPaid)
+        || (this.billStatusFilter === 'unpaid' && !isPaid);
+
+      return matchesType && matchesStatus;
+    });
   }
   editingBillIndex: number | null = null;
 
@@ -2412,9 +2436,75 @@ export class AdminDashboardComponent implements OnInit {
   getHouseStats(house: RentalHouse) {
     const bills = house.bills || [];
     const collected = bills.filter(b => b.status === 'Paid').reduce((sum, b) => sum + (b.rentAmount || 0), 0);
-    const pending = bills.filter(b => b.status === 'Pending').reduce((sum, b) => sum + (b.total || 0), 0);
+    let pending = bills.filter(b => b.status === 'Pending').reduce((sum, b) => sum + (b.total || 0), 0);
     const months = bills.length;
+
+    // Automatic Pending Rent Logic
+    if (house.status === 'Occupied' && house.arrivedDate) {
+      const now = new Date();
+      const arrived = new Date(house.arrivedDate);
+      
+      // Starting from the arrival date, check every month until today
+      let tempDate = new Date(arrived.getFullYear(), arrived.getMonth(), arrived.getDate());
+      
+      while (tempDate <= now) {
+         const monthName = tempDate.toLocaleString('default', { month: 'long' });
+         const year = tempDate.getFullYear();
+         
+         const billExists = bills.some(b => b.month === monthName && b.year === year);
+         if (!billExists) {
+           pending += (house.monthlyRent || 0);
+         }
+         
+         // Move to next month safely
+         tempDate.setMonth(tempDate.getMonth() + 1);
+      }
+    }
+
     return { collected, pending, months };
+  }
+
+  getHouseUtilityBill(house: RentalHouse, type: 'electricity' | 'water'): number {
+    const serviceNo = type === 'electricity' ? house.electricMeterNo : house.waterBillNo;
+    if (!serviceNo) return 0;
+
+    const cachedAmount = house.id ? this.rentalUtilityBills[house.id]?.[type] : undefined;
+    if (cachedAmount !== undefined) return cachedAmount;
+    
+    const service = this.trackedServices.find(s => 
+      s.serviceNumber?.trim() === serviceNo.trim() && s.serviceType === type
+    );
+    return service?.lastAmount || 0;
+  }
+
+  isHouseUtilityPaid(house: RentalHouse, type: 'electricity' | 'water'): boolean {
+    if (!house.id) return false;
+
+    const cached = this.rentalUtilityBills[house.id];
+    if (cached) {
+      return type === 'electricity' ? cached.electricityPaid === true : cached.waterPaid === true;
+    }
+
+    const serviceNo = type === 'electricity' ? house.electricMeterNo : house.waterBillNo;
+    const service = this.trackedServices.find(s =>
+      s.serviceNumber?.trim() === serviceNo?.trim() && s.serviceType === type
+    );
+    return service ? this.isTrackedServicePaid(service) : false;
+  }
+
+  getHouseUtilityPaidDate(house: RentalHouse, type: 'electricity' | 'water'): string {
+    if (!house.id) return '';
+
+    const cached = this.rentalUtilityBills[house.id];
+    if (cached) {
+      return type === 'electricity' ? cached.electricityPaidDate || '' : cached.waterPaidDate || '';
+    }
+
+    const serviceNo = type === 'electricity' ? house.electricMeterNo : house.waterBillNo;
+    const service = this.trackedServices.find(s =>
+      s.serviceNumber?.trim() === serviceNo?.trim() && s.serviceType === type
+    );
+    return service?.lastPaidDate || '';
   }
 
   isRentIncreaseDue(house: RentalHouse): boolean {
@@ -2703,6 +2793,7 @@ export class AdminDashboardComponent implements OnInit {
       arrivedDate: [new Date().toISOString().split('T')[0], Validators.required],
       electricMeterNo: [''],
       waterBillNo: [''],
+      fullAddress: [''],
       lastRentIncreaseDate: [''],
       status: ['Occupied']
     });
@@ -3147,6 +3238,7 @@ export class AdminDashboardComponent implements OnInit {
         });
         this.billService.getTrackedServices(filterUid).subscribe(data => {
           this.trackedServices = data;
+          this.calculateBillStats();
         });
       }
       this.rentalService.getHouses(filterUid).subscribe(data => {
@@ -3165,32 +3257,35 @@ export class AdminDashboardComponent implements OnInit {
     this.billStats = {
       pendingAmount: 0,
       dueTodayCount: 0,
-      paidThisMonthAmount: 0
+      paidThisMonthAmount: 0,
+      electricityTotal: 0,
+      waterTotal: 0
     };
 
     // Use Tracked Services for Pending and Due Today as requested
     this.trackedServices.forEach(service => {
-      if (service.lastAmount) {
-        this.billStats.pendingAmount += service.lastAmount;
+      const amount = Number(service.lastAmount) || 0;
+      const isPaid = this.isTrackedServicePaid(service);
+
+      if (amount && isPaid) {
+        this.billStats.paidThisMonthAmount += amount;
+      }
+
+      if (amount && !isPaid) {
+        this.billStats.pendingAmount += amount;
+        
+        if (service.serviceType === 'electricity') {
+          this.billStats.electricityTotal += amount;
+        } else if (service.serviceType === 'water') {
+          this.billStats.waterTotal += amount;
+        }
       }
 
       // Check if due today
-      if (service.lastDueDate) {
+      if (!isPaid && service.lastDueDate) {
         // Try to parse DD-MMM-YY or match string
         if (service.lastDueDate === todayStr || this.isToday(service.lastDueDate)) {
           this.billStats.dueTodayCount++;
-        }
-      }
-    });
-
-    // Still use bills for Paid This Month (from historical records)
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    this.bills.forEach(bill => {
-      if (bill.status === 'completed') {
-        const bDate = new Date(bill.dueDate);
-        if (bDate.getMonth() === currentMonth && bDate.getFullYear() === currentYear) {
-          this.billStats.paidThisMonthAmount += bill.amount;
         }
       }
     });
@@ -3458,14 +3553,19 @@ export class AdminDashboardComponent implements OnInit {
         }
       }
 
+      const liveUtilityAmount = this.getLiveUtilityAmount(this.selectedLiveBill);
+
       // 1. Create a bill record
       const billData: any = {
         serviceType: 'electricity',
         provider: this.selectedLiveBill.consumerName,
         serviceNumber: this.selectedLiveBill.uniqueServiceNumber,
-        amount: this.selectedLiveBill.totalAmountPayable,
+        amount: liveUtilityAmount,
         dueDate: isoDueDate,
-        status: 'pending',
+        status: this.selectedLiveBill.isPaid ? 'completed' : 'pending',
+        paidDate: this.selectedLiveBill.isPaid ? this.parsePortalDate(this.selectedLiveBill.paidDate) || new Date().toISOString().split('T')[0] : undefined,
+        paidAmount: this.selectedLiveBill.isPaid ? liveUtilityAmount : undefined,
+        totalPaid: this.selectedLiveBill.isPaid ? liveUtilityAmount : undefined,
         month: monthNames[now.getMonth()],
         year: now.getFullYear(),
         adminUid: profile.uid,
@@ -3480,8 +3580,11 @@ export class AdminDashboardComponent implements OnInit {
       const service = this.trackedServices.find(s => s.serviceNumber === this.selectedLiveBill.uniqueServiceNumber);
       if (service?.id) {
         await this.billService.updateTrackedService(service.id, {
-          lastAmount: this.selectedLiveBill.totalAmountPayable,
+          lastAmount: liveUtilityAmount,
+          lastAmountLabel: this.selectedLiveBill.amountLabel || 'Payable Amount',
           lastDueDate: this.selectedLiveBill.dueDate,
+          lastPaidDate: this.isLiveBillPaid(this.selectedLiveBill) ? this.getLiveBillDisplayDate(this.selectedLiveBill) : '',
+          lastBillStatus: this.isLiveBillPaid(this.selectedLiveBill) ? 'paid' : 'pending',
           consumerName: this.selectedLiveBill.consumerName
         });
       }
@@ -4100,6 +4203,7 @@ export class AdminDashboardComponent implements OnInit {
         arrivedDate: house.arrivedDate,
         electricMeterNo: house.electricMeterNo || '',
         waterBillNo: house.waterBillNo || '',
+        fullAddress: house.fullAddress || '',
         lastRentIncreaseDate: house.lastRentIncreaseDate || '',
         status: house.status
       });
@@ -4154,6 +4258,10 @@ export class AdminDashboardComponent implements OnInit {
     this.activeHouseId = houseId;
     this.rentalView = 'ledger';
     this.scrollToTop();
+    const house = this.getActiveHouse();
+    if (house) {
+      this.syncRentalUtilityBills(house);
+    }
   }
 
   getActiveHouse(): RentalHouse | undefined {
@@ -4174,16 +4282,69 @@ export class AdminDashboardComponent implements OnInit {
         status: bill.status || 'Pending'
       });
     } else {
+      const electricAmount = this.getHouseUtilityBill(house, 'electricity');
+      const waterAmount = this.getHouseUtilityBill(house, 'water');
+      
       this.monthlyBillForm.reset({
         billDate: new Date().toISOString().split('T')[0],
         rentAmount: house.monthlyRent || 0,
-        electricBill: 0,
-        waterBill: 0,
+        electricBill: electricAmount,
+        waterBill: waterAmount,
         status: 'Pending'
       });
+      this.syncRentalUtilityBills(house, true);
     }
     this.showMonthlyBillForm = true;
     document.body.classList.add('modal-open');
+  }
+
+  private async syncRentalUtilityBills(house: RentalHouse, patchMonthlyBillForm = false) {
+    if (!house.id) return;
+
+    const nextValues: {
+      electricity?: number;
+      water?: number;
+      electricityPaid?: boolean;
+      waterPaid?: boolean;
+      electricityPaidDate?: string;
+      waterPaidDate?: string;
+    } = {
+      ...(this.rentalUtilityBills[house.id] || {})
+    };
+
+    try {
+      await Promise.all([
+        house.electricMeterNo
+          ? firstValueFrom(this.tspdclService.fetchBillDetails(house.electricMeterNo)).then(details => {
+              if (details?.success) {
+                nextValues.electricity = this.getLiveUtilityAmount(details);
+                nextValues.electricityPaid = this.isLiveBillPaid(details);
+                nextValues.electricityPaidDate = this.isLiveBillPaid(details) ? this.getLiveBillDisplayDate(details) : '';
+              }
+            })
+          : Promise.resolve(),
+        house.waterBillNo
+          ? firstValueFrom(this.hmwssbService.fetchBillDetails(house.waterBillNo)).then(details => {
+              if (details?.success) {
+                nextValues.water = this.getLiveUtilityAmount(details);
+                nextValues.waterPaid = this.isLiveBillPaid(details);
+                nextValues.waterPaidDate = this.isLiveBillPaid(details) ? this.getLiveBillDisplayDate(details) : '';
+              }
+            })
+          : Promise.resolve()
+      ]);
+
+      this.rentalUtilityBills[house.id] = nextValues;
+
+      if (patchMonthlyBillForm && this.showMonthlyBillForm && this.activeHouseId === house.id && this.editingBillIndex === null) {
+        this.monthlyBillForm.patchValue({
+          electricBill: nextValues.electricity ?? this.monthlyBillForm.value.electricBill ?? 0,
+          waterBill: nextValues.water ?? this.monthlyBillForm.value.waterBill ?? 0
+        });
+      }
+    } catch (e) {
+      console.error('Failed to sync rental utility bills:', e);
+    }
   }
 
   async saveMonthlyBill() {
@@ -4391,8 +4552,11 @@ export class AdminDashboardComponent implements OnInit {
           // document.body.classList.add('modal-open');
 
           const updateData: any = {
-            lastAmount: details.totalAmountPayable,
+            lastAmount: this.getLiveUtilityAmount(details),
+            lastAmountLabel: details.amountLabel || (service.serviceType === 'water' ? 'Total Arrears' : 'Payable Amount'),
             lastDueDate: details.dueDate,
+            lastPaidDate: this.isLiveBillPaid(details) ? this.getLiveBillDisplayDate(details) : '',
+            lastBillStatus: this.isLiveBillPaid(details) ? 'paid' : 'pending',
             consumerName: details.consumerName,
           };
 
@@ -4410,11 +4574,12 @@ export class AdminDashboardComponent implements OnInit {
 
           // AUTO STORE RECORD
           const profile = await firstValueFrom(this.authService.userProfile$);
-          if (profile?.uid && details.totalAmountPayable > 0) {
+          const liveUtilityAmount = this.getLiveUtilityAmount(details);
+          if (profile?.uid && liveUtilityAmount > 0) {
             await this.billService.autoStoreBillRecord({
               consumerName: details.consumerName || service.title || 'Unnamed',
               serviceNumber: service.serviceNumber,
-              amount: details.totalAmountPayable,
+              amount: liveUtilityAmount,
               date: new Date().toISOString().split('T')[0],
               adminUid: profile.uid
             });
@@ -4435,6 +4600,54 @@ export class AdminDashboardComponent implements OnInit {
 
   lockScroll() { document.body.style.overflow = 'hidden'; }
   unlockScroll() { document.body.style.overflow = ''; }
+
+  private getLiveUtilityAmount(details: any): number {
+    const amount = details?.isPaid && details?.paidAmount !== undefined
+      ? details.paidAmount
+      : details?.totalAmountPayable;
+
+    return Number(amount) || 0;
+  }
+
+  isLiveBillPaid(details: any): boolean {
+    return details?.isPaid === true || String(details?.amountLabel || '').toLowerCase().includes('paid');
+  }
+
+  isTrackedServicePaid(service: TrackedService | null | undefined): boolean {
+    if (!service) return false;
+    return service.lastBillStatus === 'paid' || String(service.lastAmountLabel || '').toLowerCase().includes('paid');
+  }
+
+  getLiveBillDisplayDate(details: any): string {
+    if (!details) return '--';
+    return this.isLiveBillPaid(details) ? (details.paidDate || details.dueDate || '--') : (details.dueDate || '--');
+  }
+
+  getTrackedServiceDisplayDate(service: TrackedService | null | undefined): string {
+    if (!service) return '--';
+    return this.isTrackedServicePaid(service) ? (service.lastPaidDate || service.lastDueDate || '--') : (service.lastDueDate || '--');
+  }
+
+  private parsePortalDate(value?: string): string | undefined {
+    if (!value || value === '--' || value === 'Check Portal') return undefined;
+
+    const trimmed = value.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+
+    const match = trimmed.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{2}|\d{4})$/);
+    if (!match) return undefined;
+
+    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const monthIndex = months.indexOf(match[2].toUpperCase());
+    if (monthIndex === -1) return undefined;
+
+    const year = match[3].length === 2 ? Number(`20${match[3]}`) : Number(match[3]);
+    const day = Number(match[1]);
+    const date = new Date(year, monthIndex, day);
+    if (Number.isNaN(date.getTime())) return undefined;
+
+    return `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
 
   closeLiveBillModal() {
     this.showLiveBillModal = false;
@@ -4462,9 +4675,25 @@ export class AdminDashboardComponent implements OnInit {
     document.body.classList.remove('modal-open');
   }
 
+  handlePayNow(service: TrackedService) {
+    if (service.serviceType === 'water') {
+      this.openWaterBill(service.serviceNumber);
+    } else if (service.serviceType === 'electricity') {
+      this.openElectricityBill(service.serviceNumber);
+    } else {
+      this.toast.info('Direct payment redirection not available for this service type.');
+    }
+  }
+
+  openElectricityBill(uscno: string) {
+    // For TG Southern Power, online-bill-payment with uscno pre-fills the payment portal
+    const url = `https://www.tgsouthernpower.org/online-bill-payment?uscno=${uscno}`;
+    window.open(url, '_blank');
+  }
+
   openWaterBill(can: string) {
     // Create a hidden form to perform a POST request to BillDesk
-    // This allows us to jump directly to the 2nd screen (bill details)
+    // This allows us to jump directly to the 2nd screen (bill details/payment options)
     const form = document.body.appendChild(document.createElement('form'));
     form.method = 'POST';
     form.action = 'https://www.billdesk.com/pgidsk/pgmerc/hmwssb/HMWSSBNPaymentoption.jsp';
