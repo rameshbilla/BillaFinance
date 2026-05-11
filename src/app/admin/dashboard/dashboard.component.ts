@@ -110,6 +110,8 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
       .history-step { position: relative; padding-left: 3.5rem; }
       .stepper-line { position: absolute; left: 1rem; top: 2.25rem; bottom: -2rem; width: 2px; transform: translateX(-50%); }
       .stepper-dot { position: absolute; left: 1rem; top: 0.25rem; transform: translateX(-50%); }
+      @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+      .animate-slide-up { animation: slideUp 0.3s ease-out both; }
     </style>
 
     <div class="min-h-screen bg-gray-50 dark:bg-gray-950 font-sans transition-colors duration-500 overflow-x-hidden w-full relative max-w-full-mobile">
@@ -143,6 +145,10 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
               <div class="flex flex-col items-end mr-6 hidden sm:flex">
                 <span class="text-gray-900 dark:text-white text-[13px] font-black uppercase leading-tight">{{ profile.displayName || 'Admin' }}</span>
                 <span class="text-gray-500 text-[10px] font-black uppercase tracking-[0.15em] opacity-80">{{ profile.username }}</span>
+              </div>
+              <div class="flex flex-col items-end mr-3 sm:hidden">
+                <span class="text-gray-900 dark:text-white text-[11px] font-black uppercase leading-tight">{{ profile.displayName?.split(' ')?.[0] || 'Admin' }}</span>
+                <span class="text-gray-500 text-[8px] font-black uppercase tracking-tight opacity-80">&#64;{{ profile.username }}</span>
               </div>
               <!-- Logout Button -->
               <button (click)="logout()" class="p-2.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all" title="Secure Logout">
@@ -202,13 +208,12 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
         <!-- ═══════════ ADMIN OVERVIEW VIEW ═══════════ -->
         @if (!isSuperAdmin && activeTab === 'overview') {
            <div class="space-y-8 card-animate">
-              <!-- Header -->
-              <div class="flex justify-between items-center mb-6">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
                  <div>
                     <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Business Overview</h2>
                     <p class="text-sm font-medium text-gray-500 mt-1">Aggregated statistics and metrics for your operations.</p>
                  </div>
-                 <div class="flex items-center gap-3">
+                 <div class="flex items-center gap-3 mt-4 sm:mt-0">
                     <div class="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-2xl p-2 shadow-sm border border-gray-100 dark:border-gray-700">
                        <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest pl-2 hidden sm:inline">DATA</span>
                        <label class="relative inline-flex items-center cursor-pointer scale-75 sm:scale-90">
@@ -429,30 +434,35 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
         <!-- ═══════════ BILLS TRACKER (Admin Only) ═══════════ -->
         @if (!isSuperAdmin && activeTab === 'bills' && showBillsTab) {
-          <div class="card-animate" style="animation-delay:0.05s">
+          <div class="card-animate flex flex-col" style="animation-delay:0.05s">
             
-            <!-- Bills KPI Grid -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-               <div class="bg-indigo-50/50 dark:bg-indigo-900/20 p-6 rounded-[2rem] border border-indigo-100/50 dark:border-indigo-800/30">
-                  <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Total Pending</p>
-                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none">₹{{ billStats.pendingAmount }}</p>
-               </div>
-               <div class="bg-amber-50/50 dark:bg-amber-900/20 p-6 rounded-[2rem] border border-amber-100/50 dark:border-amber-800/30">
-                  <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">Electricity Total</p>
-                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none">₹{{ billStats.electricityTotal }}</p>
-               </div>
-               <div class="bg-blue-50/50 dark:bg-blue-900/20 p-6 rounded-[2rem] border border-blue-100/50 dark:border-blue-800/30">
-                  <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Water Arrears</p>
-                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none">₹{{ billStats.waterTotal }}</p>
-               </div>
-               <div class="bg-emerald-50/50 dark:bg-emerald-900/20 p-6 rounded-[2rem] border border-emerald-100/50 dark:border-emerald-800/30">
-                  <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Paid Bills</p>
-                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none">₹{{ billStats.paidThisMonthAmount }}</p>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 order-1">
+               <div>
+                  <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Bills & Payments</h2>
+                  <p class="text-sm font-medium text-gray-500 mt-1">Utility tracking and automated bill retrieval.</p>
                </div>
             </div>
             
-            <!-- Tracked Services Summary -->
-            <div class="mb-12">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10 order-2">
+               <div class="bg-indigo-50/50 dark:bg-indigo-900/20 p-6 rounded-[2rem] border border-indigo-100/50 dark:border-indigo-800/30">
+                  <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Total Pending</p>
+                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none" [appCountUp]="billStats.pendingAmount" prefix="₹"></p>
+               </div>
+               <div class="bg-amber-50/50 dark:bg-amber-900/20 p-6 rounded-[2rem] border border-amber-100/50 dark:border-amber-800/30">
+                  <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">Electricity Total</p>
+                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none" [appCountUp]="billStats.electricityTotal" prefix="₹"></p>
+               </div>
+               <div class="bg-blue-50/50 dark:bg-blue-900/20 p-6 rounded-[2rem] border border-blue-100/50 dark:border-blue-800/30">
+                  <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Water Arrears</p>
+                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none" [appCountUp]="billStats.waterTotal" prefix="₹"></p>
+               </div>
+               <div class="bg-emerald-50/50 dark:bg-emerald-900/20 p-6 rounded-[2rem] border border-emerald-100/50 dark:border-emerald-800/30">
+                  <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Paid Bills</p>
+                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none" [appCountUp]="billStats.paidThisMonthAmount" prefix="₹"></p>
+               </div>
+            </div>
+            
+            <div class="mb-12 order-3">
                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 px-2">
                   <div class="flex items-center gap-4">
                     <div class="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
@@ -483,7 +493,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                       </button>
                     </div>
 
-                    <div class="relative flex-1 md:flex-none">
+                    <div class="relative flex-1 md:flex-none hidden sm:block">
                        <select [(ngModel)]="serviceTypeFilter" class="w-full md:w-40 pl-4 pr-10 py-2.5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl text-xs font-bold text-gray-700 dark:text-gray-300 appearance-none focus:ring-2 focus:ring-indigo-500 outline-none">
                           <option value="all">All Types</option>
                           <option value="electricity">Electricity</option>
@@ -495,7 +505,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                        <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </div>
 
-                    <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/80 p-1 rounded-xl border border-gray-200 dark:border-gray-700/50">
+                    <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/80 p-1 rounded-xl border border-gray-200 dark:border-gray-700/50 hidden sm:flex">
                       <button type="button" (click)="billStatusFilter = 'all'"
                               class="px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
                               [class.bg-white]="billStatusFilter === 'all'"
@@ -518,12 +528,17 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                               [class.text-emerald-600]="billStatusFilter === 'paid'"
                               [class.text-gray-500]="billStatusFilter !== 'paid'">Paid</button>
                     </div>
+                    <button (click)="openBillsFilterModal()" class="sm:hidden p-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-indigo-600 shadow-sm">
+                      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                    </button>
                     <button (click)="handleSyncBills()" [disabled]="isSyncing" class="px-5 py-2.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-100 transition-all flex items-center gap-2">
                        <svg class="h-3.5 w-3.5" [class.animate-spin]="isSyncing" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                       {{ isSyncing ? 'Sync' : 'Deep Sync' }}
+                       <span class="hidden sm:inline">{{ isSyncing ? 'Syncing...' : 'Deep Sync' }}</span>
+                       <span class="sm:hidden">{{ isSyncing ? '...' : 'Sync' }}</span>
                     </button>
                     <button (click)="scrollToTop(); openServiceForm()" class="px-5 py-2.5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">
-                      Register Service
+                      <span class="hidden sm:inline">Register Service</span>
+                      <span class="sm:hidden">New</span>
                     </button>
                   </div>
                </div>
@@ -2173,6 +2188,47 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
             </div>
          }
 
+        <!-- 11. Mobile Filter Modal (Bills) -->
+        @if (showBillsFilterModal) {
+            <div class="fixed inset-0 z-[3000] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-8" (click)="showBillsFilterModal = false">
+               <div class="bg-white dark:bg-gray-900 w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden animate-slide-up" (click)="$event.stopPropagation()">
+                  <div class="p-8 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                     <h3 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Filter Bills</h3>
+                     <button (click)="showBillsFilterModal = false" class="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                     </button>
+                  </div>
+                  <div class="p-8 space-y-8">
+                     <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Service Category</label>
+                        <div class="grid grid-cols-2 gap-3">
+                           @for (type of ['all', 'electricity', 'water', 'internet', 'mobile', 'other']; track type) {
+                              <button (click)="serviceTypeFilter = type; showBillsFilterModal = false"
+                                      [class]="serviceTypeFilter === type ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-gray-50 dark:bg-gray-800 text-gray-500'"
+                                      class="px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all text-left">
+                                 {{ type }}
+                              </button>
+                           }
+                        </div>
+                     </div>
+                     <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Payment Status</label>
+                        <div class="flex gap-2">
+                           @for (status of ['all', 'paid', 'unpaid']; track status) {
+                              <button (click)="billStatusFilter = status; showBillsFilterModal = false"
+                                      [class]="billStatusFilter === status ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-gray-50 dark:bg-gray-800 text-gray-500'"
+                                      class="flex-1 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+                                 {{ status }}
+                              </button>
+                           }
+                        </div>
+                     </div>
+                     <button (click)="showBillsFilterModal = false" class="w-full py-4 bg-gray-900 dark:bg-white dark:text-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em]">Show Results</button>
+                  </div>
+               </div>
+            </div>
+        }
+
       <!-- Mobile Bottom Navigation -->
       <div class="fixed bottom-0 left-0 right-0 z-[100] sm:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-colors duration-500 pb-safe">
          <div class="w-full overflow-hidden">
@@ -2301,12 +2357,13 @@ export class AdminDashboardComponent implements OnInit {
   isSyncing = false;
   isFetchingLiveBill = false;
   showLiveBillModal = false;
+  showBillsFilterModal = false;
   selectedLiveBill: any = null;
   showBillForm = false;
   editingBill?: Bill;
   trackedServices: TrackedService[] = [];
   serviceTypeFilter: string = 'all';
-  billStatusFilter: 'all' | 'paid' | 'unpaid' = 'all';
+  billStatusFilter: string = 'all';
   showServiceModal = false;
   editingTrackedService?: TrackedService;
   trackedServiceForm: FormGroup;
@@ -4708,6 +4765,16 @@ export class AdminDashboardComponent implements OnInit {
 
     form.submit();
     document.body.removeChild(form);
+  }
+
+  openBillsFilterModal() {
+    this.showBillsFilterModal = true;
+    document.body.classList.add('modal-open');
+  }
+
+  closeBillsFilterModal() {
+    this.showBillsFilterModal = false;
+    document.body.classList.remove('modal-open');
   }
 }
 
