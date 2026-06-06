@@ -38,6 +38,98 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
       @keyframes slideInRight { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
       @keyframes pulseSlow { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.1); } }
       .card-animate { animation: fadeInUp 0.5s ease both; }
+      
+      .scrollbar-none::-webkit-scrollbar { display: none; }
+      .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+      @media (max-width: 639px) {
+        .mobile-carousel {
+          display: flex !important;
+          overflow-x: auto !important;
+          scroll-snap-type: x mandatory !important;
+          gap: 1.25rem !important;
+          padding: 0.5rem 0.25rem 1.5rem 0.25rem !important;
+          margin: 0 -1rem !important;
+          padding-left: 1rem !important;
+          padding-right: 1rem !important;
+          -webkit-overflow-scrolling: touch;
+        }
+        .blossom-slide {
+          flex: 0 0 82% !important;
+          min-width: 82% !important;
+          scroll-snap-align: center !important;
+          margin-bottom: 0 !important;
+        }
+        .mobile-carousel-card {
+          width: 100% !important;
+          height: 100% !important;
+        }
+
+        @supports (animation-timeline: view()) {
+          .mobile-carousel {
+            --card-width: 17rem;
+            display: grid !important;
+            grid-auto-flow: column !important;
+            grid-auto-columns: 100% !important;
+            scroll-snap-type: x mandatory !important;
+            overflow-x: auto !important;
+            width: 100% !important;
+            padding-inline: calc((100vw - var(--card-width) - 2rem) / 2) !important;
+            scroll-padding-inline: calc((100vw - var(--card-width) - 2rem) / 2) !important;
+            margin: 0 -1rem !important;
+            gap: 0 !important;
+            scrollbar-width: none !important;
+          }
+          .mobile-carousel::-webkit-scrollbar {
+            display: none !important;
+          }
+          
+          .blossom-slide {
+            width: var(--card-width) !important;
+            min-width: var(--card-width) !important;
+            height: var(--card-height, 380px) !important;
+            position: sticky !important;
+            left: calc((100vw - var(--card-width) - 2rem) / -2) !important;
+            right: calc((100vw - var(--card-width) - 2rem) / -2) !important;
+            scroll-snap-align: center !important;
+            scroll-snap-stop: always !important;
+            transform-origin: center 70%;
+            will-change: transform;
+            view-timeline: --cards inline;
+            animation: stack-cards linear both;
+            animation-timeline: --cards;
+            animation-range: contain;
+            flex: none !important;
+            margin-bottom: 0 !important;
+          }
+
+          .mobile-carousel-card {
+            width: 100% !important;
+            height: 100% !important;
+            flex: none !important;
+            min-width: unset !important;
+            scroll-snap-align: unset !important;
+            animation: rotate-cards linear both;
+            animation-timeline: --cards;
+            animation-range: contain -50% contain 150%;
+          }
+        }
+      }
+
+      @keyframes stack-cards {
+        0% { z-index: calc(100 - var(--sibling-index, 0)); }
+        40% { z-index: 1000; }
+        100% { z-index: var(--sibling-index, 0); }
+      }
+
+      @keyframes rotate-cards {
+        0% { transform: translateX(-65%) rotate(8deg) scale(0.8); }
+        25% { transform: translateX(-75%) rotate(4deg) scale(0.9); }
+        50% { transform: translateX(0%) rotate(0deg) scale(1); }
+        60% { transform: translateX(-15%) rotate(-10deg) scale(0.65); }
+        75% { transform: translateX(75%) rotate(-4deg) scale(0.9); }
+        100% { transform: translateX(65%) rotate(-8deg) scale(0.8); }
+      }
       .kpi-animate { animation: slideInRight 0.4s ease both; }
       .interest-card { animation: fadeInUp 0.5s ease both; }
       .scheme-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
@@ -558,9 +650,10 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                     }
                     
                 @if (!isBillListView) {
-                  <div class="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-4 gap-6">
-                    @for (service of filteredTrackedServices; track service.id) {
-                      <div class="group relative overflow-hidden rounded-[2rem] bg-white/40 dark:bg-gray-800/40 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 p-6 flex flex-col justify-between h-full">
+                  <div class="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-4 gap-6 mobile-carousel scrollbar-none">
+                    @for (service of filteredTrackedServices; track service.id; let idx = $index) {
+                      <div class="blossom-slide" [style.--sibling-index]="idx" style="--card-height: 295px">
+                        <div class="group relative overflow-hidden rounded-[2rem] bg-white/40 dark:bg-gray-800/40 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 p-6 flex flex-col justify-between h-full mobile-carousel-card">
                          <!-- Individual Sync Loader Overlay -->
                          @if (service.id && syncingServices[service.id]) {
                             <div class="absolute inset-0 z-20 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-300">
@@ -672,6 +765,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                             }
                          </div>
                       </div>
+                    </div>
                     }
                   </div>
                 } @else {
@@ -912,11 +1006,12 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
             <!-- Interest Cards -->
             <div class="order-5">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 mobile-carousel scrollbar-none">
               @for (loan of getFilteredLoans(); track loan.id; let i = $index) {
-                <div class="scheme-card bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden card-animate"
-                     [style.animation-delay]="(i * 0.07 + 0.2) + 's'"
-                     (click)="toggleLoanExpansion(loan.id!)">
+                <div class="blossom-slide" [style.--sibling-index]="i" [style.--card-height]="expandedLoans[loan.id!] ? '425px' : '150px'">
+                  <div class="scheme-card bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden card-animate mobile-carousel-card"
+                       [style.animation-delay]="(i * 0.07 + 0.2) + 's'"
+                       (click)="toggleLoanExpansion(loan.id!)">
                   
                   <!-- Collapsed Mobile View -->
                   <div class="sm:hidden p-5 flex justify-between items-center transition-all" *ngIf="!expandedLoans[loan.id!]">
@@ -1005,6 +1100,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                     </div>
                   </div>
                 </div>
+              </div>
               }
             </div>
 
@@ -1121,10 +1217,11 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
             </div>
 
             <!-- Chitti Cards -->
-            <div class="order-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+            <div class="order-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 mobile-carousel scrollbar-none">
               @for (chit of chittis; track chit.id; let i = $index) {
-                <div class="scheme-card bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden card-animate"
-                     [style.animation-delay]="(i * 0.07 + 0.2) + 's'">
+                <div class="blossom-slide" [style.--sibling-index]="i" style="--card-height: 360px">
+                  <div class="scheme-card bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden card-animate mobile-carousel-card"
+                       [style.animation-delay]="(i * 0.07 + 0.2) + 's'">
                   <div class="h-1.5 bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500"></div>
                   <div class="p-6">
                     <div class="flex justify-between items-start mb-4 text-xs font-bold text-gray-400 capitalize">{{ chit.tenure }} Months Tenure</div>
@@ -1166,6 +1263,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                     </div>
                   </div>
                 </div>
+              </div>
               }
             </div>
           </div>

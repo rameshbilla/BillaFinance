@@ -26,6 +26,98 @@ Chart.register(zoomPlugin);
       @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
       .fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
       
+      .scrollbar-none::-webkit-scrollbar { display: none; }
+      .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+      @media (max-width: 639px) {
+        .mobile-carousel {
+          display: flex !important;
+          overflow-x: auto !important;
+          scroll-snap-type: x mandatory !important;
+          gap: 1.25rem !important;
+          padding: 0.5rem 0.25rem 1.5rem 0.25rem !important;
+          margin: 0 -1rem !important;
+          padding-left: 1rem !important;
+          padding-right: 1rem !important;
+          -webkit-overflow-scrolling: touch;
+        }
+        .blossom-slide {
+          flex: 0 0 82% !important;
+          min-width: 82% !important;
+          scroll-snap-align: center !important;
+          margin-bottom: 0 !important;
+        }
+        .mobile-carousel-card {
+          width: 100% !important;
+          height: 100% !important;
+        }
+
+        @supports (animation-timeline: view()) {
+          .mobile-carousel {
+            --card-width: 17rem;
+            display: grid !important;
+            grid-auto-flow: column !important;
+            grid-auto-columns: 100% !important;
+            scroll-snap-type: x mandatory !important;
+            overflow-x: auto !important;
+            width: 100% !important;
+            padding-inline: calc((100vw - var(--card-width) - 2rem) / 2) !important;
+            scroll-padding-inline: calc((100vw - var(--card-width) - 2rem) / 2) !important;
+            margin: 0 -1rem !important;
+            gap: 0 !important;
+            scrollbar-width: none !important;
+          }
+          .mobile-carousel::-webkit-scrollbar {
+            display: none !important;
+          }
+          
+          .blossom-slide {
+            width: var(--card-width) !important;
+            min-width: var(--card-width) !important;
+            height: var(--card-height, 380px) !important;
+            position: sticky !important;
+            left: calc((100vw - var(--card-width) - 2rem) / -2) !important;
+            right: calc((100vw - var(--card-width) - 2rem) / -2) !important;
+            scroll-snap-align: center !important;
+            scroll-snap-stop: always !important;
+            transform-origin: center 70%;
+            will-change: transform;
+            view-timeline: --cards inline;
+            animation: stack-cards linear both;
+            animation-timeline: --cards;
+            animation-range: contain;
+            flex: none !important;
+            margin-bottom: 0 !important;
+          }
+
+          .mobile-carousel-card {
+            width: 100% !important;
+            height: 100% !important;
+            flex: none !important;
+            min-width: unset !important;
+            scroll-snap-align: unset !important;
+            animation: rotate-cards linear both;
+            animation-timeline: --cards;
+            animation-range: contain -50% contain 150%;
+          }
+        }
+      }
+
+      @keyframes stack-cards {
+        0% { z-index: calc(100 - var(--sibling-index, 0)); }
+        40% { z-index: 1000; }
+        100% { z-index: var(--sibling-index, 0); }
+      }
+
+      @keyframes rotate-cards {
+        0% { transform: translateX(-65%) rotate(8deg) scale(0.8); }
+        25% { transform: translateX(-75%) rotate(4deg) scale(0.9); }
+        50% { transform: translateX(0%) rotate(0deg) scale(1); }
+        60% { transform: translateX(-15%) rotate(-10deg) scale(0.65); }
+        75% { transform: translateX(75%) rotate(-4deg) scale(0.9); }
+        100% { transform: translateX(65%) rotate(-8deg) scale(0.8); }
+      }
+      
       .glass-card { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
       .dark .bottom-nav-pill {
         background: rgba(15, 23, 42, 0.9) !important;
@@ -378,9 +470,10 @@ Chart.register(zoomPlugin);
              <div class="h-6 w-1.5 bg-purple-600 rounded-full"></div>
              <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Chitti Accounts</h3>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
-            @for (item of customerChitties; track item.scheme.id) {
-              <div class="glass-card bg-white/80 dark:bg-[#0f172a] rounded-[2.5rem] p-6 sm:p-8 border border-white/50 dark:border-white/10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 group relative overflow-hidden">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10 mobile-carousel scrollbar-none">
+            @for (item of customerChitties; track item.scheme.id; let idx = $index) {
+              <div class="blossom-slide" [style.--sibling-index]="idx" style="--card-height: 380px">
+                <div class="glass-card bg-white/80 dark:bg-[#0f172a] rounded-[2.5rem] p-6 sm:p-8 border border-white/50 dark:border-white/10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 group relative overflow-hidden mobile-carousel-card">
                 <div class="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
                 
                 <div class="flex justify-between items-start mb-6">
@@ -421,6 +514,7 @@ Chart.register(zoomPlugin);
 
                 <button (click)="openChitHistory(item)" class="w-full py-3.5 bg-black dark:bg-white text-white dark:text-black text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:scale-[1.02] transition-all shadow-lg active:scale-95">Statement</button>
               </div>
+            </div>
             }
           </div>
         </section>
@@ -431,9 +525,10 @@ Chart.register(zoomPlugin);
              <div class="h-6 w-1.5 bg-blue-600 rounded-full"></div>
              <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Loan Accounts</h3>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
-            @for (loan of activeLoans; track loan.id) {
-              <div class="glass-card bg-white/80 dark:bg-[#0f172a] rounded-[2.5rem] p-6 sm:p-8 border border-white/50 dark:border-white/10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 overflow-hidden relative group">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10 mobile-carousel scrollbar-none">
+            @for (loan of activeLoans; track loan.id; let idx = $index) {
+              <div class="blossom-slide" [style.--sibling-index]="idx" style="--card-height: 380px">
+                <div class="glass-card bg-white/80 dark:bg-[#0f172a] rounded-[2.5rem] p-6 sm:p-8 border border-white/50 dark:border-white/10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 overflow-hidden relative group mobile-carousel-card">
                 <div class="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
                 
                 <div class="flex justify-between items-start mb-6">
@@ -490,6 +585,7 @@ Chart.register(zoomPlugin);
 
                 <button (click)="openLoanHistory(loan)" class="w-full py-3.5 bg-black dark:bg-white text-white dark:text-black text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:scale-[1.02] transition-all shadow-lg active:scale-95">Loan Statement</button>
               </div>
+            </div>
             }
           </div>
         </section>
