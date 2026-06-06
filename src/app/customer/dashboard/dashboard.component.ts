@@ -13,6 +13,8 @@ import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType, Chart } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { CountUpDirective } from '../../shared/directives/count-up.directive';
+import { Capacitor } from '@capacitor/core';
+import { TspdclService, TspdclBillDetails } from '../../admin/services/tspdcl.service';
 Chart.register(zoomPlugin);
 
 @Component({
@@ -138,16 +140,217 @@ Chart.register(zoomPlugin);
               </div>
             </div>
             
-            <div class="grid grid-cols-2 gap-3 mt-8 relative z-10">
-               <div class="glass-card bg-white/80 dark:bg-[#0f172a] rounded-3xl p-5 border border-purple-500/50 shadow-sm transition-all duration-500">
-                  <p class="text-[8px] sm:text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1 leading-none">Total Outstanding</p>
-                  <p class="text-xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tighter" [appCountUp]="totalOutstanding" prefix="₹"></p>
-               </div>
-               <div class="glass-card bg-white/80 dark:bg-[#0f172a] rounded-3xl p-5 border border-blue-500/50 text-right shadow-sm transition-all duration-500">
-                  <p class="text-[8px] sm:text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 leading-none">Active Products</p>
-                  <p class="text-xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tighter">{{ customerChitties.length + activeLoans.length + tenantHouses.length }}</p>
-               </div>
-            </div>
+            <!-- Rent & Utilities Hero Card (tenants only) -->
+            <ng-container *ngIf="tenantHouses.length > 0 && tenantHouses[0] as house">
+              <div class="mt-6 relative z-10">
+
+                <!-- Property Identity Bar -->
+                <div class="flex items-center gap-3 mb-3">
+                  <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/25 flex-shrink-0">
+                    <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                      <polyline stroke-linecap="round" stroke-linejoin="round" points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                  </div>
+                  <div class="min-w-0">
+                    <h3 class="text-base font-black text-gray-900 dark:text-white tracking-tight leading-none truncate">{{ house.houseName }}</h3>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{{ house.fullAddress || 'Rental Property' }}</p>
+                  </div>
+                  <span class="ml-auto flex-shrink-0 px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest"
+                        [ngClass]="house.status === 'Occupied' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'">
+                    {{ house.status }}
+                  </span>
+                </div>
+
+                <!-- Main Hero Card -->
+                <div class="glass-card bg-white/90 dark:bg-[#0f172a] rounded-3xl border border-white/60 dark:border-white/10 shadow-lg overflow-hidden">
+
+                  <!-- Payment Strips Row -->
+                  <div class="grid grid-cols-2 divide-x divide-gray-100 dark:divide-white/5">
+
+                    <!-- Rent Strip -->
+                    <div class="p-4">
+                      <div class="flex items-center gap-1.5 mb-2">
+                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                        <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Monthly Rent</span>
+                      </div>
+                      <p class="text-xl font-black tracking-tighter leading-none"
+                         [ngClass]="(house.bills && house.bills.length > 0 && house.bills[house.bills.length-1].status === 'Paid') ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'">
+                        ₹{{ house.monthlyRent | number }}
+                      </p>
+                      <div class="flex items-center gap-1 mt-1.5">
+                        <div class="w-1.5 h-1.5 rounded-full animate-pulse"
+                             [ngClass]="(house.bills && house.bills.length > 0 && house.bills[house.bills.length-1].status === 'Paid') ? 'bg-green-500' : 'bg-red-400'"></div>
+                        <span class="text-[9px] font-black uppercase tracking-wider"
+                              [ngClass]="(house.bills && house.bills.length > 0 && house.bills[house.bills.length-1].status === 'Paid') ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'">
+                          {{ (house.bills && house.bills.length > 0 && house.bills[house.bills.length-1].status === 'Paid') ? 'Paid' : 'Unpaid' }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- Electricity Strip -->
+                    <div class="p-4">
+                      <div class="flex items-center gap-1.5 mb-2">
+                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Electricity</span>
+                        <button *ngIf="house.electricMeterNo" (click)="fetchTenantElectricityBill(house.electricMeterNo)"
+                                [disabled]="isFetchingElectricity"
+                                class="ml-auto p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all disabled:opacity-40" title="Refresh">
+                          <svg class="w-3 h-3 text-gray-400" [ngClass]="{'animate-spin': isFetchingElectricity}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        </button>
+                      </div>
+                      <ng-container *ngIf="!isFetchingElectricity; else electricLoader">
+                        <p class="text-xl font-black tracking-tighter leading-none"
+                           [ngClass]="((tenantElectricityBill && tenantElectricityBill.totalAmountPayable > 0) ? tenantElectricityBill.isPaid : (house.bills && house.bills.length > 0 ? house.bills[house.bills.length-1].status === 'Paid' : false)) ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'">
+                          ₹{{ (tenantElectricityBill && tenantElectricityBill.totalAmountPayable > 0) ? (tenantElectricityBill.totalAmountPayable | number) : ((house.bills && house.bills.length > 0) ? (house.bills[house.bills.length-1].electricBill | number) : '—') }}
+                        </p>
+                        <div class="flex items-center gap-1 mt-1.5">
+                          <div class="w-1.5 h-1.5 rounded-full animate-pulse"
+                               [ngClass]="(tenantElectricityBill && tenantElectricityBill.totalAmountPayable > 0) 
+                                 ? (tenantElectricityBill.isPaid ? 'bg-green-500' : 'bg-red-400') 
+                                 : (house.bills && house.bills.length > 0 ? (house.bills[house.bills.length-1].status === 'Paid' ? 'bg-green-500' : 'bg-red-400') : 'bg-gray-300 dark:bg-gray-600')"></div>
+                          <span class="text-[9px] font-black uppercase tracking-wider"
+                                [ngClass]="(tenantElectricityBill && tenantElectricityBill.totalAmountPayable > 0) 
+                                  ? (tenantElectricityBill.isPaid ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400') 
+                                  : (house.bills && house.bills.length > 0 ? (house.bills[house.bills.length-1].status === 'Paid' ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400') : 'text-gray-400')">
+                            {{ (tenantElectricityBill && tenantElectricityBill.totalAmountPayable > 0) 
+                              ? (tenantElectricityBill.isPaid ? 'Paid' : 'Unpaid') 
+                              : (house.bills && house.bills.length > 0 ? (house.bills[house.bills.length-1].status === 'Paid' ? 'Paid' : 'Unpaid') : 'Unsynced') }}
+                          </span>
+                        </div>
+                      </ng-container>
+                      <ng-template #electricLoader>
+                        <div class="flex items-center gap-2 mt-1">
+                          <span class="inline-block w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></span>
+                          <span class="text-[9px] text-gray-400 font-bold">Fetching...</span>
+                        </div>
+                      </ng-template>
+                    </div>
+                  </div>
+
+                  <!-- Property Details Section -->
+                  <div class="border-t border-gray-100 dark:border-white/5 mx-0 px-4 py-3 bg-gray-50/50 dark:bg-white/2">
+                    <div class="grid grid-cols-2 gap-y-3 gap-x-4">
+                      <div>
+                        <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Advance Paid</p>
+                        <p class="text-xs font-black text-gray-900 dark:text-white">₹{{ house.advanceAmount | number }}<span class="text-[8px] text-gray-400 font-bold ml-1">({{ house.advanceMonths }}mo)</span></p>
+                      </div>
+                      <div>
+                        <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Tenant Since</p>
+                        <p class="text-xs font-black text-gray-700 dark:text-gray-300">{{ house.arrivedDate | date:'dd MMM yy' }}</p>
+                      </div>
+                      <div *ngIf="house.renterPhone">
+                        <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Contact</p>
+                        <div class="flex items-center gap-1.5">
+                          <svg class="w-3 h-3 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          </svg>
+                          <p class="text-xs font-black text-gray-700 dark:text-gray-300 font-mono">{{ house.renterPhone }}</p>
+                        </div>
+                      </div>
+                      <div *ngIf="house.renterAadhar">
+                        <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Aadhar No.</p>
+                        <div class="flex items-center gap-1.5">
+                          <svg class="w-3 h-3 text-indigo-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                          </svg>
+                          <p class="text-xs font-black text-gray-700 dark:text-gray-300 font-mono tracking-wider">
+                            XXXX-XXXX-{{ house.renterAadhar | slice:-4 }}
+                          </p>
+                        </div>
+                      </div>
+                      <div *ngIf="house.electricMeterNo">
+                        <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Meter No.</p>
+                        <p class="text-xs font-black text-gray-700 dark:text-gray-300 font-mono">{{ house.electricMeterNo }}</p>
+                      </div>
+                      <div *ngIf="house.renterName">
+                        <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Tenant Name</p>
+                        <p class="text-xs font-black text-gray-700 dark:text-gray-300 truncate">{{ house.renterName }}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Owner / Landlord Contact Section -->
+                  <div *ngIf="ownerProfile" class="border-t border-gray-100 dark:border-white/5 px-4 py-3 bg-gradient-to-r from-indigo-50/60 to-purple-50/40 dark:from-indigo-950/20 dark:to-purple-950/10">
+                    <div class="flex items-center gap-2 mb-2.5">
+                      <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-indigo-500/30">
+                        <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                      <p class="text-[9px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-[0.18em]">Owner / Landlord</p>
+                    </div>
+                    <div class="flex items-center justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="text-sm font-black text-gray-900 dark:text-white truncate">{{ ownerProfile.displayName || 'Owner' }}</p>
+                        <div *ngIf="ownerProfile.phone" class="flex items-center gap-1 mt-0.5">
+                          <svg class="w-3 h-3 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          </svg>
+                          <p class="text-[10px] font-black text-gray-600 dark:text-gray-400 font-mono">{{ ownerProfile.phone }}</p>
+                        </div>
+                      </div>
+                      <div class="flex gap-1.5 flex-shrink-0">
+                        <a *ngIf="ownerProfile.phone" [href]="'tel:' + ownerProfile.phone"
+                           class="flex items-center gap-1 px-2.5 py-1.5 bg-green-500 hover:bg-green-600 active:scale-95 transition-all text-white text-[8px] font-black uppercase tracking-wider rounded-xl shadow-sm shadow-green-500/25">
+                          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          </svg>
+                          Call
+                        </a>
+                        <a *ngIf="ownerProfile.phone" [href]="'https://wa.me/91' + ownerProfile.phone" target="_blank"
+                           class="flex items-center gap-1 px-2.5 py-1.5 bg-[#25D366] hover:bg-[#1ebe59] active:scale-95 transition-all text-white text-[8px] font-black uppercase tracking-wider rounded-xl shadow-sm shadow-green-500/20">
+                          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.529 5.855L0 24l6.335-1.51A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.808 9.808 0 01-5.001-1.368l-.36-.214-3.72.886.916-3.618-.235-.373A9.794 9.794 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
+                          </svg>
+                          WhatsApp
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Action Buttons Row -->
+                  <div class="border-t border-gray-100 dark:border-white/5 p-3 flex gap-2">
+                    <button (click)="openRentalHistory(house)"
+                            class="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[9px] font-black uppercase tracking-widest rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-md">
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      History
+                    </button>
+                    <ng-container *ngIf="house.electricMeterNo">
+                      <button (click)="openBillPortal(house.electricMeterNo)"
+                              class="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[9px] font-black uppercase tracking-widest rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-md shadow-orange-500/20">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Bill View
+                      </button>
+                      <button (click)="openElectricityPortal(house.electricMeterNo)"
+                              class="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gradient-to-r from-green-600 to-emerald-500 text-white text-[9px] font-black uppercase tracking-widest rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-md shadow-green-500/20">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        Pay Now
+                      </button>
+                    </ng-container>
+                  </div>
+
+                </div>
+              </div>
+            </ng-container>
+
+            <!-- Non-tenant outstanding summary -->
+            <ng-container *ngIf="tenantHouses.length === 0 && (customerChitties.length > 0 || activeLoans.length > 0)">
+              <div class="mt-6 glass-card bg-white/80 dark:bg-[#0f172a] rounded-3xl p-5 border border-purple-500/30 shadow-sm relative z-10">
+                <p class="text-[9px] font-black text-purple-500 uppercase tracking-widest mb-1">Total Outstanding</p>
+                <p class="text-2xl sm:text-4xl font-black text-gray-900 dark:text-white tracking-tighter" [appCountUp]="totalOutstanding" prefix="₹"></p>
+              </div>
+            </ng-container>
           </section>
 
         <!-- OVERALL ACTIVITY CHART -->
@@ -291,41 +494,42 @@ Chart.register(zoomPlugin);
           </div>
         </section>
 
-        <!-- RENTAL HOUSES -->
-        <section *ngIf="tenantHouses.length > 0" class="fade-in-up" style="animation-delay: 0.35s">
-          <div class="flex items-center gap-3 mb-6">
-             <div class="h-6 w-1.5 bg-green-600 rounded-full"></div>
-             <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Rental Properties</h3>
+        <!-- RENTAL HOUSES: Additional/Multiple Properties (if tenant has more than 1) -->
+        <section *ngIf="tenantHouses.length > 1" class="fade-in-up" style="animation-delay: 0.35s">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="h-5 w-1 bg-green-500 rounded-full"></div>
+            <h3 class="text-sm font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">Other Properties</h3>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
-            @for (house of tenantHouses; track house.id) {
-              <div class="glass-card bg-white/80 dark:bg-[#0f172a] rounded-[2.5rem] p-6 sm:p-8 border border-white/50 dark:border-white/10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 overflow-hidden relative group">
-                <div class="absolute -right-4 -top-4 w-24 h-24 bg-green-500/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
-                
-                <div class="flex justify-between items-start mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
+            @for (house of tenantHouses; track house.id; let i = $index) {
+              @if (i > 0) {
+              <div class="glass-card bg-white/80 dark:bg-[#0f172a] rounded-3xl p-5 border border-green-500/20 dark:border-green-500/10 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 overflow-hidden relative group">
+                <div class="flex items-start justify-between mb-4">
                   <div class="min-w-0">
-                    <h4 class="text-xl font-black text-gray-900 dark:text-white mb-2 truncate">{{ house.houseName }}</h4>
-                    <span class="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-[8px] font-black uppercase tracking-widest rounded-md">Tenant Account</span>
+                    <h4 class="text-base font-black text-gray-900 dark:text-white truncate">{{ house.houseName }}</h4>
+                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{{ house.fullAddress || 'Property' }}</p>
                   </div>
-                  <div class="text-right shrink-0">
-                    <p class="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1">Advance Paid</p>
-                    <p class="text-xl font-black text-green-600 tracking-tighter leading-none" [appCountUp]="house.advanceAmount" prefix="₹"></p>
+                  <span class="ml-2 flex-shrink-0 px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest"
+                        [ngClass]="house.status === 'Occupied' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-500'">
+                    {{ house.status }}
+                  </span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mb-4">
+                  <div class="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-3">
+                    <p class="text-[8px] font-black text-gray-400 uppercase mb-1">Monthly Rent</p>
+                    <p class="text-sm font-black text-gray-900 dark:text-white">₹{{ house.monthlyRent | number }}</p>
+                  </div>
+                  <div class="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-3">
+                    <p class="text-[8px] font-black text-gray-400 uppercase mb-1">Since</p>
+                    <p class="text-sm font-black text-gray-700 dark:text-gray-300">{{ house.arrivedDate | date:'MMM yy' }}</p>
                   </div>
                 </div>
-
-                <div class="bg-gray-50/50 dark:bg-gray-900/50 p-4 rounded-3xl mb-6">
-                   <div class="flex justify-between items-center mb-2">
-                      <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Occupancy</p>
-                      <p class="text-[10px] font-black text-gray-700 dark:text-white uppercase tracking-widest">{{ house.status }}</p>
-                   </div>
-                   <div class="flex justify-between items-center">
-                      <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Joined Since</p>
-                      <p class="text-[10px] font-black text-gray-700 dark:text-white uppercase tracking-widest">{{ house.arrivedDate | date:'mediumDate' }}</p>
-                   </div>
-                </div>
-
-                <button (click)="openRentalHistory(house)" class="w-full py-3.5 bg-green-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:scale-[1.02] transition-all shadow-lg active:scale-95">Billing Statement</button>
+                <button (click)="openRentalHistory(house)"
+                        class="w-full py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[9px] font-black uppercase tracking-widest rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-sm">
+                  History
+                </button>
               </div>
+              }
             }
           </div>
         </section>
@@ -442,16 +646,16 @@ Chart.register(zoomPlugin);
                                @for (bill of selectedHouse.bills; track $index) {
                                   <tr class="border-b border-gray-50 dark:border-gray-800/50">
                                      <td class="p-4 font-black text-green-600">{{ bill.billDate | date:'MMM dd, yyyy' }}</td>
-                                     <td class="p-4" [appCountUp]="bill.rentAmount" prefix="₹"></td>
-                                     <td class="p-4" [appCountUp]="bill.electricBill" prefix="₹"></td>
-                                     <td class="p-4" [appCountUp]="bill.waterBill" prefix="₹"></td>
+                                     <td class="p-4 text-green-500" [appCountUp]="bill.rentAmount" prefix="₹"></td>
+                                      <td class="p-4" [class]="bill.status === 'Pending' && bill.electricBill > 0 ? 'text-red-500' : 'text-green-500'" [appCountUp]="bill.electricBill" prefix="₹"></td>
+                                      <td class="p-4" [class]="bill.status === 'Pending' && bill.waterBill > 0 ? 'text-red-500' : 'text-green-500'" [appCountUp]="bill.waterBill" prefix="₹"></td>
                                      
                                      
                                      <td class="p-4 font-black text-gray-900 dark:text-white bg-green-50/30" [appCountUp]="bill.total" prefix="₹"></td>
                                       <td class="p-4">
                                          <span class="px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest"
                                             [class]="bill.status === 'Paid' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'">
-                                            {{ bill.status || 'Pending' }}
+                                            {{ bill.status === 'Paid' ? 'Paid' : 'Unpaid' }}
                                          </span>
                                       </td>
                                   </tr>
@@ -734,6 +938,7 @@ export class CustomerDashboardComponent implements OnInit {
   private fb = inject(FormBuilder);
   private toast = inject(ToastService);
   public biometricService = inject(BiometricService);
+  private tspdclService = inject(TspdclService);
 
   customerChitties: { scheme: ChittiScheme, customer: Customer }[] = [];
   activeLoans: InterestScheme[] = [];
@@ -742,6 +947,10 @@ export class CustomerDashboardComponent implements OnInit {
   activeMobileMenu: 'home' | 'security' = 'home';
   activeTab: 'home' | 'security' = 'home';
   isBiometricEnabled = false;
+
+  tenantElectricityBill: TspdclBillDetails | null = null;
+  isFetchingElectricity = false;
+  ownerProfile: any = null;
 
   availableYears: number[] = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
   selectedYearOverall: number = new Date().getFullYear();
@@ -762,6 +971,45 @@ export class CustomerDashboardComponent implements OnInit {
 
   goToGame() {
     this.router.navigate(['/car']);
+  }
+
+  fetchTenantElectricityBill(uscNo: string) {
+    if (!uscNo) return;
+    this.isFetchingElectricity = true;
+    this.tspdclService.fetchBillDetails(uscNo).subscribe({
+      next: (details) => {
+        this.tenantElectricityBill = details;
+        this.isFetchingElectricity = false;
+        if (details?.success) {
+          this.toast.success('Electricity bill fetched successfully!');
+        } else {
+          this.toast.error('Could not fetch electricity bill.');
+        }
+      },
+      error: (err) => {
+        console.error(err);
+        this.isFetchingElectricity = false;
+        this.toast.error('Failed to fetch electricity bill.');
+      }
+    });
+  }
+
+  openElectricityPortal(uscNo: string) {
+    const url = `https://www.tgsouthernpower.org/online-bill-payment?uscno=${uscNo}`;
+    if (Capacitor.isNativePlatform()) {
+      window.open(url, '_system');
+    } else {
+      window.open(url, '_blank');
+    }
+  }
+
+  openBillPortal(uscNo: string) {
+    const url = `https://www.tgsouthernpower.org/billinginfo?ukscno=${uscNo}&submit=SUBMIT`;
+    if (Capacitor.isNativePlatform()) {
+      window.open(url, '_system');
+    } else {
+      window.open(url, '_blank');
+    }
   }
 
   openIdentityProfile(type: 'chit' | 'loan', payload: any) {
@@ -857,6 +1105,18 @@ export class CustomerDashboardComponent implements OnInit {
         // Load Rental Houses for this tenant
         this.rentalService.getHouses().subscribe((allHouses: RentalHouse[]) => {
           this.tenantHouses = allHouses.filter(h => h.renterPhone === profile.phone);
+          if (this.tenantHouses.length > 0) {
+            const house = this.tenantHouses[0];
+            if (house.electricMeterNo) {
+              this.fetchTenantElectricityBill(house.electricMeterNo);
+            }
+            // Fetch owner/admin profile using createdBy UID
+            if (house.createdBy) {
+              this.authService.getUserProfile(house.createdBy).then(ownerProf => {
+                this.ownerProfile = ownerProf;
+              }).catch(() => { this.ownerProfile = null; });
+            }
+          }
         });
       }
     });
@@ -912,12 +1172,45 @@ export class CustomerDashboardComponent implements OnInit {
 
   getPendingInterest(loan: InterestScheme): number {
     if (!loan.startDate) return 0;
-    const months = this.getMonthsElapsed(loan.startDate);
-    const balance = this.getBalance(loan);
-    const expectedInterest = balance * (loan.interestRate / 100) * months;
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const accrued = this.getAccruedInterestThroughDate(loan, today);
     const paidInterest = this.getLoanInterestPaid(loan);
 
-    return Math.max(0, expectedInterest - paidInterest);
+    return Math.max(0, accrued - paidInterest);
+  }
+
+  private parseLocalDateForReminder(value: string): Date | null {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (match) return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  private addMonthsClamped(date: Date, months: number): Date {
+    const targetMonth = new Date(date.getFullYear(), date.getMonth() + months, 1);
+    const lastDay = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0).getDate();
+    return new Date(targetMonth.getFullYear(), targetMonth.getMonth(), Math.min(date.getDate(), lastDay));
+  }
+
+  private getAccruedInterestThroughDate(loan: InterestScheme, date: Date): number {
+    const startDate = this.parseLocalDateForReminder(loan.startDate);
+    if (!startDate) return 0;
+    let totalDue = 0;
+    let cycleIndex = 1;
+    while (true) {
+      const cycleStart = this.addMonthsClamped(startDate, cycleIndex - 1);
+      const cycleDueDate = this.addMonthsClamped(startDate, cycleIndex);
+      if (cycleDueDate.getTime() > date.getTime()) break;
+      const settledBeforeCycle = (loan.settlements || []).reduce((sum, s) => {
+        const sDate = this.parseLocalDateForReminder(s.date);
+        return (sDate && sDate.getTime() <= cycleStart.getTime()) ? sum + s.amount : sum;
+      }, 0);
+      const balanceAtStart = Math.max(0, loan.amount - settledBeforeCycle);
+      totalDue += balanceAtStart * (loan.interestRate / 100);
+      cycleIndex++;
+    }
+    return totalDue;
   }
 
   getNextInterestDate(loan: InterestScheme): Date {

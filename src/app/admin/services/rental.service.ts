@@ -23,6 +23,7 @@ export interface RentalHouse {
   monthlyRent: number;
   renterName: string;
   renterPhone: string;
+  renterAadhar?: string;
   arrivedDate: string;
   fullAddress?: string;
   

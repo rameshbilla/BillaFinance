@@ -146,7 +146,7 @@ import { RentalHouse, RentalBill } from '../../services/rental.service';
                   <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Monthly breakdown and utility consumption</p>
                 </div>
               </div>
-              <button (click)="onAddMonthlyRecord.emit()" class="w-full sm:w-auto px-5 py-3 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">Add Monthly Record</button>
+              <button (click)="onAddMonthlyRecord.emit()" class="w-full sm:w-auto px-5 py-3 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">Record Collection</button>
           </div>
           
           <div class="p-8 relative">
@@ -154,22 +154,18 @@ import { RentalHouse, RentalBill } from '../../services/rental.service';
                   <div *ngFor="let bill of sortBills(house.bills); trackBy: trackByBillDate; let i = index" class="history-step group">
                     <div *ngIf="i < house.bills.length - 1" class="stepper-line bg-indigo-500/20 dark:bg-indigo-500/10"></div>
                     
-                    <div class="stepper-dot w-8 h-8 rounded-full flex items-center justify-center text-white shadow-lg z-10 transition-all group-hover:scale-110"
-                         [class]="bill.status === 'Paid' ? 'bg-green-500 shadow-green-500/30' : 'bg-red-500 shadow-red-500/30'">
-                      <svg *ngIf="bill.status === 'Paid'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
+                    <div class="stepper-dot w-8 h-8 rounded-full flex items-center justify-center text-white shadow-lg z-10 transition-all group-hover:scale-110 bg-green-500 shadow-green-500/30">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      <svg *ngIf="bill.status !== 'Paid'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                       </svg>
                     </div>
 
-                    <div class="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-md hover:border-indigo-200">
+                    <div class="p-5 rounded-3xl border border-green-100 dark:border-green-900/30 hover:border-green-200 bg-green-50/10 dark:bg-green-950/5 shadow-sm transition-all hover:shadow-md">
                       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div class="min-w-0">
                           <div class="flex items-center gap-2 mb-1">
                             <p class="text-[9px] font-black uppercase tracking-widest leading-none" [class]="bill.status === 'Paid' ? 'text-green-500' : 'text-red-500'">
-                              {{ bill.status === 'Paid' ? 'Payment Recorded' : 'Payment Pending' }}
+                              {{ bill.status === 'Paid' ? 'Paid' : 'Unpaid' }}
                             </p>
                             <span class="text-[8px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-900 rounded font-black text-gray-400 uppercase tracking-tighter">Step {{ house.bills.length - i }}</span>
                           </div>
@@ -178,17 +174,17 @@ import { RentalHouse, RentalBill } from '../../services/rental.service';
                           <div class="flex flex-wrap gap-x-4 gap-y-2">
                             <div class="flex flex-col">
                               <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Rent</span>
-                              <span class="text-xs font-bold text-gray-700 dark:text-gray-300" [appCountUp]="bill.rentAmount" prefix="₹"></span>
+                              <span class="text-xs font-bold text-green-500" [appCountUp]="bill.rentAmount" prefix="₹"></span>
                             </div>
                             <div class="flex items-center text-gray-200 dark:text-gray-700 text-xs px-1">/</div>
                             <div class="flex flex-col">
                               <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Electric</span>
-                              <span class="text-xs font-bold text-gray-700 dark:text-gray-300" [appCountUp]="bill.electricBill" prefix="₹"></span>
+                              <span class="text-xs font-bold" [class]="bill.status === 'Pending' && bill.electricBill > 0 ? 'text-red-500' : 'text-green-500'" [appCountUp]="bill.electricBill" prefix="₹"></span>
                             </div>
                             <div class="flex items-center text-gray-200 dark:text-gray-700 text-xs px-1">/</div>
                             <div class="flex flex-col">
                               <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Water</span>
-                              <span class="text-xs font-bold text-gray-700 dark:text-gray-300" [appCountUp]="bill.waterBill" prefix="₹"></span>
+                              <span class="text-xs font-bold" [class]="bill.status === 'Pending' && bill.waterBill > 0 ? 'text-red-500' : 'text-green-500'" [appCountUp]="bill.waterBill" prefix="₹"></span>
                             </div>
                           </div>
                         </div>

@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { InterestService, InterestScheme, Settlement, InterestCollection } from '../services/interest.service';
 import { ToastService } from '../../shared/toast.service';
 import { NotificationService } from '../services/notification.service';
+import { WhatsAppService } from '../services/whatsapp.service';
 
 import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
@@ -58,11 +59,11 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                       {{ scheme.borrowerPhone }}
                     </p>
                     <div class="flex items-center gap-2">
-                      <button (click)="sendReminder('whatsapp')" class="w-8 h-8 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg shadow-green-500/30" title="Send WhatsApp via FinServe">
-                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-                      </button>
-                      <button (click)="sendReminder('sms')" class="w-8 h-8 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg shadow-blue-500/30" title="Send SMS via FinServe">
-                        <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+                      <button (click)="shareReminder()" class="w-8 h-8 bg-[#25D366] hover:bg-[#1ebe59] rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg shadow-green-500/30" title="WhatsApp Reminder">
+                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                          <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.529 5.855L0 24l6.335-1.51A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.808 9.808 0 01-5.001-1.368l-.36-.214-3.72.886.916-3.618-.235-.373A9.794 9.794 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
+                        </svg>
                       </button>
                     </div>
                   </div>
@@ -315,6 +316,7 @@ export class AdminInterestDetailsComponent implements OnInit {
   private fb = inject(FormBuilder);
   private toast = inject(ToastService);
   private notificationService = inject(NotificationService);
+  private whatsappService = inject(WhatsAppService);
 
   scheme: InterestScheme | null = null;
   activeHistoryTab: 'overview' | 'interest' | 'settlements' = 'overview';
@@ -360,11 +362,9 @@ export class AdminInterestDetailsComponent implements OnInit {
   }
 
   get totalPendingInterest(): number {
-    if (!this.scheme?.startDate) return 0;
-    const months = this.getMonthsElapsed(this.scheme.startDate);
-    const expectedInterest = this.currentBalance * (this.scheme.interestRate / 100) * months;
-    const paidInterest = this.totalInterestCollected;
-    return Math.max(0, expectedInterest - paidInterest);
+    if (!this.scheme) return 0;
+    const accrued = this.getAccruedInterestThrough(this.getLocalToday());
+    return Math.max(0, accrued - this.totalInterestCollected);
   }
 
   private getMonthsElapsed(startDateStr: string): number {
@@ -412,18 +412,22 @@ export class AdminInterestDetailsComponent implements OnInit {
     return daysDiff <= 5 && daysDiff >= 0;
   }
 
-  sendReminder(type: 'whatsapp' | 'sms' = 'whatsapp') {
+  shareReminder() {
     if (!this.scheme) return;
     const amountDue = this.totalPendingInterest || this.pendingInterest;
+    const formattedAmount = amountDue.toLocaleString('en-IN');
+    const formattedDate = this.nextDueDate ? this.nextDueDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
     
-    this.notificationService.sendReminder(
-      this.scheme.borrowerPhone,
-      this.scheme.borrowerName,
-      this.scheme.name,
-      amountDue,
-      this.nextDueDate,
-      type
-    );
+    const message = `Hello ${this.scheme.borrowerName}, this is a reminder from FinServe for your interest payment regarding ${this.scheme.name}. ` +
+      `Amount due: ₹${formattedAmount}. ` +
+      (formattedDate ? `Due date: ${formattedDate}. ` : '') +
+      `Please pay to avoid penalties. Thank you!`;
+
+    const cleanPhone = this.scheme.borrowerPhone.replace(/\D/g, '');
+    const phoneWithCountry = cleanPhone.startsWith('91') && cleanPhone.length === 12 ? cleanPhone : `91${cleanPhone}`;
+    const whatsappUrl = `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(message)}`;
+    
+    window.open(whatsappUrl, '_blank');
   }
 
   sortLatest(list: any[] | undefined) {
@@ -489,7 +493,7 @@ export class AdminInterestDetailsComponent implements OnInit {
       const cycleStart = this.addMonthsClamped(startDate, cycleIndex - 1);
       const cycleDueDate = this.addMonthsClamped(startDate, cycleIndex);
 
-      if (cycleStart.getTime() > date.getTime()) {
+      if (cycleDueDate.getTime() > date.getTime()) {
         break;
       }
 
@@ -533,6 +537,24 @@ export class AdminInterestDetailsComponent implements OnInit {
       const interestCollections = [...(this.scheme.interestCollections || []), newCollection];
       await this.interestService.updateInterest(this.scheme.id, { interestCollections });
       this.toast.success('Interest collection saved.');
+
+      // Try sending automatic WhatsApp receipt
+      try {
+        const dateObj = new Date(value.date);
+        const formattedDate = isNaN(dateObj.getTime()) ? value.date : dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        const receiptMsg = `Hello ${this.scheme.borrowerName}, we have successfully received your interest payment of ₹${value.amount.toLocaleString('en-IN')} on ${formattedDate} for the loan "${this.scheme.name}". Thank you!`;
+        
+        const res = await this.whatsappService.sendMessage(this.scheme.borrowerPhone, receiptMsg);
+        if (res && res.status === 'mocked') {
+          this.toast.info('WhatsApp receipt simulated (API not configured).');
+        } else {
+          this.toast.success('WhatsApp receipt sent automatically.');
+        }
+      } catch (err) {
+        console.error('Failed to send WhatsApp automatically:', err);
+        this.toast.warning('Interest collected successfully, but automatic WhatsApp receipt failed to send.');
+      }
+
       this.collectionForm.reset({ amount: this.pendingInterest, date: new Date().toISOString().split('T')[0] });
     }
   }

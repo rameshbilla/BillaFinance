@@ -961,12 +961,13 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                                    <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                                 </a>
 
-                               <button (click)="$event.stopPropagation(); sendLoanReminder(loan, 'whatsapp')" class="w-7 h-7 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg shadow-green-500/30" title="Send WhatsApp via FinServe">
-                                  <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-                               </button>
-                               <button (click)="$event.stopPropagation(); sendLoanReminder(loan, 'sms')" class="w-7 h-7 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg shadow-blue-500/30" title="Send SMS via FinServe">
-                                  <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-                               </button>
+                                <button (click)="$event.stopPropagation(); shareLoanReminder(loan)" class="w-7 h-7 bg-[#25D366] hover:bg-[#1ebe59] rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg shadow-green-500/30" title="WhatsApp Reminder">
+                                    <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                                      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.529 5.855L0 24l6.335-1.51A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.808 9.808 0 01-5.001-1.368l-.36-.214-3.72.886.916-3.618-.235-.373A9.794 9.794 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
+                                    </svg>
+                                </button>
+
                              </div>
                            </div>
                            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">Last Collection</p>
@@ -1381,7 +1382,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                         <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Monthly breakdown and utility consumption</p>
                       </div>
                     </div>
-                    <button (click)="openMonthlyBillForm()" class="w-full sm:w-auto px-5 py-3 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">Add Monthly Record</button>
+                    <button (click)="openMonthlyBillForm()" class="w-full sm:w-auto px-5 py-3 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">Record Collection</button>
                 </div>
                 
                 <div class="p-8 relative">
@@ -1392,22 +1393,18 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                               <div class="stepper-line bg-indigo-500/20 dark:bg-indigo-500/10"></div>
                             }
                             
-                            <div class="stepper-dot w-8 h-8 rounded-full flex items-center justify-center text-white shadow-lg z-10 transition-all group-hover:scale-110"
-                                 [class]="bill.status === 'Paid' ? 'bg-green-500 shadow-green-500/30' : 'bg-red-500 shadow-red-500/30'">
-                              <svg *ngIf="bill.status === 'Paid'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
+                            <div class="stepper-dot w-8 h-8 rounded-full flex items-center justify-center text-white shadow-lg z-10 transition-all group-hover:scale-110 bg-green-500 shadow-green-500/30">
+                              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
-                              </svg>
-                              <svg *ngIf="bill.status !== 'Paid'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                               </svg>
                             </div>
 
-                            <div class="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-md hover:border-indigo-200">
+                            <div class="p-5 rounded-3xl border border-green-100 dark:border-green-900/30 hover:border-green-200 bg-green-50/10 dark:bg-green-950/5 shadow-sm transition-all hover:shadow-md">
                               <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                 <div class="min-w-0">
                                   <div class="flex items-center gap-2 mb-1">
                                     <p class="text-[9px] font-black uppercase tracking-widest leading-none" [class]="bill.status === 'Paid' ? 'text-green-500' : 'text-red-500'">
-                                      {{ bill.status === 'Paid' ? 'Payment Recorded' : 'Payment Pending' }}
+                                      {{ bill.status === 'Paid' ? 'Paid' : 'Unpaid' }}
                                     </p>
                                     <span class="text-[8px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-900 rounded font-black text-gray-400 uppercase tracking-tighter">Step {{ (activeHouse.bills || []).length - i }}</span>
                                   </div>
@@ -1415,18 +1412,18 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                                   
                                   <div class="flex flex-wrap gap-x-4 gap-y-2">
                                     <div class="flex flex-col">
-                                      <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Rent</span>
-                                      <span class="text-xs font-bold text-gray-700 dark:text-gray-300" [appCountUp]="bill.rentAmount" prefix="₹"></span>
+                                       <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Rent</span>
+                                       <span class="text-xs font-bold text-green-500" [appCountUp]="bill.rentAmount" prefix="₹"></span>
                                     </div>
                                     <div class="flex items-center text-gray-200 dark:text-gray-700 text-xs px-1">/</div>
                                     <div class="flex flex-col">
-                                      <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Electric</span>
-                                      <span class="text-xs font-bold text-gray-700 dark:text-gray-300" [appCountUp]="bill.electricBill" prefix="₹"></span>
+                                       <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Electric</span>
+                                       <span class="text-xs font-bold" [class]="bill.status === 'Pending' && bill.electricBill > 0 ? 'text-red-500' : 'text-green-500'" [appCountUp]="bill.electricBill" prefix="₹"></span>
                                     </div>
                                     <div class="flex items-center text-gray-200 dark:text-gray-700 text-xs px-1">/</div>
                                     <div class="flex flex-col">
-                                      <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Water</span>
-                                      <span class="text-xs font-bold text-gray-700 dark:text-gray-300" [appCountUp]="bill.waterBill" prefix="₹"></span>
+                                       <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Water</span>
+                                       <span class="text-xs font-bold" [class]="bill.status === 'Pending' && bill.waterBill > 0 ? 'text-red-500' : 'text-green-500'" [appCountUp]="bill.waterBill" prefix="₹"></span>
                                     </div>
                                   </div>
                                 </div>
@@ -1452,8 +1449,8 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                         @if (!activeHouse.bills || activeHouse.bills.length === 0) {
                           <div class="py-20 text-center opacity-40">
                               <svg class="w-16 h-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                              <p class="text-sm font-black uppercase tracking-widest">No monthly records found</p>
-                              <p class="text-xs font-medium mt-1">Add a monthly record to see the history here</p>
+                              <p class="text-sm font-black uppercase tracking-widest">No rent collections recorded</p>
+                              <p class="text-xs font-medium mt-1">Record rent collection to see the history here</p>
                           </div>
                         }
                     </div>
@@ -2048,32 +2045,70 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                     <form [formGroup]="rentalHouseForm" (ngSubmit)="saveRentalHouse()" class="space-y-6">
                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div class="space-y-2">
-                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">House Name / ID</label>
-                             <input type="text" formControlName="houseName" placeholder="e.g., G-101, Penthouse" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">House Name / ID <span class="text-red-500">*</span></label>
+                             <input type="text" formControlName="houseName" placeholder="e.g., G-101, Penthouse" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold" [class.ring-2]="rentalHouseForm.get('houseName')?.invalid && rentalHouseForm.get('houseName')?.touched" [class.ring-red-500]="rentalHouseForm.get('houseName')?.invalid && rentalHouseForm.get('houseName')?.touched">
+                             @if (rentalHouseForm.get('houseName')?.invalid && rentalHouseForm.get('houseName')?.touched) {
+                                <p class="text-xs text-red-500 font-semibold mt-1 px-1">House Name / ID is required</p>
+                             }
                           </div>
                           <div class="space-y-2">
-                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Monthly Rent</label>
-                             <input type="number" formControlName="monthlyRent" placeholder="0.00" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Monthly Rent <span class="text-red-500">*</span></label>
+                             <input type="number" formControlName="monthlyRent" placeholder="0.00" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold" [class.ring-2]="rentalHouseForm.get('monthlyRent')?.invalid && rentalHouseForm.get('monthlyRent')?.touched" [class.ring-red-500]="rentalHouseForm.get('monthlyRent')?.invalid && rentalHouseForm.get('monthlyRent')?.touched">
+                             @if (rentalHouseForm.get('monthlyRent')?.invalid && rentalHouseForm.get('monthlyRent')?.touched) {
+                                <p class="text-xs text-red-500 font-semibold mt-1 px-1">Monthly Rent is required</p>
+                             }
                           </div>
                           <div class="space-y-2">
-                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Advance Amount</label>
-                             <input type="number" formControlName="advanceAmount" placeholder="0.00" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Advance Amount <span class="text-red-500">*</span></label>
+                             <input type="number" formControlName="advanceAmount" placeholder="0.00" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold" [class.ring-2]="rentalHouseForm.get('advanceAmount')?.invalid && rentalHouseForm.get('advanceAmount')?.touched" [class.ring-red-500]="rentalHouseForm.get('advanceAmount')?.invalid && rentalHouseForm.get('advanceAmount')?.touched">
+                             @if (rentalHouseForm.get('advanceAmount')?.invalid && rentalHouseForm.get('advanceAmount')?.touched) {
+                                <p class="text-xs text-red-500 font-semibold mt-1 px-1">Advance Amount is required</p>
+                             }
                           </div>
                           <div class="space-y-2">
-                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Advance (In Months)</label>
-                             <input type="number" formControlName="advanceMonths" placeholder="e.g., 3" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Advance (In Months) <span class="text-red-500">*</span></label>
+                             <input type="number" formControlName="advanceMonths" placeholder="e.g., 3" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold" [class.ring-2]="rentalHouseForm.get('advanceMonths')?.invalid && rentalHouseForm.get('advanceMonths')?.touched" [class.ring-red-500]="rentalHouseForm.get('advanceMonths')?.invalid && rentalHouseForm.get('advanceMonths')?.touched">
+                             @if (rentalHouseForm.get('advanceMonths')?.invalid && rentalHouseForm.get('advanceMonths')?.touched) {
+                                <p class="text-xs text-red-500 font-semibold mt-1 px-1">Advance Months is required</p>
+                             }
                           </div>
                           <div class="space-y-2">
-                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Renter Name</label>
-                             <input type="text" formControlName="renterName" placeholder="Full name of tenant" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Renter Name <span class="text-red-500">*</span></label>
+                             <input type="text" formControlName="renterName" placeholder="Full name of tenant" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold" [class.ring-2]="rentalHouseForm.get('renterName')?.invalid && rentalHouseForm.get('renterName')?.touched" [class.ring-red-500]="rentalHouseForm.get('renterName')?.invalid && rentalHouseForm.get('renterName')?.touched">
+                             @if (rentalHouseForm.get('renterName')?.invalid && rentalHouseForm.get('renterName')?.touched) {
+                                <p class="text-xs text-red-500 font-semibold mt-1 px-1">Tenant Name is required</p>
+                             }
                           </div>
                           <div class="space-y-2">
-                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Renter Phone</label>
-                             <input type="tel" formControlName="renterPhone" placeholder="10 digit number" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Renter Phone <span class="text-red-500">*</span></label>
+                             <input type="tel" formControlName="renterPhone" placeholder="10 digit number" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold" [class.ring-2]="rentalHouseForm.get('renterPhone')?.invalid && rentalHouseForm.get('renterPhone')?.touched" [class.ring-red-500]="rentalHouseForm.get('renterPhone')?.invalid && rentalHouseForm.get('renterPhone')?.touched">
+                             @if (rentalHouseForm.get('renterPhone')?.touched) {
+                                @if (rentalHouseForm.get('renterPhone')?.hasError('required')) {
+                                   <p class="text-xs text-red-500 font-semibold mt-1 px-1">Phone number is required</p>
+                                } @else if (rentalHouseForm.get('renterPhone')?.invalid) {
+                                   <p class="text-xs text-red-500 font-semibold mt-1 px-1">Must be a valid 10-digit number</p>
+                                }
+                             }
                           </div>
                           <div class="space-y-2">
-                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Arrived Date</label>
-                             <input type="date" formControlName="arrivedDate" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">
+                               Tenant Aadhar Number
+                               <span class="ml-1 text-[9px] normal-case font-medium text-gray-300 dark:text-gray-600 tracking-normal">(optional)</span>
+                             </label>
+                             <input type="text" formControlName="renterAadhar" placeholder="12-digit Aadhar number" maxlength="12" inputmode="numeric"
+                                    class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold tracking-[0.25em]"
+                                    [class.ring-2]="rentalHouseForm.get('renterAadhar')?.invalid && rentalHouseForm.get('renterAadhar')?.touched"
+                                    [class.ring-red-500]="rentalHouseForm.get('renterAadhar')?.invalid && rentalHouseForm.get('renterAadhar')?.touched">
+                             @if (rentalHouseForm.get('renterAadhar')?.invalid && rentalHouseForm.get('renterAadhar')?.touched) {
+                                <p class="text-xs text-red-500 font-semibold mt-1 px-1">Aadhar must be exactly 12 digits</p>
+                             }
+                          </div>
+                          <div class="space-y-2">
+                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Arrived Date <span class="text-red-500">*</span></label>
+                             <input type="date" formControlName="arrivedDate" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold" [class.ring-2]="rentalHouseForm.get('arrivedDate')?.invalid && rentalHouseForm.get('arrivedDate')?.touched" [class.ring-red-500]="rentalHouseForm.get('arrivedDate')?.invalid && rentalHouseForm.get('arrivedDate')?.touched">
+                             @if (rentalHouseForm.get('arrivedDate')?.invalid && rentalHouseForm.get('arrivedDate')?.touched) {
+                                <p class="text-xs text-red-500 font-semibold mt-1 px-1">Arrival Date is required</p>
+                             }
                           </div>
                           <div class="space-y-2">
                              <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Status</label>
@@ -2101,7 +2136,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
                        <div class="pt-8 flex gap-4">
                           <button type="button" (click)="closeRentalHouseForm()" class="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-2xl font-black uppercase text-xs tracking-widest">Cancel</button>
-                          <button type="submit" [disabled]="rentalHouseForm.invalid || isSaving" class="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-500/20">
+                          <button type="submit" [disabled]="isSaving" class="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-500/20">
                              {{ isSaving ? 'Saving...' : (isRentalEditMode ? 'Update Details' : 'Register Property') }}
                           </button>
                        </div>
@@ -2118,8 +2153,8 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                   <div class="p-8 pb-4 border-b border-gray-100 dark:border-gray-800">
                      <div class="flex justify-between items-center">
                         <div>
-                           <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Generate Bill</h3>
-                           <p class="text-sm text-gray-500 font-medium">Record rent and utility charges</p>
+                           <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Rent Collected</h3>
+                           <p class="text-sm text-gray-500 font-medium">Record monthly rent and utility collections</p>
                         </div>
                         <button (click)="closeMonthlyBillForm()" class="p-3 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500">
                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -2130,7 +2165,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                   <div class="p-8">
                      <form [formGroup]="monthlyBillForm" (ngSubmit)="saveMonthlyBill()" class="space-y-5">
                         <div class="space-y-2">
-                           <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Bill Date</label>
+                           <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Collection Date</label>
                            <input type="date" formControlName="billDate" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
                         </div>
                         <div class="grid grid-cols-2 gap-4">
@@ -2145,13 +2180,21 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                         </div>
                         <div class="space-y-2">
                            <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Electricity Bill</label>
-                           <input type="number" formControlName="electricBill" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                           <input type="number" formControlName="electricBill" readonly class="w-full px-6 py-4 rounded-2xl bg-gray-100/70 dark:bg-gray-800/50 border-none outline-none focus:ring-0 cursor-not-allowed opacity-85 text-gray-900 dark:text-white font-bold">
                         </div>
 
-                        <div class="pt-6 flex gap-4">
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Electricity bill payment</label>
+                            <select formControlName="status" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold appearance-none">
+                               <option value="Paid">Paid</option>
+                               <option value="Pending">Unpaid</option>
+                            </select>
+                         </div>
+
+                         <div class="pt-6 flex gap-4">
                            <button type="button" (click)="closeMonthlyBillForm()" class="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-2xl font-black uppercase text-xs tracking-widest">Cancel</button>
                            <button type="submit" [disabled]="monthlyBillForm.invalid || isSaving" class="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-500/20">
-                              {{ isSaving ? 'Saving...' : 'Generate Bill' }}
+                              {{ isSaving ? 'Saving...' : 'Record Collection' }}
                            </button>
                         </div>
                      </form>
@@ -2847,6 +2890,7 @@ export class AdminDashboardComponent implements OnInit {
       monthlyRent: [0, Validators.required],
       renterName: ['', Validators.required],
       renterPhone: ['', [Validators.required, Validators.pattern(/^[0-9]+$/), Validators.minLength(10), Validators.maxLength(10)]],
+      renterAadhar: ['', [Validators.pattern(/^[0-9]{12}$/)]],
       arrivedDate: [new Date().toISOString().split('T')[0], Validators.required],
       electricMeterNo: [''],
       waterBillNo: [''],
@@ -2859,7 +2903,7 @@ export class AdminDashboardComponent implements OnInit {
       rentAmount: [0, Validators.required],
       electricBill: [0],
       waterBill: [0],
-      status: ['Pending', Validators.required]
+      status: ['Paid', Validators.required]
     });
     this.trackedServiceForm = this.fb.group({
       serviceType: ['electricity', Validators.required],
@@ -2931,12 +2975,11 @@ export class AdminDashboardComponent implements OnInit {
 
   getPendingInterestForLoan(loan: InterestScheme): number {
     if (!loan.startDate) return 0;
-    const months = this.getMonthsElapsed(loan.startDate);
-    const principalPaid = (loan.settlements || []).reduce((s, st) => s + st.amount, 0);
-    const balance = Math.max(0, loan.amount - principalPaid);
-    const expectedInterest = balance * (loan.interestRate / 100) * months;
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const accrued = this.getAccruedInterestThroughDate(loan, today);
     const paidInterest = (loan.interestCollections || []).reduce((s, c) => s + c.amount, 0);
-    return Math.max(0, expectedInterest - paidInterest);
+    return Math.max(0, accrued - paidInterest);
   }
 
   get totalPendingInterest() {
@@ -4258,6 +4301,7 @@ export class AdminDashboardComponent implements OnInit {
         monthlyRent: house.monthlyRent || 0,
         renterName: house.renterName,
         renterPhone: house.renterPhone,
+        renterAadhar: house.renterAadhar || '',
         arrivedDate: house.arrivedDate,
         electricMeterNo: house.electricMeterNo || '',
         waterBillNo: house.waterBillNo || '',
@@ -4278,25 +4322,29 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   async saveRentalHouse() {
-    if (this.rentalHouseForm.valid) {
-      this.isSaving = true;
-      try {
-        const profile = await new Promise<any>(res => this.authService.userProfile$.subscribe(res));
-        const houseData = { ...this.rentalHouseForm.getRawValue(), createdBy: profile?.uid };
+    if (this.rentalHouseForm.invalid) {
+      this.rentalHouseForm.markAllAsTouched();
+      this.toast.error('Please fill all required fields correctly.');
+      return;
+    }
+    this.isSaving = true;
+    try {
+      const profile = await new Promise<any>(res => this.authService.userProfile$.subscribe(res));
+      const houseData = { ...this.rentalHouseForm.getRawValue(), createdBy: profile?.uid };
 
-        if (this.isRentalEditMode && this.editingRentalId) {
-          await this.rentalService.updateHouse(this.editingRentalId, houseData);
-          this.toast.success('House updated successfully!');
-        } else {
-          await this.rentalService.addHouse({ ...houseData, bills: [] });
-          this.toast.success('New house registered!');
-        }
-        this.showRentalHouseForm = false;
-      } catch (e) {
-        this.toast.error('Failed to save house information');
-      } finally {
-        this.isSaving = false;
+      if (this.isRentalEditMode && this.editingRentalId) {
+        await this.rentalService.updateHouse(this.editingRentalId, houseData);
+        this.toast.success('House updated successfully!');
+      } else {
+        await this.rentalService.addHouse({ ...houseData, bills: [] });
+        this.toast.success('New house registered!');
       }
+      this.showRentalHouseForm = false;
+      document.body.classList.remove('modal-open');
+    } catch (e) {
+      this.toast.error('Failed to save house information');
+    } finally {
+      this.isSaving = false;
     }
   }
 
@@ -4337,7 +4385,7 @@ export class AdminDashboardComponent implements OnInit {
         rentAmount: bill.rentAmount,
         electricBill: bill.electricBill,
         waterBill: bill.waterBill,
-        status: bill.status || 'Pending'
+        status: bill.status || 'Paid'
       });
     } else {
       const electricAmount = this.getHouseUtilityBill(house, 'electricity');
@@ -4348,7 +4396,7 @@ export class AdminDashboardComponent implements OnInit {
         rentAmount: house.monthlyRent || 0,
         electricBill: electricAmount,
         waterBill: waterAmount,
-        status: 'Pending'
+        status: 'Paid'
       });
       this.syncRentalUtilityBills(house, true);
     }
@@ -4433,7 +4481,7 @@ export class AdminDashboardComponent implements OnInit {
 
         if (this.activeHouseId) {
           await this.rentalService.updateHouse(this.activeHouseId, { bills: updatedBills });
-          this.toast.success('Monthly bill recorded!');
+          this.toast.success('Rent collection recorded!');
         }
         this.showMonthlyBillForm = false;
         document.body.classList.remove('modal-open');
@@ -4533,18 +4581,22 @@ export class AdminDashboardComponent implements OnInit {
     return dueDate;
   }
 
-  sendLoanReminder(loan: InterestScheme, type: 'whatsapp' | 'sms' = 'whatsapp') {
+  shareLoanReminder(loan: InterestScheme) {
     const nextDue = this.nextLoanDueDate(loan);
     const amountDue = this.getPendingInterestForLoan(loan);
+    const formattedAmount = amountDue.toLocaleString('en-IN');
+    const formattedDate = nextDue ? nextDue.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    
+    const message = `Hello ${loan.borrowerName}, this is a reminder from FinServe for your interest payment regarding ${loan.name}. ` +
+      `Amount due: ₹${formattedAmount}. ` +
+      (formattedDate ? `Due date: ${formattedDate}. ` : '') +
+      `Please pay to avoid penalties. Thank you!`;
 
-    this.notificationService.sendReminder(
-      loan.borrowerPhone,
-      loan.borrowerName,
-      loan.name,
-      amountDue,
-      nextDue,
-      type
-    );
+    const cleanPhone = loan.borrowerPhone.replace(/\D/g, '');
+    const phoneWithCountry = cleanPhone.startsWith('91') && cleanPhone.length === 12 ? cleanPhone : `91${cleanPhone}`;
+    const whatsappUrl = `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(message)}`;
+    
+    window.open(whatsappUrl, '_blank');
   }
 
 
@@ -4555,7 +4607,8 @@ export class AdminDashboardComponent implements OnInit {
     let cycleIndex = 1;
     while (true) {
       const cycleStart = this.addMonthsClampedForReminder(startDate, cycleIndex - 1);
-      if (cycleStart.getTime() > date.getTime()) break;
+      const cycleDueDate = this.addMonthsClampedForReminder(startDate, cycleIndex);
+      if (cycleDueDate.getTime() > date.getTime()) break;
       const settledBeforeCycle = (loan.settlements || []).reduce((sum, s) => {
         const sDate = this.parseLocalDateForReminder(s.date);
         return (sDate && sDate.getTime() <= cycleStart.getTime()) ? sum + s.amount : sum;

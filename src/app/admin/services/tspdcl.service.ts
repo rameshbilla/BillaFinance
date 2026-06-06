@@ -66,7 +66,13 @@ export class TspdclService {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     
-    if (html.includes('Invalid') || html.includes('not found')) {
+    const lowerHtml = html.toLowerCase();
+    if (lowerHtml.includes('invalid') 
+        || lowerHtml.includes('not found') 
+        || lowerHtml.includes('enter valid')
+        || lowerHtml.includes('no records')
+        || lowerHtml.includes('error')
+        || lowerHtml.includes('does not exist')) {
       return null;
     }
 
@@ -136,7 +142,13 @@ export class TspdclService {
             }
           }
 
-          if (normalizedCellText === 'amount') {
+          const isAmountCell = normalizedCellText === 'amount'
+            || normalizedCellText === 'amount:'
+            || normalizedCellText === 'amount(rs.)'
+            || normalizedCellText === 'amount (rs.)'
+            || normalizedCellText.includes('amount(')
+            || normalizedCellText.includes('amount (');
+          if (isAmountCell) {
             const amt = this.parseAmount(nextCellText);
             if (amt !== null) {
               if (currentSection === 'arrears') details.arrearsAmount = amt;
