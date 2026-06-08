@@ -267,7 +267,9 @@ export class BillService {
   // Mock Sync from Servers based on Service Numbers
   syncBillsFromServers(adminUid: string): Observable<any> {
     const q = query(this.trackedServicesCollection, where('adminUid', '==', adminUid));
-    return collectionData(q) as Observable<TrackedService[]>;
+    return (collectionData(q) as Observable<TrackedService[]>).pipe(
+      map(services => this.processSync(adminUid, services))
+    );
   }
 
   async processSync(adminUid: string, services: TrackedService[]): Promise<any> {

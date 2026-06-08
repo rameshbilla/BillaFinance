@@ -15,6 +15,26 @@ export interface RentalBill {
   paidDate?: string;
 }
 
+export interface RentalExpense {
+  id: string;
+  date: string;
+  category: 'Plumbing' | 'Electrical' | 'Painting' | 'Cleaning' | 'Tax' | 'Repairs' | 'Other';
+  amount: number;
+  description: string;
+}
+
+export interface PastTenancy {
+  renterName: string;
+  renterPhone: string;
+  arrivedDate: string;
+  vacatedDate: string;
+  bills: RentalBill[];
+  expenses?: RentalExpense[];
+  advanceRefunded: number;
+  deductions: number;
+  deductionReason?: string;
+}
+
 export interface RentalHouse {
   id?: string;
   houseName: string;
@@ -23,6 +43,7 @@ export interface RentalHouse {
   monthlyRent: number;
   renterName: string;
   renterPhone: string;
+  renterAadhar?: string;
   arrivedDate: string;
   fullAddress?: string;
   
@@ -33,6 +54,10 @@ export interface RentalHouse {
   status: 'Occupied' | 'Vacant';
   lastRentIncreaseDate?: string;
   createdBy?: string;
+  
+  landlordPan?: string;
+  expenses?: RentalExpense[];
+  pastTenancies?: PastTenancy[];
 }
 
 @Injectable({
@@ -68,4 +93,124 @@ export class RentalService {
     const houseDoc = doc(this.firestore, `rentals/${id}`);
     return deleteDoc(houseDoc);
   }
+}
+
+export function printHraReceipt(house: RentalHouse, bill: RentalBill, landlordName: string) {
+  const receiptNo = `R-${bill.year}-${bill.month.toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const dateStr = bill.paidDate ? new Date(bill.paidDate).toLocaleDateString('en-IN') : new Date(bill.billDate).toLocaleDateString('en-IN');
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) return;
+
+  const html = `
+    <html>
+      <head>
+        <title>Rent Receipt - ${bill.month} ${bill.year}</title>
+        <style>
+          body { font-family: 'Segoe UI', Roboto, sans-serif; color: #1e293b; padding: 40px; background: #fff; }
+          .receipt-container { max-width: 700px; margin: 0 auto; border: 2px solid #e2e8f0; border-radius: 20px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+          .header { display: flex; justify-content: space-between; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 30px; }
+          .logo-title { font-size: 24px; font-weight: 800; color: #4f46e5; text-transform: uppercase; letter-spacing: -0.5px; }
+          .logo-sub { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px; }
+          .receipt-badge { background: #ecfdf5; color: #047857; padding: 6px 16px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; display: inline-block; }
+          .details-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+          .section-title { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+          .detail-name { font-size: 15px; font-weight: 800; color: #0f172a; }
+          .detail-sub { font-size: 12px; color: #64748b; margin-top: 4px; }
+          .invoice-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+          .invoice-table th { border-bottom: 2px solid #f1f5f9; padding: 12px 8px; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; text-align: left; }
+          .invoice-table td { padding: 16px 8px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 700; }
+          .invoice-table .amount { text-align: right; }
+          .total-row td { border-top: 2px solid #e2e8f0; border-bottom: none; font-size: 16px !important; font-weight: 900 !important; color: #4f46e5; }
+          .footer-note { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px; line-height: 1.5; }
+          .signature-section { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 50px; }
+          .signature-box { border-top: 1px dashed #cbd5e1; width: 180px; text-align: center; padding-top: 8px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+          @media print {
+            body { padding: 0; }
+            .receipt-container { border: none; box-shadow: none; padding: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="receipt-container">
+          <div class="header">
+            <div>
+              <div class="logo-title">BillaFinance</div>
+              <div class="logo-sub">Rent Receipt</div>
+            </div>
+            <div style="text-align: right;">
+              <span class="receipt-badge">Paid Receipt</span>
+              <div class="detail-sub" style="margin-top: 8px; font-weight: 700;">No: ${receiptNo}</div>
+              <div class="detail-sub">Date: ${dateStr}</div>
+            </div>
+          </div>
+
+          <div class="details-grid">
+            <div>
+              <div class="section-title">Tenant Details</div>
+              <div class="detail-name">${house.renterName}</div>
+              <div class="detail-sub">Phone: ${house.renterPhone}</div>
+              <div class="detail-sub" style="margin-top: 8px;">Address: ${house.fullAddress || 'N/A'}</div>
+            </div>
+            <div>
+              <div class="section-title">Landlord Details</div>
+              <div class="detail-name">${landlordName || 'Property Owner'}</div>
+              <div class="detail-sub">PAN: ${house.landlordPan || 'N/A'}</div>
+              <div class="detail-sub" style="margin-top: 8px;">Property: ${house.houseName}</div>
+            </div>
+          </div>
+
+          <table class="invoice-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th class="amount">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>House Rent for ${bill.month} ${bill.year}</td>
+                <td class="amount">₹${bill.rentAmount.toLocaleString('en-IN')}</td>
+              </tr>
+              <tr>
+                <td>Electricity Charges (TSPDCL)</td>
+                <td class="amount">₹${bill.electricBill.toLocaleString('en-IN')}</td>
+              </tr>
+              <tr>
+                <td>Water Charges (HMWSSB)</td>
+                <td class="amount">₹${bill.waterBill.toLocaleString('en-IN')}</td>
+              </tr>
+              <tr class="total-row">
+                <td>Total Received</td>
+                <td class="amount">₹${bill.total.toLocaleString('en-IN')}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="signature-section">
+            <div style="font-size: 12px; font-style: italic; color: #64748b;">
+              *Generated digitally via BillaFinance.
+            </div>
+            <div>
+              <div style="height: 40px;"></div>
+              <div class="signature-box">Landlord Signature</div>
+            </div>
+          </div>
+
+          <div class="footer-note">
+            This is a computer-generated document and does not require a physical signature.<br>
+            For claiming House Rent Allowance (HRA) under Section 10(13A) of the Income Tax Act.
+          </div>
+        </div>
+        <script>
+          window.onload = function() {
+            window.print();
+            setTimeout(function() { window.close(); }, 500);
+          }
+        </script>
+      </body>
+    </html>
+  `;
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
 }

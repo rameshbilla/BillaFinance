@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist/finance-app/browser',
   plugins: {
     CapacitorHttp: {
-      enabled: false,
+      enabled: true,
     },
   },
 };

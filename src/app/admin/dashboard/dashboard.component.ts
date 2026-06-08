@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ViewChild, Renderer2 } from '@angular/core';
+import { Component, inject, OnInit, ViewChild, Renderer2, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ChittiService, ChittiScheme } from '../services/chitti.service';
@@ -23,7 +23,8 @@ import { BillService, Bill, TrackedService, StoredBillRecord } from '../services
 import { BillListComponent } from '../bills/bill-list/bill-list.component';
 import { BillFormComponent } from '../bills/bill-form/bill-form.component';
 import { BillPaymentModalComponent } from '../bills/bill-payment-modal/bill-payment-modal.component';
-import { RentalService, RentalHouse, RentalBill } from '../services/rental.service';
+import { RentalService, RentalHouse, RentalBill, RentalExpense, PastTenancy, printHraReceipt } from '../services/rental.service';
+import { RentalManagementComponent } from './components/rental-management.component';
 import { TspdclService } from '../services/tspdcl.service';
 import { HmwssbService } from '../services/hmwssb.service';
 import { CountUpDirective } from '../../shared/directives/count-up.directive';
@@ -31,7 +32,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, BaseChartDirective, BillListComponent, BillFormComponent, BillPaymentModalComponent, CountUpDirective],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, BaseChartDirective, BillListComponent, BillFormComponent, BillPaymentModalComponent, CountUpDirective, RentalManagementComponent],
   template: `
     <style>
       @keyframes fadeInUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
@@ -110,6 +111,8 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
       .history-step { position: relative; padding-left: 3.5rem; }
       .stepper-line { position: absolute; left: 1rem; top: 2.25rem; bottom: -2rem; width: 2px; transform: translateX(-50%); }
       .stepper-dot { position: absolute; left: 1rem; top: 0.25rem; transform: translateX(-50%); }
+      @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+      .animate-slide-up { animation: slideUp 0.3s ease-out both; }
     </style>
 
     <div class="min-h-screen bg-gray-50 dark:bg-gray-950 font-sans transition-colors duration-500 overflow-x-hidden w-full relative max-w-full-mobile">
@@ -129,12 +132,6 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
             </div>
             <div class="flex space-x-2 items-center" *ngIf="authService.userProfile$ | async as profile">
               
-              <!-- Super Admin Controls -->
-              <button *ngIf="isSuperAdmin" (click)="goToManageAdmins()" class="p-2.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all mr-1 flex items-center gap-2" title="Manage Admin Members">
-                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                 <span class="text-[10px] font-black uppercase tracking-widest hidden lg:inline">Manage Admins</span>
-              </button>
-              
               <!-- Theme Toggle -->
               <button (click)="toggleTheme()" class="p-2.5 text-gray-400 hover:text-purple-600 transition-colors mr-1">
                  <svg *ngIf="!isDarkMode" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
@@ -144,12 +141,64 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                 <span class="text-gray-900 dark:text-white text-[13px] font-black uppercase leading-tight">{{ profile.displayName || 'Admin' }}</span>
                 <span class="text-gray-500 text-[10px] font-black uppercase tracking-[0.15em] opacity-80">{{ profile.username }}</span>
               </div>
+              <div class="flex flex-col items-end mr-3 sm:hidden">
+                <span class="text-gray-900 dark:text-white text-[11px] font-black uppercase leading-tight">{{ profile.displayName?.split(' ')?.[0] || 'Admin' }}</span>
+                <span class="text-gray-500 text-[8px] font-black uppercase tracking-tight opacity-80">&#64;{{ profile.username }}</span>
+              </div>
               <!-- Logout Button -->
               <button (click)="logout()" class="p-2.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all" title="Secure Logout">
                 <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
               </button>
+
+              <!-- Remaining Menus Dropdown Container -->
+              <div class="relative more-menu-container flex items-center">
+                 <button (click)="toggleMoreMenu($event)" class="p-2.5 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-950/10 rounded-xl transition-all" title="Remaining Menus">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                 </button>
+                 <!-- Dropdown overlay card (solid bg for high contrast/visibility in dark mode) -->
+                 <div *ngIf="showMoreMenu" class="absolute right-0 top-full mt-2 w-56 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 z-50 overflow-hidden animate-fade-down duration-200">
+                    <div class="py-2 flex flex-col">
+                       <!-- Profile (For both) -->
+                       <button (click)="selectMoreMenu('profile')" 
+                               class="flex items-center gap-3 px-4 py-3.5 text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:text-purple-600 dark:hover:text-purple-400 transition-colors w-full text-left">
+                          <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                          </svg>
+                          My Profile
+                       </button>
+                       <!-- Customers (Regular Admin only) -->
+                       <button *ngIf="!isSuperAdmin && showCustomersTab" 
+                               (click)="selectMoreMenu('customers')" 
+                               class="flex items-center gap-3 px-4 py-3.5 text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:text-purple-600 dark:hover:text-purple-400 transition-colors w-full text-left">
+                          <svg class="w-5 h-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                          </svg>
+                          Customers
+                       </button>
+                       <!-- Manage Admins (Super Admin only) -->
+                       <button *ngIf="isSuperAdmin" 
+                               (click)="selectMoreMenu('manage-admins')" 
+                               class="flex items-center gap-3 px-4 py-3.5 text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors w-full text-left">
+                          <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                          </svg>
+                          Manage Admins
+                       </button>
+                       <!-- Security (For both) -->
+                       <button (click)="selectMoreMenu('security')" 
+                               class="flex items-center gap-3 px-4 py-3.5 text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors w-full text-left">
+                          <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                          </svg>
+                          Security
+                       </button>
+                    </div>
+                 </div>
+              </div>
             </div>
           </div>
         </div>
@@ -157,29 +206,25 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-32 sm:pb-8 relative z-10 animate-fade-up delay-100">
 
-        <!-- Tab Switcher (Only for regular admins or Super Admin Security) -->
-        <div class="hidden sm:flex p-1.5 bg-gray-200/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl w-full sm:max-w-md mb-8 relative gap-1 overflow-x-auto no-scrollbar whitespace-nowrap border border-gray-100 dark:border-gray-700">
-          <button *ngIf="!isSuperAdmin" (click)="activeTab = 'overview'; activeMobileMenu = 'overview'"
+        <!-- Tab Switcher (Only for regular admins) -->
+        <div *ngIf="!isSuperAdmin" class="hidden sm:flex p-1.5 bg-gray-200/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl w-full sm:max-w-md mb-8 relative gap-1 overflow-x-auto no-scrollbar whitespace-nowrap border border-gray-100 dark:border-gray-700">
+          <button (click)="activeTab = 'overview'; activeMobileMenu = 'overview'"
                   [class.tab-active]="activeTab === 'overview'"
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
             OVERVIEW
           </button>
-          <button *ngIf="!isSuperAdmin && showInterestTab" (click)="activeTab = 'interest'; activeMobileMenu = 'interest'"
+          <button *ngIf="showInterestTab" (click)="activeTab = 'interest'; activeMobileMenu = 'interest'"
                   [class.tab-active]="activeTab === 'interest'"
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
             LOANS
           </button>
-          <button *ngIf="!isSuperAdmin && showChittiTab" (click)="activeTab = 'chitti'; activeMobileMenu = 'chitti'"
+          <button *ngIf="showChittiTab" (click)="activeTab = 'chitti'; activeMobileMenu = 'chitti'"
                   [class.tab-active]="activeTab === 'chitti'"
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
             CHITTI
           </button>
-          <button *ngIf="!isSuperAdmin && showCustomersTab" (click)="activeTab = 'customers'; activeMobileMenu = 'customers'"
-                  [class.tab-active]="activeTab === 'customers'"
-                  class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
-            CUSTOMERS
-          </button>
-          <button *ngIf="!isSuperAdmin && showBillsTab" (click)="activeTab = 'bills'; activeMobileMenu = 'bills'"
+
+          <button *ngIf="showBillsTab" (click)="activeTab = 'bills'; activeMobileMenu = 'bills'"
                   [class.tab-active]="activeTab === 'bills'"
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10 flex items-center justify-center gap-1.5">
             BILLS
@@ -187,28 +232,22 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                {{ billStats.pendingAmount | currency:'INR':'symbol':'1.0-0' }}
             </span>
           </button>
-          <button *ngIf="!isSuperAdmin && showRentalsTab" (click)="activeTab = 'rentals'; activeMobileMenu = 'rentals'"
+          <button *ngIf="showRentalsTab" (click)="activeTab = 'rentals'; activeMobileMenu = 'rentals'"
                   [class.tab-active]="activeTab === 'rentals'"
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
             RENTALS
-          </button>
-          <button (click)="activeTab = 'security'; activeMobileMenu = 'security'"
-                  [class.tab-active]="activeTab === 'security'"
-                  class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
-            SECURITY
           </button>
         </div>
 
         <!-- ═══════════ ADMIN OVERVIEW VIEW ═══════════ -->
         @if (!isSuperAdmin && activeTab === 'overview') {
            <div class="space-y-8 card-animate">
-              <!-- Header -->
-              <div class="flex justify-between items-center mb-6">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
                  <div>
                     <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Business Overview</h2>
                     <p class="text-sm font-medium text-gray-500 mt-1">Aggregated statistics and metrics for your operations.</p>
                  </div>
-                 <div class="flex items-center gap-3">
+                 <div class="flex items-center gap-3 mt-4 sm:mt-0">
                     <div class="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-2xl p-2 shadow-sm border border-gray-100 dark:border-gray-700">
                        <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest pl-2 hidden sm:inline">DATA</span>
                        <label class="relative inline-flex items-center cursor-pointer scale-75 sm:scale-90">
@@ -429,30 +468,35 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
         <!-- ═══════════ BILLS TRACKER (Admin Only) ═══════════ -->
         @if (!isSuperAdmin && activeTab === 'bills' && showBillsTab) {
-          <div class="card-animate" style="animation-delay:0.05s">
+          <div class="card-animate flex flex-col" style="animation-delay:0.05s">
             
-            <!-- Bills KPI Grid -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-               <div class="bg-indigo-50/50 dark:bg-indigo-900/20 p-6 rounded-[2rem] border border-indigo-100/50 dark:border-indigo-800/30">
-                  <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Total Pending</p>
-                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none">₹{{ billStats.pendingAmount }}</p>
-               </div>
-               <div class="bg-amber-50/50 dark:bg-amber-900/20 p-6 rounded-[2rem] border border-amber-100/50 dark:border-amber-800/30">
-                  <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">Electricity Total</p>
-                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none">₹{{ billStats.electricityTotal }}</p>
-               </div>
-               <div class="bg-blue-50/50 dark:bg-blue-900/20 p-6 rounded-[2rem] border border-blue-100/50 dark:border-blue-800/30">
-                  <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Water Arrears</p>
-                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none">₹{{ billStats.waterTotal }}</p>
-               </div>
-               <div class="bg-emerald-50/50 dark:bg-emerald-900/20 p-6 rounded-[2rem] border border-emerald-100/50 dark:border-emerald-800/30">
-                  <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Paid Bills</p>
-                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none">₹{{ billStats.paidThisMonthAmount }}</p>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 order-1">
+               <div>
+                  <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Bills & Payments</h2>
+                  <p class="text-sm font-medium text-gray-500 mt-1">Utility tracking and automated bill retrieval.</p>
                </div>
             </div>
             
-            <!-- Tracked Services Summary -->
-            <div class="mb-12">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10 order-2">
+               <div class="bg-indigo-50/50 dark:bg-indigo-900/20 p-6 rounded-[2rem] border border-indigo-100/50 dark:border-indigo-800/30">
+                  <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Total Pending</p>
+                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none" [appCountUp]="billStats.pendingAmount" prefix="₹"></p>
+               </div>
+               <div class="bg-amber-50/50 dark:bg-amber-900/20 p-6 rounded-[2rem] border border-amber-100/50 dark:border-amber-800/30">
+                  <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">Electricity Total</p>
+                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none" [appCountUp]="billStats.electricityTotal" prefix="₹"></p>
+               </div>
+               <div class="bg-blue-50/50 dark:bg-blue-900/20 p-6 rounded-[2rem] border border-blue-100/50 dark:border-blue-800/30">
+                  <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Water Arrears</p>
+                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none" [appCountUp]="billStats.waterTotal" prefix="₹"></p>
+               </div>
+               <div class="bg-emerald-50/50 dark:bg-emerald-900/20 p-6 rounded-[2rem] border border-emerald-100/50 dark:border-emerald-800/30">
+                  <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Paid Bills</p>
+                  <p class="text-3xl font-black text-gray-900 dark:text-white leading-none" [appCountUp]="billStats.paidThisMonthAmount" prefix="₹"></p>
+               </div>
+            </div>
+            
+            <div class="mb-12 order-3">
                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 px-2">
                   <div class="flex items-center gap-4">
                     <div class="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
@@ -483,7 +527,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                       </button>
                     </div>
 
-                    <div class="relative flex-1 md:flex-none">
+                    <div class="relative flex-1 md:flex-none hidden sm:block">
                        <select [(ngModel)]="serviceTypeFilter" class="w-full md:w-40 pl-4 pr-10 py-2.5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl text-xs font-bold text-gray-700 dark:text-gray-300 appearance-none focus:ring-2 focus:ring-indigo-500 outline-none">
                           <option value="all">All Types</option>
                           <option value="electricity">Electricity</option>
@@ -495,7 +539,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                        <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </div>
 
-                    <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/80 p-1 rounded-xl border border-gray-200 dark:border-gray-700/50">
+                    <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/80 p-1 rounded-xl border border-gray-200 dark:border-gray-700/50 hidden sm:flex">
                       <button type="button" (click)="billStatusFilter = 'all'"
                               class="px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
                               [class.bg-white]="billStatusFilter === 'all'"
@@ -518,12 +562,17 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                               [class.text-emerald-600]="billStatusFilter === 'paid'"
                               [class.text-gray-500]="billStatusFilter !== 'paid'">Paid</button>
                     </div>
+                    <button (click)="openBillsFilterModal()" class="sm:hidden p-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-indigo-600 shadow-sm">
+                      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                    </button>
                     <button (click)="handleSyncBills()" [disabled]="isSyncing" class="px-5 py-2.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-100 transition-all flex items-center gap-2">
                        <svg class="h-3.5 w-3.5" [class.animate-spin]="isSyncing" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                       {{ isSyncing ? 'Sync' : 'Deep Sync' }}
+                       <span class="hidden sm:inline">{{ isSyncing ? 'Syncing...' : 'Deep Sync' }}</span>
+                       <span class="sm:hidden">{{ isSyncing ? '...' : 'Sync' }}</span>
                     </button>
                     <button (click)="scrollToTop(); openServiceForm()" class="px-5 py-2.5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">
-                      Register Service
+                      <span class="hidden sm:inline">Register Service</span>
+                      <span class="sm:hidden">New</span>
                     </button>
                   </div>
                </div>
@@ -946,12 +995,13 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                                    <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                                 </a>
 
-                               <button (click)="$event.stopPropagation(); sendLoanReminder(loan, 'whatsapp')" class="w-7 h-7 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg shadow-green-500/30" title="Send WhatsApp via FinServe">
-                                  <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-                               </button>
-                               <button (click)="$event.stopPropagation(); sendLoanReminder(loan, 'sms')" class="w-7 h-7 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg shadow-blue-500/30" title="Send SMS via FinServe">
-                                  <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-                               </button>
+                                <button (click)="$event.stopPropagation(); shareLoanReminder(loan)" class="w-7 h-7 bg-[#25D366] hover:bg-[#1ebe59] rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg shadow-green-500/30" title="WhatsApp Reminder">
+                                    <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                                      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.529 5.855L0 24l6.335-1.51A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.808 9.808 0 01-5.001-1.368l-.36-.214-3.72.886.916-3.618-.235-.373A9.794 9.794 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
+                                    </svg>
+                                </button>
+
                              </div>
                            </div>
                            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">Last Collection</p>
@@ -1220,233 +1270,35 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
         <!-- ═══════════ RENTALS MANAGEMENT (Admin Only) ═══════════ -->
         @if (!isSuperAdmin && activeTab === 'rentals' && showRentalsTab) {
-          <div class="card-animate space-y-8" style="animation-delay:0.05s">
-            
-            @if (rentalView === 'houses') {
-              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                <div>
-                  <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">House Management</h2>
-                  <p class="text-sm font-medium text-gray-500 mt-1">{{ houses.length }} registered properties</p>
-                </div>
-                <button (click)="openRentalHouseForm()" class="hidden sm:block px-6 py-3 bg-gray-900 dark:bg-white dark:text-gray-900 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:opacity-90 transition-all">
-                   Register New Property
-                </button>
-              </div>
-
-              <!-- Rental Analytics Chart -->
-              <div class="bg-white dark:bg-gray-800 p-5 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm mb-8">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
-                    <div class="flex items-center gap-4">
-                      <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0">
-                          <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                      </div>
-                      <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                          <h3 class="text-lg sm:text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">Rent Collections</h3>
-                          <span class="hidden sm:inline text-gray-300">•</span>
-                          <p class="text-[9px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest leading-none">Monthly revenue breakdown for {{ rentalSelectedYear }}</p>
-                      </div>
-                    </div>
-                    
-                    <div class="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
-                      <div class="flex-1 sm:flex-none flex items-center gap-1 bg-gray-50 dark:bg-gray-900 p-1 rounded-2xl border border-gray-100 dark:border-gray-800">
-                        <select [(ngModel)]="rentalSelectedYear" (change)="updateRentalAnalytics()" class="bg-transparent border-none outline-none text-[9px] sm:text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-widest px-3 py-2 appearance-none cursor-pointer">
-                            @for (year of rentalAvailableYears; track year) {
-                              <option [value]="year">{{ year }}</option>
-                            }
-                        </select>
-                        <div class="h-6 w-[1px] bg-gray-200 dark:bg-gray-800"></div>
-                        <div class="px-3 py-1 text-right min-w-[80px]">
-                            <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-0.5">Total</p>
-                            <p class="text-[11px] sm:text-sm font-black text-indigo-600" [appCountUp]="filteredTotalRent" prefix="₹"></p>
-                        </div>
-                      </div>
-                      <button (click)="openRentalHouseForm()" class="sm:hidden p-3 bg-gray-900 dark:bg-white dark:text-gray-900 text-white rounded-xl shadow-lg">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                      </button>
-                    </div>
-                </div>
-
-                <div class="h-[200px] sm:h-[250px] relative chart-touch-wrapper"
-                     (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
-                    <canvas baseChart #rentalChart="base-chart"
-                      [data]="rentalBarChartData"
-                      [options]="barChartOptions"
-                      [type]="barChartType">
-                    </canvas>
-                </div>
-              </div>
-
-              <!-- House Grid -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                @for (house of houses; track house.id) {
-                  <div class="bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all group relative overflow-hidden h-full flex flex-col"
-                        [class.ring-2]="activeHouseId === house.id" [class.ring-indigo-500]="activeHouseId === house.id">
-                      
-                      <!-- Status Badges -->
-                      <div class="absolute top-5 right-5 flex gap-1.5">
-                        @if (isRentIncreaseDue(house)) {
-                            <span class="text-[7px] font-black px-2 py-1 rounded-lg uppercase tracking-widest bg-amber-500 text-white shadow-lg shadow-amber-500/20 animate-pulse">
-                              Increase
-                            </span>
-                        }
-                        <span class="text-[7px] font-black px-2 py-1 rounded-lg uppercase tracking-widest shadow-sm"
-                              [ngClass]="house.status === 'Occupied' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-500'">
-                            {{ house.status }}
-                        </span>
-                      </div>
-
-                      <!-- Icon & Title -->
-                      <div class="flex items-start gap-3 mb-4 pr-24 min-h-[74px]">
-                        <div class="w-11 h-11 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
-                          <svg class="w-5.5 h-5.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                        </div>
-                        <div class="min-w-0 flex-1">
-                          <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none truncate">{{ house.houseName }}</h3>
-                          <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1.5 leading-snug overflow-hidden" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;" [title]="house.fullAddress || ''">{{ house.fullAddress || 'Address Not Set' }}</p>
-                          <p class="text-[8px] font-black text-indigo-500/60 uppercase tracking-widest mt-1.5">Arrived: {{ house.arrivedDate | date:'dd MMM yyyy' }}</p>
-                        </div>
-                      </div>
-
-                      <div class="grid grid-cols-2 gap-2 mb-4 bg-gray-50/70 dark:bg-gray-900/30 p-3 rounded-2xl border border-gray-100 dark:border-gray-800">
-                        <div class="min-w-0">
-                            <span class="block text-[8px] font-black text-gray-400 uppercase tracking-widest truncate">Electric</span>
-                            <span class="block text-sm font-black leading-tight"
-                                  [class]="isHouseUtilityPaid(house, 'electricity') ? 'text-emerald-500' : 'text-amber-500'">₹{{ getHouseUtilityBill(house, 'electricity') }}</span>
-                            @if (getHouseUtilityPaidDate(house, 'electricity')) {
-                              <span class="block text-[7px] font-black text-emerald-500 uppercase tracking-widest truncate">Paid {{ getHouseUtilityPaidDate(house, 'electricity') }}</span>
-                            }
-                        </div>
-                        <div class="min-w-0">
-                            <span class="block text-[8px] font-black text-gray-400 uppercase tracking-widest truncate">Water</span>
-                            <span class="block text-sm font-black leading-tight"
-                                  [class]="isHouseUtilityPaid(house, 'water') ? 'text-emerald-500' : 'text-blue-500'">₹{{ getHouseUtilityBill(house, 'water') }}</span>
-                            @if (getHouseUtilityPaidDate(house, 'water')) {
-                              <span class="block text-[7px] font-black text-emerald-500 uppercase tracking-widest truncate">Paid {{ getHouseUtilityPaidDate(house, 'water') }}</span>
-                            }
-                        </div>
-                        <div class="min-w-0 pt-2 border-t border-gray-100 dark:border-gray-800">
-                            <span class="block text-[8px] font-black text-gray-400 uppercase tracking-widest truncate">Pending</span>
-                            <span class="block text-sm font-black text-rose-500 leading-tight" [appCountUp]="getHouseStats(house).pending" prefix="₹"></span>
-                        </div>
-                        <div class="min-w-0 pt-2 border-t border-gray-100 dark:border-gray-800">
-                            <span class="block text-[8px] font-black text-gray-400 uppercase tracking-widest truncate">Collected</span>
-                            <span class="block text-sm font-black text-green-500 leading-tight" [appCountUp]="getHouseStats(house).collected" prefix="₹"></span>
-                        </div>
-                      </div>
-
-                      <div class="flex items-center gap-2 mt-auto">
-                        <button (click)="viewHouseBills(house.id!)" class="flex-1 py-3 bg-gray-900 dark:bg-white dark:text-gray-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg transition-all hover:opacity-90">Ledger</button>
-                        <button (click)="openRentalHouseForm(house)" class="p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-100 transition-all">
-                          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                        </button>
-                        <button (click)="deleteRentalHouse(house.id!)" class="p-3 bg-rose-50 dark:bg-rose-900/20 text-rose-500 rounded-xl hover:bg-rose-100 transition-all">
-                          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        </button>
-                      </div>
-                  </div>
-                }
-                @if (houses.length === 0) {
-                  <div class="col-span-full py-20 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-[3rem] opacity-50">
-                      <p class="text-gray-400 font-black uppercase tracking-widest text-xs">No rental properties registered</p>
-                  </div>
-                }
-              </div>
-            }
-
-            <!-- Billing Details Table (Now as a separate step/view) -->
-            @if (rentalView === 'ledger' && getActiveHouse(); as activeHouse) {
-              <div class="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-xl overflow-hidden animate-fade-up">
-                <div class="p-8 border-b border-gray-50 dark:border-gray-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div class="flex items-center gap-3">
-                      <button (click)="rentalView = 'houses'; activeHouseId = null" class="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:text-indigo-600 transition-colors">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" /></svg>
-                      </button>
-                      <div>
-                        <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{{ activeHouse.houseName }} Ledger</h3>
-                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Monthly breakdown and utility consumption</p>
-                      </div>
-                    </div>
-                    <button (click)="openMonthlyBillForm()" class="w-full sm:w-auto px-5 py-3 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">Add Monthly Record</button>
-                </div>
-                
-                <div class="p-8 relative">
-                    <div class="space-y-8 relative">
-                        @for (bill of sortLatestBills(activeHouse.bills || []); track $index; let i = $index) {
-                          <div class="history-step group">
-                            @if (i < (activeHouse.bills || []).length - 1) {
-                              <div class="stepper-line bg-indigo-500/20 dark:bg-indigo-500/10"></div>
-                            }
-                            
-                            <div class="stepper-dot w-8 h-8 rounded-full flex items-center justify-center text-white shadow-lg z-10 transition-all group-hover:scale-110"
-                                 [class]="bill.status === 'Paid' ? 'bg-green-500 shadow-green-500/30' : 'bg-red-500 shadow-red-500/30'">
-                              <svg *ngIf="bill.status === 'Paid'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
-                              </svg>
-                              <svg *ngIf="bill.status !== 'Paid'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                              </svg>
-                            </div>
-
-                            <div class="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-md hover:border-indigo-200">
-                              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                <div class="min-w-0">
-                                  <div class="flex items-center gap-2 mb-1">
-                                    <p class="text-[9px] font-black uppercase tracking-widest leading-none" [class]="bill.status === 'Paid' ? 'text-green-500' : 'text-red-500'">
-                                      {{ bill.status === 'Paid' ? 'Payment Recorded' : 'Payment Pending' }}
-                                    </p>
-                                    <span class="text-[8px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-900 rounded font-black text-gray-400 uppercase tracking-tighter">Step {{ (activeHouse.bills || []).length - i }}</span>
-                                  </div>
-                                  <p class="text-base font-black text-gray-900 dark:text-white leading-none mb-3">{{ bill.billDate | date:'MMMM dd, yyyy' }}</p>
-                                  
-                                  <div class="flex flex-wrap gap-x-4 gap-y-2">
-                                    <div class="flex flex-col">
-                                      <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Rent</span>
-                                      <span class="text-xs font-bold text-gray-700 dark:text-gray-300" [appCountUp]="bill.rentAmount" prefix="₹"></span>
-                                    </div>
-                                    <div class="flex items-center text-gray-200 dark:text-gray-700 text-xs px-1">/</div>
-                                    <div class="flex flex-col">
-                                      <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Electric</span>
-                                      <span class="text-xs font-bold text-gray-700 dark:text-gray-300" [appCountUp]="bill.electricBill" prefix="₹"></span>
-                                    </div>
-                                    <div class="flex items-center text-gray-200 dark:text-gray-700 text-xs px-1">/</div>
-                                    <div class="flex flex-col">
-                                      <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Water</span>
-                                      <span class="text-xs font-bold text-gray-700 dark:text-gray-300" [appCountUp]="bill.waterBill" prefix="₹"></span>
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                <div class="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-none border-gray-50 dark:border-gray-700">
-                                  <div class="sm:text-right">
-                                    <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Bill</p>
-                                    <p class="text-xl font-black text-indigo-600 dark:text-indigo-400 tracking-tighter leading-none" [appCountUp]="bill.total" prefix="₹"></p>
-                                  </div>
-                                  <div class="flex gap-1 sm:mt-4">
-                                    <button (click)="openMonthlyBillForm(bill, findOriginalBillIndex(bill, activeHouse))" class="p-2 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all">
-                                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                    </button>
-                                    <button (click)="deleteMonthlyBill(findOriginalBillIndex(bill, activeHouse))" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all">
-                                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        }
-                        @if (!activeHouse.bills || activeHouse.bills.length === 0) {
-                          <div class="py-20 text-center opacity-40">
-                              <svg class="w-16 h-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                              <p class="text-sm font-black uppercase tracking-widest">No monthly records found</p>
-                              <p class="text-xs font-medium mt-1">Add a monthly record to see the history here</p>
-                          </div>
-                        }
-                    </div>
-                </div>
-              </div>
-            }
-
-          </div>
+          <app-rental-management
+            [houses]="houses"
+            [activeHouseId]="activeHouseId"
+            [activeHouse]="getActiveHouse() || null"
+            [rentalView]="rentalView"
+            [selectedYear]="rentalSelectedYear"
+            [availableYears]="rentalAvailableYears"
+            [filteredTotalRent]="filteredTotalRent"
+            [chartData]="rentalBarChartData"
+            [rentalUtilityBills]="rentalUtilityBills"
+            [refetchingHouseIds]="refetchingHouseIds"
+            (onRegisterProperty)="openRentalHouseForm()"
+            (onEditProperty)="openRentalHouseForm($event)"
+            (onDeleteProperty)="deleteRentalHouse($event)"
+            (onViewLedger)="viewHouseBills($event)"
+            (onBackToHouses)="rentalView = 'houses'; activeHouseId = null"
+            (onAddMonthlyRecord)="openMonthlyBillForm()"
+            (onEditBill)="openMonthlyBillForm($event.bill, $event.index)"
+            (onDeleteBill)="deleteMonthlyBill($event)"
+            (onYearChange)="rentalSelectedYear = $event; updateRentalAnalytics()"
+            (onLockScroll)="lockScroll()"
+            (onUnlockScroll)="unlockScroll()"
+            (onRefetchBills)="refreshUtilityBills($event)"
+            (onSendRentReminder)="sendRentReminder($event)"
+            (onPrintRentReceipt)="printRentReceipt($event)"
+            (onAddExpense)="addHouseExpense($event.houseId, $event.expense)"
+            (onDeleteExpense)="deleteHouseExpense($event.houseId, $event.expenseId)"
+            (onVacateTenant)="vacateTenant($event.houseId, $event.settlement)">
+          </app-rental-management>
         }
 
 
@@ -1541,6 +1393,118 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
       <!-- GLOBAL MODAL STACK (Root Level for Rendering Independence) -->
       
+        <!-- Logged-in User Profile Modal Overlay -->
+        <div *ngIf="showProfileModal && currentUserProfile" class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-y-auto custom-scrollbar" (click)="closeProfileModal()">
+           <div class="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col my-auto border border-gray-100 dark:border-gray-800" (click)="$event.stopPropagation()">
+              <div class="p-8 pb-4 border-b border-gray-100 dark:border-gray-800">
+                 <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                       <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-lg">
+                          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                          </svg>
+                       </div>
+                       <div>
+                          <h3 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">My Profile</h3>
+                          <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Administrator Identity</p>
+                       </div>
+                    </div>
+                    <button (click)="closeProfileModal()" class="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:rotate-90 transition-all">
+                       <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                       </svg>
+                    </button>
+                 </div>
+              </div>
+
+              <div class="p-8 space-y-6">
+                 <!-- User details circle header -->
+                 <div class="flex flex-col items-center text-center space-y-3 pb-6 border-b border-gray-100 dark:border-gray-800">
+                    <div class="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white font-black text-3xl flex items-center justify-center shadow-lg shadow-purple-500/35">
+                       {{ currentUserProfile.displayName?.charAt(0) || 'A' }}
+                    </div>
+                    <div>
+                       <h4 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">{{ currentUserProfile.displayName || 'Administrator' }}</h4>
+                       <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">&#64;{{ currentUserProfile.username }}</p>
+                    </div>
+                    <span class="px-3.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30">
+                       {{ isSuperAdmin ? 'Super Administrator' : 'System Administrator' }}
+                    </span>
+                 </div>
+
+                 <!-- Grid Details -->
+                 <div class="grid grid-cols-2 gap-4">
+                    <div class="p-4 bg-gray-50 dark:bg-gray-800/40 rounded-2xl border border-gray-100 dark:border-gray-800">
+                       <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Phone Number</p>
+                       <p class="text-xs font-black text-gray-900 dark:text-white">{{ currentUserProfile.phone || 'N/A' }}</p>
+                    </div>
+                    <div class="p-4 bg-gray-50 dark:bg-gray-800/40 rounded-2xl border border-gray-100 dark:border-gray-800">
+                       <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Identity Document</p>
+                       <p class="text-xs font-black text-gray-900 dark:text-white uppercase truncate">{{ currentUserProfile.idType ? (currentUserProfile.idType + ': ' + currentUserProfile.idValue) : 'Not Provided' }}</p>
+                    </div>
+                    <div class="col-span-2 p-4 bg-gray-50 dark:bg-gray-800/40 rounded-2xl border border-gray-100 dark:border-gray-800">
+                       <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Residential Address</p>
+                       <p class="text-xs font-bold text-gray-900 dark:text-white whitespace-pre-line leading-relaxed">{{ currentUserProfile.address || 'Address information not registered' }}</p>
+                    </div>
+                 </div>
+
+                 <!-- Module Access checklist for regular admins -->
+                 <div *ngIf="!isSuperAdmin" class="space-y-3 pt-2">
+                    <h5 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">Module Access Configurations</h5>
+                    <div class="grid grid-cols-2 gap-2">
+                       <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all"
+                            [ngClass]="showInterestTab 
+                              ? 'bg-emerald-50/50 dark:bg-emerald-950/10 border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400' 
+                              : 'bg-gray-50 dark:bg-gray-800/20 border-gray-100 dark:border-gray-800/60 text-gray-400 dark:text-gray-600'">
+                          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" [attr.d]="showInterestTab ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'"/>
+                          </svg>
+                          Loans Module
+                       </div>
+                       <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all"
+                            [ngClass]="showChittiTab 
+                              ? 'bg-emerald-50/50 dark:bg-emerald-950/10 border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400' 
+                              : 'bg-gray-50 dark:bg-gray-800/20 border-gray-100 dark:border-gray-800/60 text-gray-400 dark:text-gray-600'">
+                          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" [attr.d]="showChittiTab ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'"/>
+                          </svg>
+                          Chitti Module
+                       </div>
+                       <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all"
+                            [ngClass]="showCustomersTab 
+                              ? 'bg-emerald-50/50 dark:bg-emerald-950/10 border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400' 
+                              : 'bg-gray-50 dark:bg-gray-800/20 border-gray-100 dark:border-gray-800/60 text-gray-400 dark:text-gray-600'">
+                          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" [attr.d]="showCustomersTab ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'"/>
+                          </svg>
+                          Customers Directory
+                       </div>
+                       <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all"
+                            [ngClass]="showBillsTab 
+                              ? 'bg-emerald-50/50 dark:bg-emerald-950/10 border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400' 
+                              : 'bg-gray-50 dark:bg-gray-800/20 border-gray-100 dark:border-gray-800/60 text-gray-400 dark:text-gray-600'">
+                          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" [attr.d]="showBillsTab ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'"/>
+                          </svg>
+                          Bills Tracker
+                       </div>
+                       <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all col-span-2"
+                            [ngClass]="showRentalsTab 
+                              ? 'bg-emerald-50/50 dark:bg-emerald-950/10 border-emerald-100 dark:border-emerald-900/30 text-emerald-600 dark:text-emerald-400' 
+                              : 'bg-gray-50 dark:bg-gray-800/20 border-gray-100 dark:border-gray-800/60 text-gray-400 dark:text-gray-600'">
+                          <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" [attr.d]="showRentalsTab ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'"/>
+                          </svg>
+                          Rentals Management
+                       </div>
+                    </div>
+                 </div>
+
+                 <button (click)="closeProfileModal()" class="w-full py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-[1.01] transition-all">Close Profile</button>
+              </div>
+           </div>
+        </div>
+
         <!-- 1. Admin/Edit Profile Form Overlay -->
         @if (showAdminForm || isAdminEditMode) {
           <div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-y-auto custom-scrollbar">
@@ -2033,32 +1997,70 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                     <form [formGroup]="rentalHouseForm" (ngSubmit)="saveRentalHouse()" class="space-y-6">
                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div class="space-y-2">
-                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">House Name / ID</label>
-                             <input type="text" formControlName="houseName" placeholder="e.g., G-101, Penthouse" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">House Name / ID <span class="text-red-500">*</span></label>
+                             <input type="text" formControlName="houseName" placeholder="e.g., G-101, Penthouse" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold" [class.ring-2]="rentalHouseForm.get('houseName')?.invalid && rentalHouseForm.get('houseName')?.touched" [class.ring-red-500]="rentalHouseForm.get('houseName')?.invalid && rentalHouseForm.get('houseName')?.touched">
+                             @if (rentalHouseForm.get('houseName')?.invalid && rentalHouseForm.get('houseName')?.touched) {
+                                <p class="text-xs text-red-500 font-semibold mt-1 px-1">House Name / ID is required</p>
+                             }
                           </div>
                           <div class="space-y-2">
-                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Monthly Rent</label>
-                             <input type="number" formControlName="monthlyRent" placeholder="0.00" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Monthly Rent <span class="text-red-500">*</span></label>
+                             <input type="number" formControlName="monthlyRent" placeholder="0.00" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold" [class.ring-2]="rentalHouseForm.get('monthlyRent')?.invalid && rentalHouseForm.get('monthlyRent')?.touched" [class.ring-red-500]="rentalHouseForm.get('monthlyRent')?.invalid && rentalHouseForm.get('monthlyRent')?.touched">
+                             @if (rentalHouseForm.get('monthlyRent')?.invalid && rentalHouseForm.get('monthlyRent')?.touched) {
+                                <p class="text-xs text-red-500 font-semibold mt-1 px-1">Monthly Rent is required</p>
+                             }
                           </div>
                           <div class="space-y-2">
-                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Advance Amount</label>
-                             <input type="number" formControlName="advanceAmount" placeholder="0.00" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Advance Amount <span class="text-red-500">*</span></label>
+                             <input type="number" formControlName="advanceAmount" placeholder="0.00" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold" [class.ring-2]="rentalHouseForm.get('advanceAmount')?.invalid && rentalHouseForm.get('advanceAmount')?.touched" [class.ring-red-500]="rentalHouseForm.get('advanceAmount')?.invalid && rentalHouseForm.get('advanceAmount')?.touched">
+                             @if (rentalHouseForm.get('advanceAmount')?.invalid && rentalHouseForm.get('advanceAmount')?.touched) {
+                                <p class="text-xs text-red-500 font-semibold mt-1 px-1">Advance Amount is required</p>
+                             }
                           </div>
                           <div class="space-y-2">
-                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Advance (In Months)</label>
-                             <input type="number" formControlName="advanceMonths" placeholder="e.g., 3" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Advance (In Months) <span class="text-red-500">*</span></label>
+                             <input type="number" formControlName="advanceMonths" placeholder="e.g., 3" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold" [class.ring-2]="rentalHouseForm.get('advanceMonths')?.invalid && rentalHouseForm.get('advanceMonths')?.touched" [class.ring-red-500]="rentalHouseForm.get('advanceMonths')?.invalid && rentalHouseForm.get('advanceMonths')?.touched">
+                             @if (rentalHouseForm.get('advanceMonths')?.invalid && rentalHouseForm.get('advanceMonths')?.touched) {
+                                <p class="text-xs text-red-500 font-semibold mt-1 px-1">Advance Months is required</p>
+                             }
                           </div>
                           <div class="space-y-2">
-                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Renter Name</label>
-                             <input type="text" formControlName="renterName" placeholder="Full name of tenant" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Renter Name <span class="text-red-500">*</span></label>
+                             <input type="text" formControlName="renterName" placeholder="Full name of tenant" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold" [class.ring-2]="rentalHouseForm.get('renterName')?.invalid && rentalHouseForm.get('renterName')?.touched" [class.ring-red-500]="rentalHouseForm.get('renterName')?.invalid && rentalHouseForm.get('renterName')?.touched">
+                             @if (rentalHouseForm.get('renterName')?.invalid && rentalHouseForm.get('renterName')?.touched) {
+                                <p class="text-xs text-red-500 font-semibold mt-1 px-1">Tenant Name is required</p>
+                             }
                           </div>
                           <div class="space-y-2">
-                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Renter Phone</label>
-                             <input type="tel" formControlName="renterPhone" placeholder="10 digit number" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Renter Phone <span class="text-red-500">*</span></label>
+                             <input type="tel" formControlName="renterPhone" placeholder="10 digit number" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold" [class.ring-2]="rentalHouseForm.get('renterPhone')?.invalid && rentalHouseForm.get('renterPhone')?.touched" [class.ring-red-500]="rentalHouseForm.get('renterPhone')?.invalid && rentalHouseForm.get('renterPhone')?.touched">
+                             @if (rentalHouseForm.get('renterPhone')?.touched) {
+                                @if (rentalHouseForm.get('renterPhone')?.hasError('required')) {
+                                   <p class="text-xs text-red-500 font-semibold mt-1 px-1">Phone number is required</p>
+                                } @else if (rentalHouseForm.get('renterPhone')?.invalid) {
+                                   <p class="text-xs text-red-500 font-semibold mt-1 px-1">Must be a valid 10-digit number</p>
+                                }
+                             }
                           </div>
                           <div class="space-y-2">
-                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Arrived Date</label>
-                             <input type="date" formControlName="arrivedDate" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">
+                               Tenant Aadhar Number
+                               <span class="ml-1 text-[9px] normal-case font-medium text-gray-300 dark:text-gray-600 tracking-normal">(optional)</span>
+                             </label>
+                             <input type="text" formControlName="renterAadhar" placeholder="12-digit Aadhar number" maxlength="12" inputmode="numeric"
+                                    class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold tracking-[0.25em]"
+                                    [class.ring-2]="rentalHouseForm.get('renterAadhar')?.invalid && rentalHouseForm.get('renterAadhar')?.touched"
+                                    [class.ring-red-500]="rentalHouseForm.get('renterAadhar')?.invalid && rentalHouseForm.get('renterAadhar')?.touched">
+                             @if (rentalHouseForm.get('renterAadhar')?.invalid && rentalHouseForm.get('renterAadhar')?.touched) {
+                                <p class="text-xs text-red-500 font-semibold mt-1 px-1">Aadhar must be exactly 12 digits</p>
+                             }
+                          </div>
+                          <div class="space-y-2">
+                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Arrived Date <span class="text-red-500">*</span></label>
+                             <input type="date" formControlName="arrivedDate" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold" [class.ring-2]="rentalHouseForm.get('arrivedDate')?.invalid && rentalHouseForm.get('arrivedDate')?.touched" [class.ring-red-500]="rentalHouseForm.get('arrivedDate')?.invalid && rentalHouseForm.get('arrivedDate')?.touched">
+                             @if (rentalHouseForm.get('arrivedDate')?.invalid && rentalHouseForm.get('arrivedDate')?.touched) {
+                                <p class="text-xs text-red-500 font-semibold mt-1 px-1">Arrival Date is required</p>
+                             }
                           </div>
                           <div class="space-y-2">
                              <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Status</label>
@@ -2086,7 +2088,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
                        <div class="pt-8 flex gap-4">
                           <button type="button" (click)="closeRentalHouseForm()" class="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-2xl font-black uppercase text-xs tracking-widest">Cancel</button>
-                          <button type="submit" [disabled]="rentalHouseForm.invalid || isSaving" class="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-500/20">
+                          <button type="submit" [disabled]="isSaving" class="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-500/20">
                              {{ isSaving ? 'Saving...' : (isRentalEditMode ? 'Update Details' : 'Register Property') }}
                           </button>
                        </div>
@@ -2103,8 +2105,8 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                   <div class="p-8 pb-4 border-b border-gray-100 dark:border-gray-800">
                      <div class="flex justify-between items-center">
                         <div>
-                           <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Generate Bill</h3>
-                           <p class="text-sm text-gray-500 font-medium">Record rent and utility charges</p>
+                           <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Rent Collected</h3>
+                           <p class="text-sm text-gray-500 font-medium">Record monthly rent and utility collections</p>
                         </div>
                         <button (click)="closeMonthlyBillForm()" class="p-3 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500">
                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -2115,7 +2117,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                   <div class="p-8">
                      <form [formGroup]="monthlyBillForm" (ngSubmit)="saveMonthlyBill()" class="space-y-5">
                         <div class="space-y-2">
-                           <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Bill Date</label>
+                           <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Collection Date</label>
                            <input type="date" formControlName="billDate" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
                         </div>
                         <div class="grid grid-cols-2 gap-4">
@@ -2130,13 +2132,21 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                         </div>
                         <div class="space-y-2">
                            <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Electricity Bill</label>
-                           <input type="number" formControlName="electricBill" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold">
+                           <input type="number" formControlName="electricBill" readonly class="w-full px-6 py-4 rounded-2xl bg-gray-100/70 dark:bg-gray-800/50 border-none outline-none focus:ring-0 cursor-not-allowed opacity-85 text-gray-900 dark:text-white font-bold">
                         </div>
 
-                        <div class="pt-6 flex gap-4">
+                        <div class="space-y-2">
+                            <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Electricity bill payment</label>
+                            <select formControlName="status" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white font-bold appearance-none">
+                               <option value="Paid">Paid</option>
+                               <option value="Pending">Unpaid</option>
+                            </select>
+                         </div>
+
+                         <div class="pt-6 flex gap-4">
                            <button type="button" (click)="closeMonthlyBillForm()" class="flex-1 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-2xl font-black uppercase text-xs tracking-widest">Cancel</button>
                            <button type="submit" [disabled]="monthlyBillForm.invalid || isSaving" class="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-500/20">
-                              {{ isSaving ? 'Saving...' : 'Generate Bill' }}
+                              {{ isSaving ? 'Saving...' : 'Record Collection' }}
                            </button>
                         </div>
                      </form>
@@ -2172,6 +2182,47 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                </div>
             </div>
          }
+
+        <!-- 11. Mobile Filter Modal (Bills) -->
+        @if (showBillsFilterModal) {
+            <div class="fixed inset-0 z-[3000] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-8" (click)="showBillsFilterModal = false">
+               <div class="bg-white dark:bg-gray-900 w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden animate-slide-up" (click)="$event.stopPropagation()">
+                  <div class="p-8 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                     <h3 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Filter Bills</h3>
+                     <button (click)="showBillsFilterModal = false" class="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                     </button>
+                  </div>
+                  <div class="p-8 space-y-8">
+                     <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Service Category</label>
+                        <div class="grid grid-cols-2 gap-3">
+                           @for (type of ['all', 'electricity', 'water', 'internet', 'mobile', 'other']; track type) {
+                              <button (click)="serviceTypeFilter = type; showBillsFilterModal = false"
+                                      [class]="serviceTypeFilter === type ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-gray-50 dark:bg-gray-800 text-gray-500'"
+                                      class="px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all text-left">
+                                 {{ type }}
+                              </button>
+                           }
+                        </div>
+                     </div>
+                     <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Payment Status</label>
+                        <div class="flex gap-2">
+                           @for (status of ['all', 'paid', 'unpaid']; track status) {
+                              <button (click)="billStatusFilter = status; showBillsFilterModal = false"
+                                      [class]="billStatusFilter === status ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-gray-50 dark:bg-gray-800 text-gray-500'"
+                                      class="flex-1 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+                                 {{ status }}
+                              </button>
+                           }
+                        </div>
+                     </div>
+                     <button (click)="showBillsFilterModal = false" class="w-full py-4 bg-gray-900 dark:bg-white dark:text-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em]">Show Results</button>
+                  </div>
+               </div>
+            </div>
+        }
 
       <!-- Mobile Bottom Navigation -->
       <div class="fixed bottom-0 left-0 right-0 z-[100] sm:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-colors duration-500 pb-safe">
@@ -2275,6 +2326,39 @@ export class AdminDashboardComponent implements OnInit {
   isDarkMode = false;
   activeMobileMenu: 'chitti' | 'interest' | 'customers' | 'security' | 'bills' | 'overview' | 'rentals' | '' = '';
   currentUserProfile: UserProfile | null = null;
+  showMoreMenu = false;
+  showProfileModal = false;
+
+  toggleMoreMenu(event: Event) {
+    event.stopPropagation();
+    this.showMoreMenu = !this.showMoreMenu;
+  }
+
+  selectMoreMenu(menu: 'customers' | 'manage-admins' | 'security' | 'profile') {
+    this.showMoreMenu = false;
+    if (menu === 'manage-admins') {
+      this.goToManageAdmins();
+    } else if (menu === 'profile') {
+      this.showProfileModal = true;
+      document.body.classList.add('modal-open');
+    } else {
+      this.activeTab = menu;
+      this.activeMobileMenu = menu;
+    }
+  }
+
+  closeProfileModal() {
+    this.showProfileModal = false;
+    document.body.classList.remove('modal-open');
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.more-menu-container')) {
+      this.showMoreMenu = false;
+    }
+  }
 
   get showInterestTab() { return this.isSuperAdmin || this.currentUserProfile?.tabConfig?.interest !== false; }
   get showChittiTab() { return this.isSuperAdmin || this.currentUserProfile?.tabConfig?.chitti !== false; }
@@ -2301,12 +2385,13 @@ export class AdminDashboardComponent implements OnInit {
   isSyncing = false;
   isFetchingLiveBill = false;
   showLiveBillModal = false;
+  showBillsFilterModal = false;
   selectedLiveBill: any = null;
   showBillForm = false;
   editingBill?: Bill;
   trackedServices: TrackedService[] = [];
   serviceTypeFilter: string = 'all';
-  billStatusFilter: 'all' | 'paid' | 'unpaid' = 'all';
+  billStatusFilter: string = 'all';
   showServiceModal = false;
   editingTrackedService?: TrackedService;
   trackedServiceForm: FormGroup;
@@ -2346,6 +2431,7 @@ export class AdminDashboardComponent implements OnInit {
     electricityPaidDate?: string;
     waterPaidDate?: string;
   }> = {};
+  refetchingHouseIds: Record<string, boolean> = {};
   overviewFilter: 'All' | 'Loan Issue' | 'Interest' | 'Settlement' = 'All';
   readonly overviewFilters: ('All' | 'Loan Issue' | 'Interest' | 'Settlement')[] = ['All', 'Loan Issue', 'Interest', 'Settlement'];
   showMonthlyBillForm = false;
@@ -2435,8 +2521,8 @@ export class AdminDashboardComponent implements OnInit {
 
   getHouseStats(house: RentalHouse) {
     const bills = house.bills || [];
-    const collected = bills.filter(b => b.status === 'Paid').reduce((sum, b) => sum + (b.rentAmount || 0), 0);
-    let pending = bills.filter(b => b.status === 'Pending').reduce((sum, b) => sum + (b.total || 0), 0);
+    const collected = bills.filter(b => b.rentAmount > 0).reduce((sum, b) => sum + (b.rentAmount || 0), 0);
+    let pending = bills.filter(b => b.status && b.status.toLowerCase() === 'pending').reduce((sum, b) => sum + (b.electricBill || 0) + (b.waterBill || 0), 0);
     const months = bills.length;
 
     // Automatic Pending Rent Logic
@@ -2448,11 +2534,23 @@ export class AdminDashboardComponent implements OnInit {
       let tempDate = new Date(arrived.getFullYear(), arrived.getMonth(), arrived.getDate());
       
       while (tempDate <= now) {
-         const monthName = tempDate.toLocaleString('default', { month: 'long' });
+         const monthNameLong = tempDate.toLocaleString('default', { month: 'long' }).toLowerCase();
+         const monthNameShort = tempDate.toLocaleString('default', { month: 'short' }).toLowerCase();
          const year = tempDate.getFullYear();
          
-         const billExists = bills.some(b => b.month === monthName && b.year === year);
-         if (!billExists) {
+         const monthlyBill = bills.find(b => {
+           if (b.billDate) {
+             const d = new Date(b.billDate);
+             if (!isNaN(d.getTime())) {
+               return d.getMonth() === tempDate.getMonth() && d.getFullYear() === tempDate.getFullYear();
+             }
+           }
+           const bMonth = (b.month || '').toLowerCase();
+           return (bMonth === monthNameLong || bMonth === monthNameShort) && b.year === year;
+         });
+         if (!monthlyBill) {
+           pending += (house.monthlyRent || 0);
+         } else if (!(monthlyBill.rentAmount > 0)) {
            pending += (house.monthlyRent || 0);
          }
          
@@ -2478,6 +2576,20 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   isHouseUtilityPaid(house: RentalHouse, type: 'electricity' | 'water'): boolean {
+    const bills = house.bills || [];
+    if (bills.length > 0) {
+      const sorted = [...bills].sort((a, b) => new Date(b.billDate).getTime() - new Date(a.billDate).getTime());
+      const latestBill = sorted[0];
+      const statusStr = (latestBill.status || '').toLowerCase();
+      if (statusStr === 'paid') {
+        return true;
+      }
+      if (statusStr === 'pending') {
+        const amt = type === 'electricity' ? (latestBill.electricBill || 0) : (latestBill.waterBill || 0);
+        return amt === 0;
+      }
+    }
+
     if (!house.id) return false;
 
     const cached = this.rentalUtilityBills[house.id];
@@ -2493,6 +2605,22 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   getHouseUtilityPaidDate(house: RentalHouse, type: 'electricity' | 'water'): string {
+    const bills = house.bills || [];
+    if (bills.length > 0) {
+      const sorted = [...bills].sort((a, b) => new Date(b.billDate).getTime() - new Date(a.billDate).getTime());
+      const latestBill = sorted[0];
+      const statusStr = (latestBill.status || '').toLowerCase();
+      if (statusStr === 'paid') {
+        return latestBill.paidDate || latestBill.billDate;
+      }
+      if (statusStr === 'pending') {
+        const amt = type === 'electricity' ? (latestBill.electricBill || 0) : (latestBill.waterBill || 0);
+        if (amt === 0) {
+          return latestBill.billDate;
+        }
+      }
+    }
+
     if (!house.id) return '';
 
     const cached = this.rentalUtilityBills[house.id];
@@ -2524,6 +2652,32 @@ export class AdminDashboardComponent implements OnInit {
     }
 
     return yearsPassed >= 1;
+  }
+
+  getCompletedMonthsOccupied(house: RentalHouse): number {
+    if (!house.arrivedDate || house.status !== 'Occupied') return 0;
+    const arrived = new Date(house.arrivedDate);
+    const today = new Date();
+    
+    let months = (today.getFullYear() - arrived.getFullYear()) * 12 + (today.getMonth() - arrived.getMonth());
+    
+    if (today.getDate() < arrived.getDate()) {
+      months--;
+    }
+    return Math.max(0, months);
+  }
+
+  async refreshUtilityBills(house: RentalHouse) {
+    if (!house.id) return;
+    this.refetchingHouseIds[house.id] = true;
+    try {
+      await this.syncRentalUtilityBills(house);
+      this.toast.success(`Utility bills updated for ${house.houseName}`);
+    } catch (e) {
+      this.toast.error(`Failed to fetch bills for ${house.houseName}`);
+    } finally {
+      this.refetchingHouseIds[house.id] = false;
+    }
   }
 
   toggleLoanExpansion(id: string) {
@@ -2790,6 +2944,7 @@ export class AdminDashboardComponent implements OnInit {
       monthlyRent: [0, Validators.required],
       renterName: ['', Validators.required],
       renterPhone: ['', [Validators.required, Validators.pattern(/^[0-9]+$/), Validators.minLength(10), Validators.maxLength(10)]],
+      renterAadhar: ['', [Validators.pattern(/^[0-9]{12}$/)]],
       arrivedDate: [new Date().toISOString().split('T')[0], Validators.required],
       electricMeterNo: [''],
       waterBillNo: [''],
@@ -2802,7 +2957,7 @@ export class AdminDashboardComponent implements OnInit {
       rentAmount: [0, Validators.required],
       electricBill: [0],
       waterBill: [0],
-      status: ['Pending', Validators.required]
+      status: ['Paid', Validators.required]
     });
     this.trackedServiceForm = this.fb.group({
       serviceType: ['electricity', Validators.required],
@@ -2874,12 +3029,11 @@ export class AdminDashboardComponent implements OnInit {
 
   getPendingInterestForLoan(loan: InterestScheme): number {
     if (!loan.startDate) return 0;
-    const months = this.getMonthsElapsed(loan.startDate);
-    const principalPaid = (loan.settlements || []).reduce((s, st) => s + st.amount, 0);
-    const balance = Math.max(0, loan.amount - principalPaid);
-    const expectedInterest = balance * (loan.interestRate / 100) * months;
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const accrued = this.getAccruedInterestThroughDate(loan, today);
     const paidInterest = (loan.interestCollections || []).reduce((s, c) => s + c.amount, 0);
-    return Math.max(0, expectedInterest - paidInterest);
+    return Math.max(0, accrued - paidInterest);
   }
 
   get totalPendingInterest() {
@@ -3704,7 +3858,7 @@ export class AdminDashboardComponent implements OnInit {
 
     this.houses.forEach(house => {
       (house.bills || []).forEach(bill => {
-        if (bill.status !== 'Paid') return;
+        if (!(bill.rentAmount > 0)) return;
 
         const bDate = new Date(bill.billDate);
         if (isNaN(bDate.getTime())) return;
@@ -4201,6 +4355,7 @@ export class AdminDashboardComponent implements OnInit {
         monthlyRent: house.monthlyRent || 0,
         renterName: house.renterName,
         renterPhone: house.renterPhone,
+        renterAadhar: house.renterAadhar || '',
         arrivedDate: house.arrivedDate,
         electricMeterNo: house.electricMeterNo || '',
         waterBillNo: house.waterBillNo || '',
@@ -4221,25 +4376,29 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   async saveRentalHouse() {
-    if (this.rentalHouseForm.valid) {
-      this.isSaving = true;
-      try {
-        const profile = await new Promise<any>(res => this.authService.userProfile$.subscribe(res));
-        const houseData = { ...this.rentalHouseForm.getRawValue(), createdBy: profile?.uid };
+    if (this.rentalHouseForm.invalid) {
+      this.rentalHouseForm.markAllAsTouched();
+      this.toast.error('Please fill all required fields correctly.');
+      return;
+    }
+    this.isSaving = true;
+    try {
+      const profile = await new Promise<any>(res => this.authService.userProfile$.subscribe(res));
+      const houseData = { ...this.rentalHouseForm.getRawValue(), createdBy: profile?.uid };
 
-        if (this.isRentalEditMode && this.editingRentalId) {
-          await this.rentalService.updateHouse(this.editingRentalId, houseData);
-          this.toast.success('House updated successfully!');
-        } else {
-          await this.rentalService.addHouse({ ...houseData, bills: [] });
-          this.toast.success('New house registered!');
-        }
-        this.showRentalHouseForm = false;
-      } catch (e) {
-        this.toast.error('Failed to save house information');
-      } finally {
-        this.isSaving = false;
+      if (this.isRentalEditMode && this.editingRentalId) {
+        await this.rentalService.updateHouse(this.editingRentalId, houseData);
+        this.toast.success('House updated successfully!');
+      } else {
+        await this.rentalService.addHouse({ ...houseData, bills: [] });
+        this.toast.success('New house registered!');
       }
+      this.showRentalHouseForm = false;
+      document.body.classList.remove('modal-open');
+    } catch (e) {
+      this.toast.error('Failed to save house information');
+    } finally {
+      this.isSaving = false;
     }
   }
 
@@ -4280,7 +4439,7 @@ export class AdminDashboardComponent implements OnInit {
         rentAmount: bill.rentAmount,
         electricBill: bill.electricBill,
         waterBill: bill.waterBill,
-        status: bill.status || 'Pending'
+        status: bill.status || 'Paid'
       });
     } else {
       const electricAmount = this.getHouseUtilityBill(house, 'electricity');
@@ -4291,7 +4450,7 @@ export class AdminDashboardComponent implements OnInit {
         rentAmount: house.monthlyRent || 0,
         electricBill: electricAmount,
         waterBill: waterAmount,
-        status: 'Pending'
+        status: 'Paid'
       });
       this.syncRentalUtilityBills(house, true);
     }
@@ -4376,7 +4535,18 @@ export class AdminDashboardComponent implements OnInit {
 
         if (this.activeHouseId) {
           await this.rentalService.updateHouse(this.activeHouseId, { bills: updatedBills });
-          this.toast.success('Monthly bill recorded!');
+          this.toast.success('Rent collection recorded!');
+          // Trigger automated WhatsApp receipt if status is Paid
+          if (billData.rentAmount > 0 && house.renterPhone) {
+            this.notificationService.sendRentReceiptNotification(
+              house.renterPhone,
+              house.renterName,
+              house.houseName,
+              billData.total,
+              billData.month,
+              billData.year
+            );
+          }
         }
         this.showMonthlyBillForm = false;
         document.body.classList.remove('modal-open');
@@ -4402,6 +4572,115 @@ export class AdminDashboardComponent implements OnInit {
       } catch (e) {
         this.toast.error('Delete failed.');
       }
+    }
+  }
+
+  async sendRentReminder(house: RentalHouse) {
+    if (!house.renterPhone) {
+      this.toast.error('Renter contact details are incomplete.');
+      return;
+    }
+    const cleanPhone = house.renterPhone.replace(/\D/g, '');
+    const phoneWithCountry = cleanPhone.startsWith('91') && cleanPhone.length === 12 ? cleanPhone : `91${cleanPhone}`;
+    const stats = this.getHouseStats(house);
+    
+    let message = '';
+    if (stats.pending > 0) {
+      const now = new Date();
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const month = monthNames[now.getMonth()];
+      const year = now.getFullYear();
+      message = `Hello ${house.renterName || 'Tenant'},\n\n` +
+        `This is a friendly reminder for the rent & utilities payment of *${house.houseName}* for ${month} ${year}.\n\n` +
+        `• Pending Amount: ₹${stats.pending.toLocaleString('en-IN')}\n\n` +
+        `Please clear the dues at your earliest convenience. Thank you!`;
+    }
+    
+    const whatsappUrl = `https://wa.me/${phoneWithCountry}${message ? '?text=' + encodeURIComponent(message) : ''}`;
+    window.open(whatsappUrl, '_blank');
+  }
+
+  printRentReceipt(event: { house: RentalHouse, bill: RentalBill }) {
+    const landlordName = this.currentUserProfile?.displayName || 'Property Owner';
+    printHraReceipt(event.house, event.bill, landlordName);
+  }
+
+  async addHouseExpense(houseId: string, expense: Omit<RentalExpense, 'id'>) {
+    const house = this.houses.find(h => h.id === houseId);
+    if (!house) return;
+
+    const id = `exp_${Date.now()}`;
+    const newExpense: RentalExpense = { ...expense, id };
+    const updatedExpenses = [...(house.expenses || []), newExpense];
+
+    this.isSaving = true;
+    try {
+      await this.rentalService.updateHouse(houseId, { expenses: updatedExpenses });
+      this.toast.success('Expense recorded successfully!');
+    } catch (e) {
+      this.toast.error('Failed to log expense.');
+    } finally {
+      this.isSaving = false;
+    }
+  }
+
+  async deleteHouseExpense(houseId: string, expenseId: string) {
+    const house = this.houses.find(h => h.id === houseId);
+    if (!house) return;
+
+    if (!confirm('Are you sure you want to delete this expense record?')) return;
+
+    const updatedExpenses = (house.expenses || []).filter(e => e.id !== expenseId);
+
+    this.isSaving = true;
+    try {
+      await this.rentalService.updateHouse(houseId, { expenses: updatedExpenses });
+      this.toast.success('Expense deleted.');
+    } catch (e) {
+      this.toast.error('Failed to delete expense.');
+    } finally {
+      this.isSaving = false;
+    }
+  }
+
+  async vacateTenant(houseId: string, settlement: { vacatedDate: string, refundAmount: number, deductions: number, deductionReason: string }) {
+    const house = this.houses.find(h => h.id === houseId);
+    if (!house) return;
+
+    if (!confirm(`Are you sure you want to vacate ${house.renterName}? This will archive this tenancy history.`)) return;
+
+    const past: PastTenancy = {
+      renterName: house.renterName,
+      renterPhone: house.renterPhone,
+      arrivedDate: house.arrivedDate,
+      vacatedDate: settlement.vacatedDate,
+      bills: house.bills || [],
+      expenses: house.expenses || [],
+      advanceRefunded: settlement.refundAmount,
+      deductions: settlement.deductions,
+      deductionReason: settlement.deductionReason
+    };
+
+    const updatedPast = [...(house.pastTenancies || []), past];
+
+    this.isSaving = true;
+    try {
+      await this.rentalService.updateHouse(houseId, {
+        status: 'Vacant',
+        renterName: '',
+        renterPhone: '',
+        renterAadhar: '',
+        arrivedDate: '',
+        lastRentIncreaseDate: '',
+        bills: [],
+        expenses: [],
+        pastTenancies: updatedPast
+      });
+      this.toast.success('Tenant vacated and record archived!');
+    } catch (e) {
+      this.toast.error('Failed to process vacating.');
+    } finally {
+      this.isSaving = false;
     }
   }
 
@@ -4476,18 +4755,60 @@ export class AdminDashboardComponent implements OnInit {
     return dueDate;
   }
 
-  sendLoanReminder(loan: InterestScheme, type: 'whatsapp' | 'sms' = 'whatsapp') {
-    const nextDue = this.nextLoanDueDate(loan);
-    const amountDue = this.getPendingInterestForLoan(loan);
+  shareLoanReminder(loan: InterestScheme) {
+    const cleanPhone = loan.borrowerPhone ? loan.borrowerPhone.replace(/\D/g, '') : '';
+    const phoneWithCountry = cleanPhone.startsWith('91') && cleanPhone.length === 12 ? cleanPhone : `91${cleanPhone}`;
 
-    this.notificationService.sendReminder(
-      loan.borrowerPhone,
-      loan.borrowerName,
-      loan.name,
-      amountDue,
-      nextDue,
-      type
-    );
+    // Find all active loans for this borrower (matching phone number or name)
+    const borrowerLoans = this.interests.filter(l => {
+      if (l.status === 'Inactive') return false;
+      const lPhone = l.borrowerPhone ? l.borrowerPhone.replace(/\D/g, '') : '';
+      const phoneMatches = lPhone && cleanPhone && (lPhone === cleanPhone || `91${lPhone}` === phoneWithCountry || lPhone === phoneWithCountry);
+      const nameMatches = l.borrowerName && loan.borrowerName && l.borrowerName.trim().toLowerCase() === loan.borrowerName.trim().toLowerCase();
+      return phoneMatches || nameMatches;
+    });
+
+    let message = '';
+    if (borrowerLoans.length <= 1) {
+      const nextDue = this.nextLoanDueDate(loan);
+      const amountDue = this.getPendingInterestForLoan(loan);
+      const formattedAmount = amountDue.toLocaleString('en-IN');
+      const formattedDate = nextDue ? nextDue.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+      
+      message = `Hello ${loan.borrowerName},\n\n` +
+        `This is an interest payment reminder from FinServe for your loan *${loan.name}*.\n\n` +
+        `• Principal Amount: ₹${loan.amount.toLocaleString('en-IN')}\n` +
+        `• Interest Rate: ${loan.interestRate}% p.m.\n` +
+        `• *Interest Due: ₹${formattedAmount}*\n` +
+        (formattedDate ? `• Due Date: ${formattedDate}\n` : '') +
+        `\nPlease clear the dues at your earliest convenience to avoid penalties. Thank you!`;
+    } else {
+      message = `Hello ${loan.borrowerName},\n\n` +
+        `This is a consolidated interest payment reminder from FinServe for your active loans:\n\n`;
+      let grandTotalPending = 0;
+      
+      borrowerLoans.forEach((l, idx) => {
+        const nextDue = this.nextLoanDueDate(l);
+        const amountDue = this.getPendingInterestForLoan(l);
+        const formattedDate = nextDue ? nextDue.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+        grandTotalPending += amountDue;
+        
+        message += `*${idx + 1}. ${l.name}*\n`;
+        message += `   - Principal: ₹${l.amount.toLocaleString('en-IN')}\n`;
+        message += `   - Interest Rate: ${l.interestRate}% p.m.\n`;
+        message += `   - Interest Due: ₹${amountDue.toLocaleString('en-IN')}\n`;
+        if (formattedDate) {
+          message += `   - Due Date: ${formattedDate}\n`;
+        }
+        message += `\n`;
+      });
+      
+      message += `*Total Consolidated Amount Due: ₹${grandTotalPending.toLocaleString('en-IN')}*\n\n`;
+      message += `Please clear your dues at your earliest convenience to avoid penalties. Thank you!`;
+    }
+
+    const whatsappUrl = `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
   }
 
 
@@ -4498,7 +4819,8 @@ export class AdminDashboardComponent implements OnInit {
     let cycleIndex = 1;
     while (true) {
       const cycleStart = this.addMonthsClampedForReminder(startDate, cycleIndex - 1);
-      if (cycleStart.getTime() > date.getTime()) break;
+      const cycleDueDate = this.addMonthsClampedForReminder(startDate, cycleIndex);
+      if (cycleDueDate.getTime() > date.getTime()) break;
       const settledBeforeCycle = (loan.settlements || []).reduce((sum, s) => {
         const sDate = this.parseLocalDateForReminder(s.date);
         return (sDate && sDate.getTime() <= cycleStart.getTime()) ? sum + s.amount : sum;
@@ -4708,6 +5030,16 @@ export class AdminDashboardComponent implements OnInit {
 
     form.submit();
     document.body.removeChild(form);
+  }
+
+  openBillsFilterModal() {
+    this.showBillsFilterModal = true;
+    document.body.classList.add('modal-open');
+  }
+
+  closeBillsFilterModal() {
+    this.showBillsFilterModal = false;
+    document.body.classList.remove('modal-open');
   }
 }
 
