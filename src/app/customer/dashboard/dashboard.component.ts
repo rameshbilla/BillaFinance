@@ -6,7 +6,7 @@ import { BiometricService } from '../../services/biometric.service';
 import { ChittiService, ChittiScheme } from '../../admin/services/chitti.service';
 import { InterestService, InterestScheme } from '../../admin/services/interest.service';
 import { CustomerService, Customer } from '../../admin/services/customer.service';
-import { RentalService, RentalHouse, RentalBill } from '../../admin/services/rental.service';
+import { RentalService, RentalHouse, RentalBill, printHraReceipt } from '../../admin/services/rental.service';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ToastService } from '../../shared/toast.service';
 import { BaseChartDirective } from 'ng2-charts';
@@ -636,10 +636,9 @@ Chart.register(zoomPlugin);
                                   <th class="p-4">Rent</th>
                                   <th class="p-4">Electric</th>
                                   <th class="p-4">Water</th>
-                                  
-                                  
                                   <th class="p-4">Total</th>
-                                   <th class="p-4 rounded-tr-2xl">Status</th>
+                                  <th class="p-4">Status</th>
+                                  <th class="p-4 rounded-tr-2xl text-center">Receipt</th>
                                </tr>
                             </thead>
                             <tbody class="text-xs font-bold text-gray-700 dark:text-gray-300">
@@ -649,14 +648,18 @@ Chart.register(zoomPlugin);
                                      <td class="p-4 text-green-500" [appCountUp]="bill.rentAmount" prefix="₹"></td>
                                       <td class="p-4" [class]="bill.status === 'Pending' && bill.electricBill > 0 ? 'text-red-500' : 'text-green-500'" [appCountUp]="bill.electricBill" prefix="₹"></td>
                                       <td class="p-4" [class]="bill.status === 'Pending' && bill.waterBill > 0 ? 'text-red-500' : 'text-green-500'" [appCountUp]="bill.waterBill" prefix="₹"></td>
-                                     
-                                     
                                      <td class="p-4 font-black text-gray-900 dark:text-white bg-green-50/30" [appCountUp]="bill.total" prefix="₹"></td>
                                       <td class="p-4">
                                          <span class="px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest"
                                             [class]="bill.status === 'Paid' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'">
                                             {{ bill.status === 'Paid' ? 'Paid' : 'Unpaid' }}
                                          </span>
+                                      </td>
+                                      <td class="p-4 text-center">
+                                         <button *ngIf="bill.status === 'Paid'" (click)="printRentReceipt(selectedHouse, bill)" class="p-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 rounded-lg transition-all" title="Download Rent Receipt">
+                                            <svg class="w-4 h-4 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                         </button>
+                                         <span *ngIf="bill.status !== 'Paid'" class="text-[8px] text-gray-400 font-bold uppercase tracking-widest">---</span>
                                       </td>
                                   </tr>
                                }
@@ -967,6 +970,11 @@ export class CustomerDashboardComponent implements OnInit {
     this.selectedChit = null;
     this.selectedLoan = null;
     this.scrollToTop();
+  }
+
+  printRentReceipt(house: RentalHouse, bill: RentalBill) {
+    const ownerName = this.ownerProfile?.displayName || 'Property Owner';
+    printHraReceipt(house, bill, ownerName);
   }
 
   goToGame() {
