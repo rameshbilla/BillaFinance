@@ -170,6 +170,15 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                           </svg>
                           My Profile
                        </button>
+                       <!-- Chitties (Regular Admin only) -->
+                       <button *ngIf="!isSuperAdmin && showChittiTab" 
+                               (click)="selectMoreMenu('chitti')" 
+                               class="flex items-center gap-3 px-4 py-3.5 text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-950/20 hover:text-purple-600 dark:hover:text-purple-400 transition-colors w-full text-left">
+                          <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                          </svg>
+                          Chitties
+                       </button>
                        <!-- Customers (Regular Admin only) -->
                        <button *ngIf="!isSuperAdmin && showCustomersTab" 
                                (click)="selectMoreMenu('customers')" 
@@ -670,40 +679,45 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                          </div>
 
                          <div class="relative z-10">
-                            @if (service.lastAmount || service.lastDueDate) {
-                              <div class="bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
-                                 <div class="flex justify-between items-end">
-                                    <div>
-                                       <p class="text-[9px] font-black uppercase tracking-widest mb-1"
-                                          [class]="isTrackedServicePaid(service) ? 'text-emerald-500' : 'text-gray-400'">{{ service.lastAmountLabel || (service.serviceType === 'water' ? 'Total Arrears' : 'Payable Amount') }}</p>
-                                       <p class="text-2xl font-black"
-                                          [class]="isTrackedServicePaid(service) ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white'">₹{{ service.lastAmount }}</p>
-                                    </div>
-                                    <div class="text-right">
-                                       <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{{ isTrackedServicePaid(service) ? 'Paid Date' : 'Due Date' }}</p>
-                                       <p class="text-xs font-black" [class]="isTrackedServicePaid(service) ? 'text-emerald-500' : 'text-rose-500'">{{ getTrackedServiceDisplayDate(service) }}</p>
-                                    </div>
-                                 </div>
-                                 <div class="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
-                                  <div class="flex-1">
-                                     <button (click)="storeBillAsRecord(service)" class="text-[9px] font-black text-indigo-500 uppercase tracking-widest hover:text-indigo-700 transition-colors flex items-center gap-1">
-                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-                                        Store Record
-                                     </button>
+                            <div class="bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
+                               <div class="flex justify-between items-end">
+                                  <div>
+                                     <p class="text-[9px] font-black uppercase tracking-widest mb-1"
+                                        [class]="isTrackedServicePaid(service) ? 'text-emerald-500' : 'text-gray-400'">
+                                        {{ service.lastAmountLabel || (service.serviceType === 'water' ? 'Total Arrears' : 'Payable Amount') }}
+                                     </p>
+                                     <p class="text-2xl font-black"
+                                        [class]="isTrackedServicePaid(service) ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white'">
+                                        ₹{{ service.lastAmount !== undefined && service.lastAmount !== null ? service.lastAmount : '0' }}
+                                     </p>
                                   </div>
-                                  <button *ngIf="service.lastAmount && !isTrackedServicePaid(service)"
-                                      (click)="handlePayNow(service)"
-                                      [class]="service.serviceType === 'water' ? 'px-4 py-2 bg-indigo-600 text-white text-[10px] font-black rounded-xl shadow-lg shadow-indigo-600/20 uppercase tracking-widest hover:scale-105 transition-all' : 'px-4 py-2 bg-orange-600 text-white text-[10px] font-black rounded-xl shadow-lg shadow-orange-600/20 uppercase tracking-widest hover:scale-105 transition-all'">
-                                      Pay Now
-                                   </button>
+                                  <div class="text-right">
+                                     <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                                        {{ isTrackedServicePaid(service) ? 'Paid Date' : 'Due Date' }}
+                                     </p>
+                                     <p class="text-xs font-black" [class]="isTrackedServicePaid(service) ? 'text-emerald-500' : 'text-rose-500'">
+                                        {{ getTrackedServiceDisplayDate(service) || 'Pending Sync' }}
+                                     </p>
+                                  </div>
                                </div>
-                              </div>
-                            } @else {
-                              <button (click)="handleFetchLiveBill(service)" 
-                                      class="w-full py-4 bg-indigo-600/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all group-hover:shadow-lg group-hover:shadow-indigo-600/20">
-                                 Fetch Live Details
-                              </button>
-                            }
+                               <div class="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                                <div class="flex-1">
+                                   <button *ngIf="service.lastAmount" (click)="storeBillAsRecord(service)" class="text-[9px] font-black text-indigo-500 uppercase tracking-widest hover:text-indigo-700 transition-colors flex items-center gap-1">
+                                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                                      Store Record
+                                   </button>
+                                   <button *ngIf="!service.lastAmount" (click)="handleFetchLiveBill(service)" class="text-[9px] font-black text-indigo-600 uppercase tracking-widest hover:text-indigo-700 transition-colors flex items-center gap-1">
+                                      <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                      Fetch Live
+                                   </button>
+                                </div>
+                                <button *ngIf="service.lastAmount && !isTrackedServicePaid(service)"
+                                    (click)="handlePayNow(service)"
+                                    [class]="service.serviceType === 'water' ? 'px-4 py-2 bg-indigo-600 text-white text-[10px] font-black rounded-xl shadow-lg shadow-indigo-600/20 uppercase tracking-widest hover:scale-105 transition-all' : 'px-4 py-2 bg-orange-600 text-white text-[10px] font-black rounded-xl shadow-lg shadow-orange-600/20 uppercase tracking-widest hover:scale-105 transition-all'">
+                                    Pay Now
+                                 </button>
+                             </div>
+                            </div>
                          </div>
                       </div>
                     }
@@ -794,73 +808,26 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                  </div>
                }
             </div>
-
-
-
-
-
-
-
           </div>
         }
 
         <!-- ═══════════ INTEREST DASHBOARD (Admin Only) ═══════════ -->
         @if (!isSuperAdmin && activeTab === 'interest' && showInterestTab) {
           <div class="card-animate flex flex-col" style="animation-delay:0.05s">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 order-1">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
               <div>
                 <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Interest Management</h2>
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">{{ interests.length }} active loan schemes</p>
               </div>
+              <button (click)="goToCreateInterest()" class="px-6 py-4 bg-purple-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 active:scale-95 transition-all whitespace-nowrap">
+                 <svg class="h-4 w-4 sm:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                 <span class="hidden sm:inline">New Loan</span>
+              </button>
             </div>
 
-
-            <!-- Loan Action & Search Row -->
-            <div class="flex gap-3 mb-4 order-3 lg:order-2">
-               <div class="flex-1 bg-white dark:bg-gray-800/50 backdrop-blur-md rounded-2xl p-1.5 flex items-center shadow-sm border border-gray-100 dark:border-gray-700/50">
-                  <div class="pl-4 pr-2 text-gray-400">
-                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                  </div>
-                  <input type="text" [(ngModel)]="loanSearchQuery" placeholder="Search borrowers..."
-                         class="w-full py-3 bg-transparent border-none outline-none text-sm text-gray-900 dark:text-white font-black placeholder:text-gray-400">
-               </div>
-               
-               <button (click)="goToCreateInterest()" class="px-6 py-4 bg-purple-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 active:scale-95 transition-all whitespace-nowrap">
-                  <svg class="h-4 w-4 sm:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                  <span class="hidden sm:inline">New Loan</span>
-               </button>
-
-               @if (getFilteredLoans().length > 0) {
-                 <button (click)="sendAllReminders()" [disabled]="isSaving" class="px-6 py-4 bg-emerald-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 active:scale-95 transition-all whitespace-nowrap">
-                    <svg class="h-4 w-4" [class.animate-pulse]="isSaving" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    <span class="hidden sm:inline">{{ isSaving ? 'Sending...' : 'Send All Reminders' }}</span>
-                 </button>
-               }
-            </div>
-
-            <!-- Loan Filters Row -->
-            <div class="flex mb-10 order-3 lg:order-2">
-               <div class="p-1 bg-gray-100 dark:bg-gray-800/50 backdrop-blur-md rounded-xl flex gap-1 border border-gray-200 dark:border-gray-700/50 shadow-inner">
-                  <button (click)="loanStatusFilter = 'Active'"
-                          [class.tab-active]="loanStatusFilter === 'Active'"
-                          class="px-5 py-2 text-[9px] font-black rounded-lg transition-all duration-300 text-gray-500 dark:text-gray-300 uppercase tracking-[0.2em]">
-                     ACTIVE
-                  </button>
-                  <button (click)="loanStatusFilter = 'Inactive'"
-                          [class.tab-active]="loanStatusFilter === 'Inactive'"
-                          class="px-5 py-2 text-[9px] font-black rounded-lg transition-all duration-300 text-gray-500 dark:text-gray-300 uppercase tracking-[0.2em]">
-                     INACTIVE
-                  </button>
-                  <button (click)="loanStatusFilter = 'All'"
-                          [class.tab-active]="loanStatusFilter === 'All'"
-                          class="px-5 py-2 text-[9px] font-black rounded-lg transition-all duration-300 text-gray-500 dark:text-gray-300 uppercase tracking-[0.2em]">
-                     ALL
-                  </button>
-               </div>
-            </div>
 
             <!-- Analytics & Insights -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 order-2 lg:order-3">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
               <!-- Bar Chart Card -->
               <div class="lg:col-span-2 bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700 h-[220px] sm:h-[320px] relative overflow-hidden card-animate">
                 <div class="flex justify-between items-center mb-4 sm:mb-6">
@@ -944,8 +911,37 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
               </div>
             </div>
 
+            <!-- Search & Filters Row -->
+            <div class="flex flex-col md:flex-row gap-4 mb-8">
+               <div class="flex-1 bg-white dark:bg-gray-800/50 backdrop-blur-md rounded-2xl p-1.5 flex items-center shadow-sm border border-gray-100 dark:border-gray-700/50">
+                  <div class="pl-4 pr-2 text-gray-400">
+                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                  </div>
+                  <input type="text" [(ngModel)]="loanSearchQuery" placeholder="Search borrowers..."
+                         class="w-full py-3 bg-transparent border-none outline-none text-sm text-gray-900 dark:text-white font-black placeholder:text-gray-400">
+               </div>
+
+               <div class="p-1 bg-gray-100 dark:bg-gray-800/50 backdrop-blur-md rounded-xl flex gap-1 border border-gray-200 dark:border-gray-700/50 shadow-inner w-fit">
+                  <button (click)="loanStatusFilter = 'Active'"
+                          [class.tab-active]="loanStatusFilter === 'Active'"
+                          class="px-5 py-2 text-[9px] font-black rounded-lg transition-all duration-300 text-gray-500 dark:text-gray-300 uppercase tracking-[0.2em] whitespace-nowrap">
+                     ACTIVE
+                  </button>
+                  <button (click)="loanStatusFilter = 'Inactive'"
+                          [class.tab-active]="loanStatusFilter === 'Inactive'"
+                          class="px-5 py-2 text-[9px] font-black rounded-lg transition-all duration-300 text-gray-500 dark:text-gray-300 uppercase tracking-[0.2em] whitespace-nowrap">
+                     INACTIVE
+                  </button>
+                  <button (click)="loanStatusFilter = 'All'"
+                          [class.tab-active]="loanStatusFilter === 'All'"
+                          class="px-5 py-2 text-[9px] font-black rounded-lg transition-all duration-300 text-gray-500 dark:text-gray-300 uppercase tracking-[0.2em] whitespace-nowrap">
+                     ALL
+                  </button>
+               </div>
+            </div>
+
             <!-- Interest Cards -->
-            <div class="order-5">
+            <div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
               @for (loan of getFilteredLoans(); track loan.id; let i = $index) {
                 <div class="scheme-card bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden card-animate"
@@ -963,7 +959,12 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                         {{ loan.borrowerName }} · 
                         <span class="text-indigo-500 font-black uppercase">{{ (getLastInterestDate(loan) | date:'dd MMM') || 'No Collection' }}</span>
                       </p>
-                      <p class="text-[8px] font-black text-gray-400 ml-3.5 mt-0.5 uppercase tracking-tighter">Started: {{ loan.startDate | date:'dd MMM yyyy' }}</p>
+                      <p class="text-[8px] font-black text-gray-400 ml-3.5 mt-0.5 uppercase tracking-tighter">
+                        Started: {{ loan.startDate | date:'dd MMM yyyy' }}
+                        @if (loan.status === 'Inactive' && getLoanCompletionDate(loan)) {
+                          · Completed: {{ getLoanCompletionDate(loan) | date:'dd MMM yyyy' }}
+                        }
+                      </p>
                     </div>
                     <div class="text-right ml-4">
                       <p class="text-xs font-black text-gray-900 dark:text-white" [appCountUp]="loan.amount" prefix="₹"></p>
@@ -1011,6 +1012,9 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                        <div class="flex flex-wrap gap-x-4 gap-y-1 mb-4">
                          <p class="text-xs text-gray-500 font-bold">{{ loan.borrowerName }}</p>
                          <p class="text-[10px] font-black text-indigo-500/70 uppercase">Started: {{ loan.startDate | date:'dd MMM yyyy' }}</p>
+                         @if (loan.status === 'Inactive' && getLoanCompletionDate(loan)) {
+                           <p class="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase">Completed: {{ getLoanCompletionDate(loan) | date:'dd MMM yyyy' }}</p>
+                         }
                        </div>
                       <div class="grid grid-cols-2 gap-3 mb-3">
                         <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-100/50 dark:border-gray-700/50">
@@ -1019,7 +1023,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                         </div>
                         <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl text-right border border-gray-100/50 dark:border-gray-700/50">
                           <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Monthly Int.</p>
-                          <p class="text-sm font-black text-indigo-600" [appCountUp]="(loan.amount * loan.interestRate / 100)" prefix="₹"></p>
+                          <p class="text-sm font-black text-indigo-600" [appCountUp]="getMonthlyInterest(loan)" prefix="₹"></p>
                         </div>
                       </div>
                       @if (loan.status !== 'Inactive' && getPendingInterestForLoan(loan) > 0) {
@@ -1229,10 +1233,24 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                </button>
             </div>
 
+            <!-- Module Filters -->
+            <div class="flex gap-2 overflow-x-auto no-scrollbar mb-8 pb-1">
+               @for (f of ['all', 'chitti', 'interest', 'rent']; track f) {
+                  <button (click)="customerModuleFilter = f"
+                          [class]="customerModuleFilter === f ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30 border-purple-600' : 'bg-white dark:bg-gray-800 text-gray-500 border-gray-100 dark:border-gray-700'"
+                          class="px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all whitespace-nowrap">
+                     {{ f === 'all' ? 'All Modules' : (f === 'chitti' ? 'Chitties' : (f === 'interest' ? 'Loans / Interest' : 'Rentals / Rent')) }}
+                  </button>
+               }
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                @for (cust of getFilteredCustomers(); track cust.id; let i = $index) {
-                  <div (click)="openEditCustomer(cust)" class="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all relative group cursor-pointer">
+                  <div class="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all relative group">
                      <div class="absolute top-4 right-4 flex items-center gap-1 transition-all">
+                        <a href="tel:{{cust.phone}}" (click)="$event.stopPropagation()" class="p-2 text-gray-400 hover:text-green-500 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 transition-colors cursor-pointer z-10 flex items-center justify-center" title="Call">
+                           <svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                        </a>
                         <button (click)="openEditCustomer(cust); $event.stopPropagation()" class="p-2 text-gray-400 hover:text-purple-600 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 transition-colors cursor-pointer z-10" title="Edit">
                            <svg class="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                         </button>
@@ -1249,15 +1267,9 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ cust.username ? '@' + cust.username : 'Temporary' }}</p>
                         </div>
                      </div>
-                     <div class="space-y-3">
-                        <div class="flex items-center gap-2 text-xs">
-                           <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                           <span class="text-gray-600 dark:text-gray-300 font-medium">{{ cust.phone }}</span>
-                        </div>
-                        <div class="flex justify-between items-center pt-3 border-t border-gray-50 dark:border-gray-700/50">
-                           <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Type: <span class="text-purple-600">{{ cust.schemeType || 'Interest' }}</span></p>
-                           <button (click)="viewCustomerAccounts(cust); $event.stopPropagation()" class="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:underline z-10 cursor-pointer relative">View Accounts →</button>
-                        </div>
+                     <div class="mt-4 pt-3 border-t border-gray-50 dark:border-gray-700/50 flex justify-between items-center">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Type: <span class="text-purple-600">{{ cust.schemeType || 'Interest' }}</span></p>
+                        <button (click)="viewCustomerAccounts(cust); $event.stopPropagation()" class="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:underline z-10 cursor-pointer relative">View Accounts →</button>
                      </div>
                   </div>
                }
@@ -1394,8 +1406,8 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
       <!-- GLOBAL MODAL STACK (Root Level for Rendering Independence) -->
       
         <!-- Logged-in User Profile Modal Overlay -->
-        <div *ngIf="showProfileModal && currentUserProfile" class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-y-auto custom-scrollbar" (click)="closeProfileModal()">
-           <div class="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col my-auto border border-gray-100 dark:border-gray-800" (click)="$event.stopPropagation()">
+        <div *ngIf="showProfileModal && currentUserProfile" class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-hidden" (click)="closeProfileModal()">
+           <div class="bg-white dark:bg-gray-900 w-full max-w-lg max-h-[90vh] rounded-[2.5rem] shadow-2xl flex flex-col my-auto border border-gray-100 dark:border-gray-800" (click)="$event.stopPropagation()">
               <div class="p-8 pb-4 border-b border-gray-100 dark:border-gray-800">
                  <div class="flex justify-between items-center">
                     <div class="flex items-center gap-3">
@@ -1417,7 +1429,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                  </div>
               </div>
 
-              <div class="p-8 space-y-6">
+              <div class="p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
                  <!-- User details circle header -->
                  <div class="flex flex-col items-center text-center space-y-3 pb-6 border-b border-gray-100 dark:border-gray-800">
                     <div class="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white font-black text-3xl flex items-center justify-center shadow-lg shadow-purple-500/35">
@@ -1505,10 +1517,90 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
            </div>
         </div>
 
+        <!-- HRA Rent Receipt Modal Overlay -->
+        <div *ngIf="showReceiptModal && selectedReceiptHouse && selectedReceiptBill" class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 overflow-hidden">
+           <div class="bg-white dark:bg-gray-900 w-full max-w-lg max-h-[90vh] rounded-[2.5rem] overflow-hidden shadow-2xl border border-gray-100 dark:border-gray-800 animate-in fade-in-50 zoom-in-95 duration-200 flex flex-col" (click)="$event.stopPropagation()">
+              <div class="p-6 sm:p-8 overflow-y-auto custom-scrollbar flex-1">
+                 <!-- Modal Header -->
+                 <div class="flex justify-between items-center mb-6">
+                    <div>
+                       <h3 class="text-xl font-black text-gray-900 dark:text-white tracking-tighter uppercase leading-none">Rent Receipt</h3>
+                       <p class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mt-1.5">HRA Documentation</p>
+                    </div>
+                    <button (click)="closeReceiptModal()" class="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:rotate-90 transition-all">
+                       <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                       </svg>
+                    </button>
+                 </div>
+
+                 <!-- Receipt Visual Body (Ticket Look) -->
+                 <div class="bg-gray-50 dark:bg-gray-800/60 p-6 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700 relative overflow-hidden">
+                    <div class="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-8 bg-white dark:bg-gray-900 rounded-r-full -ml-2 border-r border-dashed border-gray-200 dark:border-gray-700"></div>
+                    <div class="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-8 bg-white dark:bg-gray-900 rounded-l-full -mr-2 border-l border-dashed border-gray-200 dark:border-gray-700"></div>
+
+                    <div class="flex justify-between items-start mb-6">
+                       <div>
+                          <h4 class="text-lg font-black text-indigo-600 dark:text-indigo-400 leading-none">BillaFinance</h4>
+                          <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Digital Receipt</p>
+                       </div>
+                       <div class="text-right">
+                          <span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[8px] font-black uppercase tracking-widest rounded-md">Paid</span>
+                          <p class="text-[9px] font-bold text-gray-500 mt-1.5">No: R-{{selectedReceiptBill.year}}-{{selectedReceiptBill.month.toUpperCase()}}</p>
+                       </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 text-xs mb-6 border-b border-gray-200/50 dark:border-gray-700/50 pb-4">
+                       <div>
+                          <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Tenant</p>
+                          <p class="font-bold text-gray-800 dark:text-gray-200">{{selectedReceiptHouse.renterName}}</p>
+                          <p class="text-[10px] text-gray-400 mt-0.5">{{selectedReceiptHouse.renterPhone}}</p>
+                       </div>
+                       <div class="text-right">
+                          <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Property</p>
+                          <p class="font-bold text-gray-800 dark:text-gray-200">{{selectedReceiptHouse.houseName}}</p>
+                          <p class="text-[10px] text-gray-400 mt-0.5">Date: {{ (selectedReceiptBill.paidDate ? selectedReceiptBill.paidDate : selectedReceiptBill.billDate) | date:'dd/MM/yyyy' }}</p>
+                       </div>
+                    </div>
+
+                    <div class="space-y-2.5 text-xs">
+                       <div class="flex justify-between text-gray-600 dark:text-gray-400">
+                          <span>House Rent ({{selectedReceiptBill.month}} {{selectedReceiptBill.year}})</span>
+                          <span class="font-bold text-gray-800 dark:text-gray-200">₹{{selectedReceiptBill.rentAmount | number:'1.0-0'}}</span>
+                       </div>
+                       <div class="flex justify-between text-gray-600 dark:text-gray-400">
+                          <span>Electricity Charges</span>
+                          <span class="font-bold text-gray-800 dark:text-gray-200">₹{{selectedReceiptBill.electricBill | number:'1.0-0'}}</span>
+                       </div>
+                       <div class="flex justify-between text-gray-600 dark:text-gray-400">
+                          <span>Water Charges</span>
+                          <span class="font-bold text-gray-800 dark:text-gray-200">₹{{selectedReceiptBill.waterBill | number:'1.0-0'}}</span>
+                       </div>
+                       <div class="flex justify-between text-base font-black text-gray-900 dark:text-white border-t border-dashed border-gray-200 dark:border-gray-700 pt-3 mt-3">
+                          <span>Total Paid</span>
+                          <span class="text-indigo-600 dark:text-indigo-400">₹{{selectedReceiptBill.total | number:'1.0-0'}}</span>
+                       </div>
+                    </div>
+                 </div>
+
+                 <!-- Action Buttons -->
+                 <div class="flex gap-4 mt-6">
+                    <button (click)="closeReceiptModal()" class="flex-1 py-3.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-2xl text-xs font-black uppercase tracking-wider transition-all">
+                       Close
+                    </button>
+                    <button (click)="downloadReceipt()" class="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2">
+                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                       Download
+                    </button>
+                 </div>
+              </div>
+           </div>
+        </div>
+
         <!-- 1. Admin/Edit Profile Form Overlay -->
         @if (showAdminForm || isAdminEditMode) {
-          <div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-y-auto custom-scrollbar">
-            <div class="bg-white dark:bg-gray-900 w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col max-h-[95vh] relative my-auto">
+          <div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-hidden">
+            <div class="bg-white dark:bg-gray-900 w-full max-w-4xl max-h-[90vh] rounded-[3rem] shadow-2xl flex flex-col relative my-auto">
                <div class="p-8 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/30">
                   <div class="flex items-center gap-4">
                      <div class="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
@@ -1523,7 +1615,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                </div>
-               <div class="p-8 overflow-y-auto custom-scrollbar">
+               <div class="p-8 overflow-y-auto custom-scrollbar flex-1">
                   <form [formGroup]="adminForm" (ngSubmit)="createAdminMember()" class="space-y-6">
                       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                          <div>
@@ -1598,10 +1690,10 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
         <!-- 2. Service Registration Overlay -->
         @if (showServiceModal) {
-          <div class="fixed inset-0 z-[3000] flex items-start justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-y-auto custom-scrollbar">
-            <div class="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh] mt-4 sm:my-auto">
+          <div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-hidden">
+            <div class="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh] my-auto">
               <div class="h-2 bg-gradient-to-r from-indigo-500 to-purple-600"></div>
-              <div class="p-8 overflow-y-auto no-scrollbar">
+              <div class="p-8 overflow-y-auto custom-scrollbar flex-1">
                  <div class="flex justify-between items-center mb-8">
                     <div>
                        <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">Register Service</h3>
@@ -1643,8 +1735,8 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
         <!-- 3. Service Details & Insights Overlay -->
         @if (showServiceDetailsModal && selectedTrackedService) {
-          <div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-y-auto custom-scrollbar">
-            <div class="bg-white dark:bg-gray-900 w-full max-w-4xl rounded-[3rem] overflow-hidden shadow-2xl max-h-[95vh] flex flex-col my-auto">
+          <div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-hidden">
+            <div class="bg-white dark:bg-gray-900 w-full max-w-4xl rounded-[3rem] overflow-hidden shadow-2xl max-h-[90vh] flex flex-col my-auto">
                <!-- Modal Header -->
                <div class="p-8 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/30">
                   <div class="flex items-center gap-4">
@@ -1815,7 +1907,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
         <!-- 5. Live Bill Search Overlay -->
         @if (showLiveBillModal && selectedLiveBill) {
-          <div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-y-auto custom-scrollbar">
+          <div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-hidden">
             <div class="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] my-auto">
                <div class="p-8 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/30">
                   <div class="flex items-center gap-3">
@@ -1831,7 +1923,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                </div>
-               <div class="p-8 overflow-y-auto custom-scrollbar space-y-6">
+               <div class="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-6">
                   <div class="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-800">
                      <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Consumer Information</p>
                      <p class="text-lg font-black text-gray-900 dark:text-white uppercase">{{ selectedLiveBill.consumerName || 'Unknown' }}</p>
@@ -1865,8 +1957,8 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
         <!-- 6. Customer Profile Overlay -->
         @if (showCustomerModal) {
-          <div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-y-auto custom-scrollbar">
-            <div class="bg-white dark:bg-gray-900 w-full max-w-2xl rounded-[3rem] shadow-2xl flex flex-col max-h-[95vh] relative my-auto">
+          <div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-hidden">
+            <div class="bg-white dark:bg-gray-900 w-full max-w-2xl rounded-[3rem] shadow-2xl flex flex-col max-h-[90vh] relative my-auto">
                <div class="p-8 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/30">
                   <div class="flex items-center gap-4">
                      <div class="w-12 h-12 rounded-2xl bg-purple-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
@@ -1965,16 +2057,16 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
         <!-- 7. Bill Entry Overlay -->
         @if (showBillForm) {
-          <div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-y-auto custom-scrollbar">
-            <div class="w-full max-w-2xl my-auto">
-              <app-bill-form [bill]="editingBill" (save)="handleSaveBill($event)" (cancel)="closeBillForm()"></app-bill-form>
+          <div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-hidden">
+            <div class="w-full max-w-2xl max-h-[90vh] my-auto flex flex-col">
+              <app-bill-form class="flex-1 flex flex-col min-h-0" [bill]="editingBill" (save)="handleSaveBill($event)" (cancel)="closeBillForm()"></app-bill-form>
             </div>
           </div>
         }
 
         <!-- 8. Rental House Registration Overlay -->
         @if (showRentalHouseForm) {
-           <div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-y-auto custom-scrollbar">
+           <div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-hidden">
               <div class="bg-white dark:bg-gray-900 w-full max-w-2xl max-h-[90vh] rounded-[3rem] flex flex-col shadow-2xl my-auto">
                  <div class="p-8 pb-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
                     <div class="flex justify-between items-center">
@@ -2100,8 +2192,8 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
          <!-- 9. Monthly Bill Entry Overlay -->
          @if (showMonthlyBillForm && activeHouseId) {
-            <div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-y-auto custom-scrollbar">
-               <div class="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[2.5rem] flex flex-col shadow-2xl my-auto">
+            <div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-hidden">
+               <div class="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[2.5rem] flex flex-col max-h-[90vh] shadow-2xl my-auto">
                   <div class="p-8 pb-4 border-b border-gray-100 dark:border-gray-800">
                      <div class="flex justify-between items-center">
                         <div>
@@ -2114,7 +2206,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                      </div>
                   </div>
 
-                  <div class="p-8">
+                  <div class="p-8 overflow-y-auto custom-scrollbar flex-1">
                      <form [formGroup]="monthlyBillForm" (ngSubmit)="saveMonthlyBill()" class="space-y-5">
                         <div class="space-y-2">
                            <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Collection Date</label>
@@ -2157,7 +2249,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
          <!-- 10. Account Selection Overlay -->
          @if (showAccountsModal && selectedCustomerForAccounts) {
-            <div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-y-auto custom-scrollbar">
+            <div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8 overflow-hidden">
                <div class="bg-white dark:bg-gray-900 w-full max-w-lg rounded-[2.5rem] flex flex-col shadow-2xl max-h-[90vh] my-auto">
                   <div class="p-8 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
                      <div>
@@ -2168,7 +2260,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
                      </button>
                   </div>
-                  <div class="p-8 overflow-y-auto custom-scrollbar space-y-3">
+                  <div class="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-3">
                      @for (acc of customerAccountsList; track acc.id) {
                         <div (click)="handleAccountSelection(acc)" class="p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 hover:border-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 cursor-pointer transition-all flex justify-between items-center group">
                            <div>
@@ -2185,20 +2277,20 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
         <!-- 11. Mobile Filter Modal (Bills) -->
         @if (showBillsFilterModal) {
-            <div class="fixed inset-0 z-[3000] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-8" (click)="showBillsFilterModal = false">
-               <div class="bg-white dark:bg-gray-900 w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden animate-slide-up" (click)="$event.stopPropagation()">
+            <div class="fixed inset-0 z-[3000] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-8 overflow-hidden" (click)="closeBillsFilterModal()">
+               <div class="bg-white dark:bg-gray-900 w-full max-w-lg max-h-[90vh] rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden animate-slide-up flex flex-col" (click)="$event.stopPropagation()">
                   <div class="p-8 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
                      <h3 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Filter Bills</h3>
-                     <button (click)="showBillsFilterModal = false" class="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500">
+                     <button (click)="closeBillsFilterModal()" class="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500">
                         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
                      </button>
                   </div>
-                  <div class="p-8 space-y-8">
+                  <div class="p-8 space-y-8 overflow-y-auto custom-scrollbar flex-1">
                      <div>
                         <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Service Category</label>
                         <div class="grid grid-cols-2 gap-3">
                            @for (type of ['all', 'electricity', 'water', 'internet', 'mobile', 'other']; track type) {
-                              <button (click)="serviceTypeFilter = type; showBillsFilterModal = false"
+                              <button (click)="serviceTypeFilter = type; closeBillsFilterModal()"
                                       [class]="serviceTypeFilter === type ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-gray-50 dark:bg-gray-800 text-gray-500'"
                                       class="px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all text-left">
                                  {{ type }}
@@ -2210,7 +2302,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                         <label class="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Payment Status</label>
                         <div class="flex gap-2">
                            @for (status of ['all', 'paid', 'unpaid']; track status) {
-                              <button (click)="billStatusFilter = status; showBillsFilterModal = false"
+                              <button (click)="billStatusFilter = status; closeBillsFilterModal()"
                                       [class]="billStatusFilter === status ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-gray-50 dark:bg-gray-800 text-gray-500'"
                                       class="flex-1 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
                                  {{ status }}
@@ -2218,7 +2310,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                            }
                         </div>
                      </div>
-                     <button (click)="showBillsFilterModal = false" class="w-full py-4 bg-gray-900 dark:bg-white dark:text-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em]">Show Results</button>
+                     <button (click)="closeBillsFilterModal()" class="w-full py-4 bg-gray-900 dark:bg-white dark:text-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em]">Show Results</button>
                   </div>
                </div>
             </div>
@@ -2229,13 +2321,15 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
          <div class="w-full overflow-hidden">
             <div class="bottom-nav-pill pointer-events-auto relative flex items-center px-2">
             
-            <div class="absolute inset-1 flex pointer-events-none z-0">
-               <div [style.flex-grow]="visibleMobileTabs.indexOf(activeMobileMenu)" class="transition-all duration-500 ease-in-out"></div>
-               <div class="flex-none flex items-center justify-center" style="width: calc(100% / {{ visibleMobileTabs.length }})">
-                  <div class="h-full aspect-square bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-full shadow-lg shadow-purple-500/40 dark:shadow-purple-500/60 transition-all duration-500"></div>
+            @if (visibleMobileTabs.indexOf(activeMobileMenu) !== -1) {
+               <div class="absolute inset-1 flex pointer-events-none z-0">
+                  <div [style.flex-grow]="visibleMobileTabs.indexOf(activeMobileMenu)" class="transition-all duration-500 ease-in-out"></div>
+                  <div class="flex-none flex items-center justify-center" style="width: calc(100% / {{ visibleMobileTabs.length }})">
+                     <div class="h-full aspect-square bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-full shadow-lg shadow-purple-500/40 dark:shadow-purple-500/60 transition-all duration-500"></div>
+                  </div>
+                  <div [style.flex-grow]="visibleMobileTabs.length - 1 - visibleMobileTabs.indexOf(activeMobileMenu)" class="transition-all duration-500 ease-in-out"></div>
                </div>
-               <div [style.flex-grow]="visibleMobileTabs.length - 1 - visibleMobileTabs.indexOf(activeMobileMenu)" class="transition-all duration-500 ease-in-out"></div>
-            </div>
+            }
 
             <!-- Overview -->
             <div (click)="scrollToTop(); activeMobileMenu = 'overview'; activeTab = 'overview'" 
@@ -2251,26 +2345,6 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                     class="nav-item-box">
                   <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'interest' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                  </svg>
-               </div>
-            }
-
-            <!-- Chitties -->
-            @if (!isSuperAdmin && showChittiTab) {
-               <div (click)="scrollToTop(); activeMobileMenu = 'chitti'; activeTab = 'chitti'" 
-                    class="nav-item-box">
-                  <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'chitti' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
-               </div>
-            }
-
-            <!-- Customers -->
-            @if (!isSuperAdmin && showCustomersTab) {
-               <div (click)="scrollToTop(); activeMobileMenu = 'customers'; activeTab = 'customers'" 
-                    class="nav-item-box">
-                  <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'customers' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                   </svg>
                </div>
             }
@@ -2294,13 +2368,6 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                   </svg>
                </div>
             }
-
-            <div (click)="scrollToTop(); activeMobileMenu = 'security'; activeTab = 'security'" 
-                 class="nav-item-box">
-               <svg class="w-6 h-6 nav-icon" [class]="activeMobileMenu === 'security' ? 'icon-active' : 'icon-inactive'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-               </svg>
-            </div>
          </div>
       </div>
    </div>
@@ -2328,13 +2395,14 @@ export class AdminDashboardComponent implements OnInit {
   currentUserProfile: UserProfile | null = null;
   showMoreMenu = false;
   showProfileModal = false;
+  customerModuleFilter = 'all';
 
   toggleMoreMenu(event: Event) {
     event.stopPropagation();
     this.showMoreMenu = !this.showMoreMenu;
   }
 
-  selectMoreMenu(menu: 'customers' | 'manage-admins' | 'security' | 'profile') {
+  selectMoreMenu(menu: 'customers' | 'manage-admins' | 'security' | 'profile' | 'chitti') {
     this.showMoreMenu = false;
     if (menu === 'manage-admins') {
       this.goToManageAdmins();
@@ -2357,6 +2425,18 @@ export class AdminDashboardComponent implements OnInit {
     const target = event.target as HTMLElement;
     if (!target.closest('.more-menu-container')) {
       this.showMoreMenu = false;
+    }
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus() {
+    const isModalOpen = this.showProfileModal || this.showReceiptModal || this.showAdminForm || this.isAdminEditMode ||
+                        this.showServiceModal || this.showServiceDetailsModal || this.showLiveBillModal || this.showCustomerModal ||
+                        this.showBillForm || this.showRentalHouseForm || this.showMonthlyBillForm || this.showAccountsModal ||
+                        this.showBillsFilterModal;
+    if (!isModalOpen) {
+      document.body.style.overflow = '';
+      document.body.classList.remove('modal-open');
     }
   }
 
@@ -2398,6 +2478,10 @@ export class AdminDashboardComponent implements OnInit {
   // Comprehensive Details
   showServiceDetailsModal = false;
   selectedTrackedService: TrackedService | null = null;
+
+  showReceiptModal = false;
+  selectedReceiptHouse: RentalHouse | null = null;
+  selectedReceiptBill: RentalBill | null = null;
   selectedServiceHistory: Bill[] = [];
   selectedStoredHistory: StoredBillRecord[] = [];
   activeDetailsTab: 'current' | 'history' = 'current';
@@ -3027,6 +3111,15 @@ export class AdminDashboardComponent implements OnInit {
     return diffDays >= 0 && diffDays <= 10;
   }
 
+  getCurrentBalance(loan: InterestScheme): number {
+    const settled = (loan.settlements || []).reduce((sum, s) => sum + s.amount, 0);
+    return Math.max(0, loan.amount - settled);
+  }
+
+  getMonthlyInterest(loan: InterestScheme): number {
+    return this.getCurrentBalance(loan) * (loan.interestRate / 100);
+  }
+
   getPendingInterestForLoan(loan: InterestScheme): number {
     if (!loan.startDate) return 0;
     const now = new Date();
@@ -3062,6 +3155,12 @@ export class AdminDashboardComponent implements OnInit {
     return sorted[0].date;
   }
 
+  getLoanCompletionDate(loan: InterestScheme): string | null {
+    if (!loan.settlements || loan.settlements.length === 0) return null;
+    const sorted = [...loan.settlements].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return sorted[0].date;
+  }
+
   getFilteredLoans(): InterestScheme[] {
     const filtered = this.interests.filter(loan => {
       // Basic status match
@@ -3089,14 +3188,12 @@ export class AdminDashboardComponent implements OnInit {
 
   get visibleMobileTabs() {
     if (this.isSuperAdmin) {
-      return ['overview', 'security'];
+      return ['overview'];
     }
-    const all = ['overview', 'interest', 'chitti', 'customers', 'bills', 'rentals', 'security'];
+    const all = ['overview', 'interest', 'bills', 'rentals'];
     return all.filter(t => {
-      if (t === 'overview' || t === 'security') return true;
+      if (t === 'overview') return true;
       if (t === 'interest') return this.showInterestTab;
-      if (t === 'chitti') return this.showChittiTab;
-      if (t === 'customers') return this.showCustomersTab;
       if (t === 'bills') return this.showBillsTab;
       if (t === 'rentals') return this.showRentalsTab;
       return false;
@@ -3965,13 +4062,25 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   getFilteredCustomers(): Customer[] {
-    if (!this.customerSearchQuery || !this.customerSearchQuery.trim()) return this.allCustomers;
-    const q = this.customerSearchQuery.toLowerCase();
-    return this.allCustomers.filter(c =>
-      (c.name?.toLowerCase().includes(q)) ||
-      (c.phone?.includes(q)) ||
-      (c.username?.toLowerCase().includes(q))
-    );
+    return this.allCustomers.filter(c => {
+      // 1. Module filter
+      if (this.customerModuleFilter && this.customerModuleFilter !== 'all') {
+        const type = c.schemeType || 'interest';
+        if (type.toLowerCase() !== this.customerModuleFilter.toLowerCase()) {
+          return false;
+        }
+      }
+      
+      // 2. Search query filter
+      if (this.customerSearchQuery && this.customerSearchQuery.trim()) {
+        const q = this.customerSearchQuery.toLowerCase().trim();
+        return (c.name?.toLowerCase().includes(q)) ||
+               (c.phone?.includes(q)) ||
+               (c.username?.toLowerCase().includes(q));
+      }
+      
+      return true;
+    });
   }
 
   viewCustomerAccounts(cust: Customer) {
@@ -4601,8 +4710,139 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   printRentReceipt(event: { house: RentalHouse, bill: RentalBill }) {
+    this.selectedReceiptHouse = event.house;
+    this.selectedReceiptBill = event.bill;
+    this.showReceiptModal = true;
+    document.body.classList.add('modal-open');
+  }
+
+  closeReceiptModal() {
+    this.showReceiptModal = false;
+    this.selectedReceiptHouse = null;
+    this.selectedReceiptBill = null;
+    document.body.classList.remove('modal-open');
+  }
+
+  downloadReceipt() {
+    if (!this.selectedReceiptHouse || !this.selectedReceiptBill) return;
     const landlordName = this.currentUserProfile?.displayName || 'Property Owner';
-    printHraReceipt(event.house, event.bill, landlordName);
+    const house = this.selectedReceiptHouse;
+    const bill = this.selectedReceiptBill;
+    const receiptNo = `R-${bill.year}-${bill.month.toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const dateStr = bill.paidDate ? new Date(bill.paidDate).toLocaleDateString('en-IN') : new Date(bill.billDate).toLocaleDateString('en-IN');
+
+    const html = `
+      <html>
+        <head>
+          <title>Rent Receipt - ${bill.month} ${bill.year}</title>
+          <style>
+            body { font-family: 'Segoe UI', Roboto, sans-serif; color: #1e293b; padding: 40px; background: #fff; }
+            .receipt-container { max-width: 700px; margin: 0 auto; border: 2px solid #e2e8f0; border-radius: 20px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+            .header { display: flex; justify-content: space-between; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 30px; }
+            .logo-title { font-size: 24px; font-weight: 800; color: #4f46e5; text-transform: uppercase; letter-spacing: -0.5px; }
+            .logo-sub { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px; }
+            .receipt-badge { background: #ecfdf5; color: #047857; padding: 6px 16px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; display: inline-block; }
+            .details-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+            .section-title { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+            .detail-name { font-size: 15px; font-weight: 800; color: #0f172a; }
+            .detail-sub { font-size: 12px; color: #64748b; margin-top: 4px; }
+            .invoice-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+            .invoice-table th { border-bottom: 2px solid #f1f5f9; padding: 12px 8px; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; text-align: left; }
+            .invoice-table td { padding: 16px 8px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 700; }
+            .invoice-table .amount { text-align: right; }
+            .total-row td { border-top: 2px solid #e2e8f0; border-bottom: none; font-size: 16px !important; font-weight: 900 !important; color: #4f46e5; }
+            .footer-note { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px; line-height: 1.5; }
+            .signature-section { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 50px; }
+            .signature-box { border-top: 1px dashed #cbd5e1; width: 180px; text-align: center; padding-top: 8px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+            @media print {
+              body { padding: 0; }
+              .receipt-container { border: none; box-shadow: none; padding: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-container">
+            <div class="header">
+              <div>
+                <div class="logo-title">BillaFinance</div>
+                <div class="logo-sub">Rent Receipt</div>
+              </div>
+              <div style="text-align: right;">
+                <span class="receipt-badge">Paid Receipt</span>
+                <div class="detail-sub" style="margin-top: 8px; font-weight: 700;">No: ${receiptNo}</div>
+                <div class="detail-sub">Date: ${dateStr}</div>
+              </div>
+            </div>
+
+            <div class="details-grid">
+              <div>
+                <div class="section-title">Tenant Details</div>
+                <div class="detail-name">${house.renterName}</div>
+                <div class="detail-sub">Phone: ${house.renterPhone}</div>
+                <div class="detail-sub" style="margin-top: 8px;">Address: ${house.fullAddress || 'N/A'}</div>
+              </div>
+              <div>
+                <div class="section-title">Landlord Details</div>
+                <div class="detail-name">${landlordName || 'Property Owner'}</div>
+                <div class="detail-sub">PAN: ${house.landlordPan || 'N/A'}</div>
+                <div class="detail-sub" style="margin-top: 8px;">Property: ${house.houseName}</div>
+              </div>
+            </div>
+
+            <table class="invoice-table">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th class="amount">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>House Rent for ${bill.month} ${bill.year}</td>
+                  <td class="amount">₹${bill.rentAmount.toLocaleString('en-IN')}</td>
+                </tr>
+                <tr>
+                  <td>Electricity Charges (TSPDCL)</td>
+                  <td class="amount">₹${bill.electricBill.toLocaleString('en-IN')}</td>
+                </tr>
+                <tr>
+                  <td>Water Charges (HMWSSB)</td>
+                  <td class="amount">₹${bill.waterBill.toLocaleString('en-IN')}</td>
+                </tr>
+                <tr class="total-row">
+                  <td>Total Received</td>
+                  <td class="amount">₹${bill.total.toLocaleString('en-IN')}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="signature-section">
+              <div style="font-size: 12px; font-style: italic; color: #64748b;">
+                *Generated digitally via BillaFinance.
+              </div>
+              <div>
+                <div style="height: 40px;"></div>
+                <div class="signature-box">Landlord Signature</div>
+              </div>
+            </div>
+
+            <div class="footer-note">
+              This is a computer-generated document and does not require a physical signature.<br>
+              For claiming House Rent Allowance (HRA) under Section 10(13A) of the Income Tax Act.
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rent_receipt_${bill.month}_${bill.year}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   async addHouseExpense(houseId: string, expense: Omit<RentalExpense, 'id'>) {
@@ -4823,7 +5063,7 @@ export class AdminDashboardComponent implements OnInit {
       if (cycleDueDate.getTime() > date.getTime()) break;
       const settledBeforeCycle = (loan.settlements || []).reduce((sum, s) => {
         const sDate = this.parseLocalDateForReminder(s.date);
-        return (sDate && sDate.getTime() <= cycleStart.getTime()) ? sum + s.amount : sum;
+        return (sDate && sDate.getTime() < cycleDueDate.getTime()) ? sum + s.amount : sum;
       }, 0);
       const balanceAtStart = Math.max(0, loan.amount - settledBeforeCycle);
       totalDue += balanceAtStart * (loan.interestRate / 100);

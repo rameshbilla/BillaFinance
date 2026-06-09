@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, OnInit, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -657,7 +657,7 @@ Chart.register(zoomPlugin);
                                       </td>
                                       <td class="p-4 text-center">
                                          <button *ngIf="bill.status === 'Paid'" (click)="printRentReceipt(selectedHouse, bill)" class="p-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 rounded-lg transition-all" title="Download Rent Receipt">
-                                            <svg class="w-4 h-4 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                            <svg class="w-4 h-4 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                          </button>
                                          <span *ngIf="bill.status !== 'Paid'" class="text-[8px] text-gray-400 font-bold uppercase tracking-widest">---</span>
                                       </td>
@@ -766,9 +766,9 @@ Chart.register(zoomPlugin);
 
       <!-- Password Update Modal -->
       @if (activeTab === 'security') {
-        <div class="fixed inset-0 z-[110] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md px-0 sm:px-4">
-            <div class="bg-white dark:bg-gray-900 w-full max-w-xl rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl mobile-animate-slide duration-500">
-               <div class="p-8 sm:p-10">
+        <div class="fixed inset-0 z-[110] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md px-0 sm:px-4 overflow-hidden">
+            <div class="bg-white dark:bg-gray-900 w-full max-w-xl max-h-[90vh] rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl mobile-animate-slide duration-500 flex flex-col">
+               <div class="p-8 sm:p-10 overflow-y-auto custom-scrollbar flex-1">
                   <div class="flex justify-between items-center mb-8">
                      <div>
                         <h3 class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter uppercase">Security</h3>
@@ -828,11 +828,91 @@ Chart.register(zoomPlugin);
         </div>
       }
 
+      <!-- HRA Rent Receipt Modal Overlay -->
+      <div *ngIf="showReceiptModal && selectedReceiptHouse && selectedReceiptBill" class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 overflow-hidden">
+         <div class="bg-white dark:bg-gray-900 w-full max-w-lg max-h-[90vh] rounded-[2.5rem] overflow-hidden shadow-2xl border border-gray-100 dark:border-gray-800 animate-in fade-in-50 zoom-in-95 duration-200 flex flex-col" (click)="$event.stopPropagation()">
+            <div class="p-6 sm:p-8 overflow-y-auto custom-scrollbar flex-1">
+               <!-- Modal Header -->
+               <div class="flex justify-between items-center mb-6">
+                  <div>
+                     <h3 class="text-xl font-black text-gray-900 dark:text-white tracking-tighter uppercase leading-none">Rent Receipt</h3>
+                     <p class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mt-1.5">HRA Documentation</p>
+                  </div>
+                  <button (click)="closeReceiptModal()" class="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:rotate-90 transition-all">
+                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                     </svg>
+                  </button>
+               </div>
+
+               <!-- Receipt Visual Body (Ticket Look) -->
+               <div class="bg-gray-50 dark:bg-gray-800/60 p-6 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700 relative overflow-hidden">
+                  <div class="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-8 bg-white dark:bg-gray-900 rounded-r-full -ml-2 border-r border-dashed border-gray-200 dark:border-gray-700"></div>
+                  <div class="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-8 bg-white dark:bg-gray-900 rounded-l-full -mr-2 border-l border-dashed border-gray-200 dark:border-gray-700"></div>
+
+                  <div class="flex justify-between items-start mb-6">
+                     <div>
+                        <h4 class="text-lg font-black text-indigo-600 dark:text-indigo-400 leading-none">BillaFinance</h4>
+                        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Digital Receipt</p>
+                     </div>
+                     <div class="text-right">
+                        <span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[8px] font-black uppercase tracking-widest rounded-md">Paid</span>
+                        <p class="text-[9px] font-bold text-gray-500 mt-1.5">No: R-{{selectedReceiptBill.year}}-{{selectedReceiptBill.month.toUpperCase()}}</p>
+                     </div>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-4 text-xs mb-6 border-b border-gray-200/50 dark:border-gray-700/50 pb-4">
+                     <div>
+                        <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Tenant</p>
+                        <p class="font-bold text-gray-800 dark:text-gray-200">{{selectedReceiptHouse.renterName}}</p>
+                        <p class="text-[10px] text-gray-400 mt-0.5">{{selectedReceiptHouse.renterPhone}}</p>
+                     </div>
+                     <div class="text-right">
+                        <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Property</p>
+                        <p class="font-bold text-gray-800 dark:text-gray-200">{{selectedReceiptHouse.houseName}}</p>
+                        <p class="text-[10px] text-gray-400 mt-0.5">Date: {{ (selectedReceiptBill.paidDate ? selectedReceiptBill.paidDate : selectedReceiptBill.billDate) | date:'dd/MM/yyyy' }}</p>
+                     </div>
+                  </div>
+
+                  <div class="space-y-2.5 text-xs">
+                     <div class="flex justify-between text-gray-600 dark:text-gray-400">
+                        <span>House Rent ({{selectedReceiptBill.month}} {{selectedReceiptBill.year}})</span>
+                        <span class="font-bold text-gray-800 dark:text-gray-200">₹{{selectedReceiptBill.rentAmount | number:'1.0-0'}}</span>
+                     </div>
+                     <div class="flex justify-between text-gray-600 dark:text-gray-400">
+                        <span>Electricity Charges</span>
+                        <span class="font-bold text-gray-800 dark:text-gray-200">₹{{selectedReceiptBill.electricBill | number:'1.0-0'}}</span>
+                     </div>
+                     <div class="flex justify-between text-gray-600 dark:text-gray-400">
+                        <span>Water Charges</span>
+                        <span class="font-bold text-gray-800 dark:text-gray-200">₹{{selectedReceiptBill.waterBill | number:'1.0-0'}}</span>
+                     </div>
+                     <div class="flex justify-between text-base font-black text-gray-900 dark:text-white border-t border-dashed border-gray-200 dark:border-gray-700 pt-3 mt-3">
+                        <span>Total Paid</span>
+                        <span class="text-indigo-600 dark:text-indigo-400">₹{{selectedReceiptBill.total | number:'1.0-0'}}</span>
+                     </div>
+                  </div>
+               </div>
+
+               <!-- Action Buttons -->
+               <div class="flex gap-4 mt-6">
+                  <button (click)="closeReceiptModal()" class="flex-1 py-3.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-2xl text-xs font-black uppercase tracking-wider transition-all">
+                     Close
+                  </button>
+                  <button (click)="downloadReceipt()" class="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2">
+                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                     Download
+                  </button>
+               </div>
+            </div>
+         </div>
+      </div>
+
       <!-- Identity Popup Modal -->
       @if (showIdentityPopup && identityPayload) {
-        <div class="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md px-0 sm:px-4">
-            <div class="bg-white dark:bg-gray-900 w-full max-w-xl rounded-t-[3rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl mobile-animate-slide duration-300 border border-gray-100 dark:border-gray-800">
-               <div class="p-8 sm:p-12">
+        <div class="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md px-0 sm:px-4 overflow-hidden">
+            <div class="bg-white dark:bg-gray-900 w-full max-w-xl max-h-[90vh] rounded-t-[3rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl mobile-animate-slide duration-300 border border-gray-100 dark:border-gray-800 flex flex-col">
+               <div class="p-8 sm:p-12 overflow-y-auto custom-scrollbar flex-1">
                   <div class="flex justify-between items-center mb-6">
                      <div>
                         <h3 class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter uppercase">Profile details</h3>
@@ -965,6 +1045,10 @@ export class CustomerDashboardComponent implements OnInit {
   showIdentityPopup = false;
   identityPayload: any = null;
 
+  showReceiptModal = false;
+  selectedReceiptHouse: RentalHouse | null = null;
+  selectedReceiptBill: RentalBill | null = null;
+
   openRentalHistory(house: RentalHouse) {
     this.selectedHouse = house;
     this.selectedChit = null;
@@ -973,8 +1057,139 @@ export class CustomerDashboardComponent implements OnInit {
   }
 
   printRentReceipt(house: RentalHouse, bill: RentalBill) {
+    this.selectedReceiptHouse = house;
+    this.selectedReceiptBill = bill;
+    this.showReceiptModal = true;
+    document.body.classList.add('modal-open');
+  }
+
+  closeReceiptModal() {
+    this.showReceiptModal = false;
+    this.selectedReceiptHouse = null;
+    this.selectedReceiptBill = null;
+    document.body.classList.remove('modal-open');
+  }
+
+  downloadReceipt() {
+    if (!this.selectedReceiptHouse || !this.selectedReceiptBill) return;
     const ownerName = this.ownerProfile?.displayName || 'Property Owner';
-    printHraReceipt(house, bill, ownerName);
+    const house = this.selectedReceiptHouse;
+    const bill = this.selectedReceiptBill;
+    const receiptNo = `R-${bill.year}-${bill.month.toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const dateStr = bill.paidDate ? new Date(bill.paidDate).toLocaleDateString('en-IN') : new Date(bill.billDate).toLocaleDateString('en-IN');
+
+    const html = `
+      <html>
+        <head>
+          <title>Rent Receipt - ${bill.month} ${bill.year}</title>
+          <style>
+            body { font-family: 'Segoe UI', Roboto, sans-serif; color: #1e293b; padding: 40px; background: #fff; }
+            .receipt-container { max-width: 700px; margin: 0 auto; border: 2px solid #e2e8f0; border-radius: 20px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+            .header { display: flex; justify-content: space-between; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 30px; }
+            .logo-title { font-size: 24px; font-weight: 800; color: #4f46e5; text-transform: uppercase; letter-spacing: -0.5px; }
+            .logo-sub { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px; }
+            .receipt-badge { background: #ecfdf5; color: #047857; padding: 6px 16px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; display: inline-block; }
+            .details-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+            .section-title { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+            .detail-name { font-size: 15px; font-weight: 800; color: #0f172a; }
+            .detail-sub { font-size: 12px; color: #64748b; margin-top: 4px; }
+            .invoice-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+            .invoice-table th { border-bottom: 2px solid #f1f5f9; padding: 12px 8px; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; text-align: left; }
+            .invoice-table td { padding: 16px 8px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 700; }
+            .invoice-table .amount { text-align: right; }
+            .total-row td { border-top: 2px solid #e2e8f0; border-bottom: none; font-size: 16px !important; font-weight: 900 !important; color: #4f46e5; }
+            .footer-note { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px; line-height: 1.5; }
+            .signature-section { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 50px; }
+            .signature-box { border-top: 1px dashed #cbd5e1; width: 180px; text-align: center; padding-top: 8px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+            @media print {
+              body { padding: 0; }
+              .receipt-container { border: none; box-shadow: none; padding: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-container">
+            <div class="header">
+              <div>
+                <div class="logo-title">BillaFinance</div>
+                <div class="logo-sub">Rent Receipt</div>
+              </div>
+              <div style="text-align: right;">
+                <span class="receipt-badge">Paid Receipt</span>
+                <div class="detail-sub" style="margin-top: 8px; font-weight: 700;">No: ${receiptNo}</div>
+                <div class="detail-sub">Date: ${dateStr}</div>
+              </div>
+            </div>
+
+            <div class="details-grid">
+              <div>
+                <div class="section-title">Tenant Details</div>
+                <div class="detail-name">${house.renterName}</div>
+                <div class="detail-sub">Phone: ${house.renterPhone}</div>
+                <div class="detail-sub" style="margin-top: 8px;">Address: ${house.fullAddress || 'N/A'}</div>
+              </div>
+              <div>
+                <div class="section-title">Landlord Details</div>
+                <div class="detail-name">${ownerName || 'Property Owner'}</div>
+                <div class="detail-sub">PAN: ${house.landlordPan || 'N/A'}</div>
+                <div class="detail-sub" style="margin-top: 8px;">Property: ${house.houseName}</div>
+              </div>
+            </div>
+
+            <table class="invoice-table">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th class="amount">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>House Rent for ${bill.month} ${bill.year}</td>
+                  <td class="amount">₹${bill.rentAmount.toLocaleString('en-IN')}</td>
+                </tr>
+                <tr>
+                  <td>Electricity Charges (TSPDCL)</td>
+                  <td class="amount">₹${bill.electricBill.toLocaleString('en-IN')}</td>
+                </tr>
+                <tr>
+                  <td>Water Charges (HMWSSB)</td>
+                  <td class="amount">₹${bill.waterBill.toLocaleString('en-IN')}</td>
+                </tr>
+                <tr class="total-row">
+                  <td>Total Received</td>
+                  <td class="amount">₹${bill.total.toLocaleString('en-IN')}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="signature-section">
+              <div style="font-size: 12px; font-style: italic; color: #64748b;">
+                *Generated digitally via BillaFinance.
+              </div>
+              <div>
+                <div style="height: 40px;"></div>
+                <div class="signature-box">Landlord Signature</div>
+              </div>
+            </div>
+
+            <div class="footer-note">
+              This is a computer-generated document and does not require a physical signature.<br>
+              For claiming House Rent Allowance (HRA) under Section 10(13A) of the Income Tax Act.
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rent_receipt_${bill.month}_${bill.year}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   goToGame() {
@@ -1212,7 +1427,7 @@ export class CustomerDashboardComponent implements OnInit {
       if (cycleDueDate.getTime() > date.getTime()) break;
       const settledBeforeCycle = (loan.settlements || []).reduce((sum, s) => {
         const sDate = this.parseLocalDateForReminder(s.date);
-        return (sDate && sDate.getTime() <= cycleStart.getTime()) ? sum + s.amount : sum;
+        return (sDate && sDate.getTime() < cycleDueDate.getTime()) ? sum + s.amount : sum;
       }, 0);
       const balanceAtStart = Math.max(0, loan.amount - settledBeforeCycle);
       totalDue += balanceAtStart * (loan.interestRate / 100);
@@ -1531,5 +1746,14 @@ export class CustomerDashboardComponent implements OnInit {
 
   lockScroll() { document.body.style.overflow = 'hidden'; }
   unlockScroll() { document.body.style.overflow = ''; }
+
+  @HostListener('window:focus')
+  onWindowFocus() {
+    const isModalOpen = (this.activeTab === 'security') || this.showReceiptModal || this.showIdentityPopup;
+    if (!isModalOpen) {
+      document.body.style.overflow = '';
+      document.body.classList.remove('modal-open');
+    }
+  }
 }
 

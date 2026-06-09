@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { firstValueFrom } from 'rxjs';
+import { Capacitor, CapacitorHttp } from '@capacitor/core';
 
 @Injectable({
   providedIn: 'root'
@@ -26,7 +27,18 @@ export class WhatsAppService {
     };
 
     try {
-      return await firstValueFrom(this.http.post(this.apiUrl, body));
+      if (Capacitor.getPlatform() === 'web') {
+        return await firstValueFrom(this.http.post(this.apiUrl, body));
+      } else {
+        const response = await CapacitorHttp.post({
+          url: this.apiUrl,
+          data: body,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        return response.data;
+      }
     } catch (error) {
       console.error('Failed to send WhatsApp message', error);
       throw error;

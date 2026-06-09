@@ -18,7 +18,7 @@
     "logLevel": "debug"
   },
   "/api/billdesk-water": {
-    "target": "https://billdesk.com/pgidsk/pgmerc/hmwssb/HMWSSBNPaymentoption.jsp",
+    "target": "https://www.billdesk.com/pgidsk/pgmerc/hmwssb/HMWSSBNPaymentoption.jsp",
     "secure": false,
     "changeOrigin": true,
     "pathRewrite": {

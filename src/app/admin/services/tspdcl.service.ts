@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, catchError, of } from 'rxjs';
-import { Capacitor } from '@capacitor/core';
+import { Observable, map, catchError, of, from } from 'rxjs';
+import { Capacitor, CapacitorHttp } from '@capacitor/core';
 
 export interface TspdclBillDetails {
   consumerName: string;
@@ -36,30 +36,53 @@ export class TspdclService {
   }
 
   fetchBillDetails(uscNo: string): Observable<TspdclBillDetails | null> {
-    const fullUrl = `${this.baseUrl}/billinginfo?ukscno=${uscNo}&submit=SUBMIT`;
-
-    return this.http.get(fullUrl, { 
-      responseType: 'text',
-      headers: {
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Cache-Control': 'no-cache'
-      }
-    }).pipe(
-      map(html => {
-        if (html && html.length > 100) { // Basic check for meaningful content
-          const parsed = this.parseTspdclHtml(html, uscNo);
-          if (parsed && parsed.totalAmountPayable >= 0) {
-            return parsed;
-          }
+    if (Capacitor.getPlatform() === 'web') {
+      const fullUrl = `${this.baseUrl}/billinginfo?ukscno=${uscNo}&submit=SUBMIT`;
+      return this.http.get(fullUrl, { 
+        responseType: 'text',
+        headers: {
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+          'Cache-Control': 'no-cache'
         }
-        console.error('TSPDCL: Received invalid or empty HTML response.');
-        return null;
-      }),
-      catchError(err => {
-        console.error('TSPDCL Connection Error:', err);
-        return of(null);
-      })
-    );
+      }).pipe(
+        map(html => this.processTspdclResponse(html, uscNo)),
+        catchError(err => {
+          console.error('TSPDCL Connection Error:', err);
+          return of(null);
+        })
+      );
+    } else {
+      // Use native CapacitorHttp explicitly since global network interception is disabled
+      const fullUrl = `${this.baseUrl}/billinginfo?ukscno=${uscNo}&submit=SUBMIT`;
+      const options = {
+        url: fullUrl,
+        method: 'GET',
+        headers: {
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+          'Cache-Control': 'no-cache'
+        },
+        responseType: 'text' as const
+      };
+      
+      return from(CapacitorHttp.get(options)).pipe(
+        map(response => this.processTspdclResponse(response.data, uscNo)),
+        catchError(err => {
+          console.error('TSPDCL Native Connection Error:', err);
+          return of(null);
+        })
+      );
+    }
+  }
+
+  private processTspdclResponse(html: any, uscNo: string): TspdclBillDetails | null {
+    if (html && typeof html === 'string' && html.length > 100) { 
+      const parsed = this.parseTspdclHtml(html, uscNo);
+      if (parsed && parsed.totalAmountPayable >= 0) {
+        return parsed;
+      }
+    }
+    console.error('TSPDCL: Received invalid or empty HTML response.');
+    return null;
   }
 
   private parseTspdclHtml(html: string, uscNo: string): TspdclBillDetails | null {

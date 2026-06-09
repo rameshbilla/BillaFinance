@@ -8,8 +8,8 @@ import { routes } from './app.routes';
 import { environment } from '../environments/environment';
 import { provideFirebaseApp, initializeApp, FirebaseApp } from '@angular/fire/app';
 import { provideAuth, getAuth } from '@angular/fire/auth';
-import { provideFirestore, getFirestore, initializeFirestore } from '@angular/fire/firestore';
-import { persistentLocalCache, persistentSingleTabManager } from 'firebase/firestore';
+import { provideFirestore, initializeFirestore } from '@angular/fire/firestore';
+import { persistentLocalCache, persistentMultipleTabManager, persistentSingleTabManager } from 'firebase/firestore';
 import { provideStorage, getStorage } from '@angular/fire/storage';
 import { Capacitor } from '@capacitor/core';
 
@@ -23,6 +23,7 @@ export const appConfig: ApplicationConfig = {
     provideFirestore(() => {
       const app = inject(FirebaseApp);
       if (Capacitor.isNativePlatform()) {
+        // Mobile APK: use long-polling + single-tab persistent cache
         return initializeFirestore(app, {
           experimentalForceLongPolling: true,
           localCache: persistentLocalCache({
@@ -31,7 +32,12 @@ export const appConfig: ApplicationConfig = {
         });
       }
 
-      return getFirestore();
+      // Web browser: use persistent multi-tab cache for real-time sync across tabs
+      return initializeFirestore(app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager()
+        })
+      });
     }),
     provideStorage(() => getStorage()),
     provideHttpClient(),

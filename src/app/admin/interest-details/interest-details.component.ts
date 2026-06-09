@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -463,7 +463,7 @@ export class AdminInterestDetailsComponent implements OnInit {
   private getSettledAmountThrough(date: Date): number {
     return (this.scheme?.settlements || []).reduce((sum, settlement) => {
       const settlementDate = this.parseLocalDate(settlement.date);
-      if (!settlementDate || settlementDate.getTime() > date.getTime()) {
+      if (!settlementDate || settlementDate.getTime() >= date.getTime()) {
         return sum;
       }
       return sum + settlement.amount;
@@ -497,7 +497,7 @@ export class AdminInterestDetailsComponent implements OnInit {
         break;
       }
 
-      const balanceAtCycleStart = Math.max(0, this.scheme.amount - this.getSettledAmountThrough(cycleStart));
+      const balanceAtCycleStart = Math.max(0, this.scheme.amount - this.getSettledAmountThrough(cycleDueDate));
       totalDue += balanceAtCycleStart * (this.scheme.interestRate / 100);
       cycleIndex += 1;
     }
@@ -577,5 +577,11 @@ export class AdminInterestDetailsComponent implements OnInit {
 
   goBack() {
     this.router.navigate(['/admin']);
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus() {
+    document.body.style.overflow = '';
+    document.body.classList.remove('modal-open');
   }
 }

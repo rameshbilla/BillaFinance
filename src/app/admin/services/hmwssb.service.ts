@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, catchError, of } from 'rxjs';
-import { Capacitor } from '@capacitor/core';
+import { Observable, map, catchError, of, from } from 'rxjs';
+import { Capacitor, CapacitorHttp } from '@capacitor/core';
 
 export interface HmwssbBillDetails {
   consumerName: string;
@@ -29,37 +29,61 @@ export class HmwssbService {
   }
 
   fetchBillDetails(can: string): Observable<HmwssbBillDetails | null> {
-    // New specific endpoint approach to resolve proxy 404s
-    const fullUrl = Capacitor.getPlatform() === 'web' 
-      ? '/api/billdesk-water' 
-      : 'https://billdesk.com/pgidsk/pgmerc/hmwssb/HMWSSBNPaymentoption.jsp';
-      
-    const body = new URLSearchParams();
-    body.set('canNumber', can);
-
-    return this.http.post(fullUrl, body.toString(), { 
-      responseType: 'text',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Cache-Control': 'no-cache'
-      }
-    }).pipe(
-      map(html => {
-        if (html && html.length > 200) { 
-          const parsed = this.parseHmwssbHtml(html, can);
-          if (parsed && (parsed.totalAmountPayable >= 0 || (parsed.consumerName && parsed.consumerName !== 'Unknown'))) {
-            return parsed;
-          }
+    if (Capacitor.getPlatform() === 'web') {
+      const body = new URLSearchParams();
+      body.set('canNumber', can);
+      return this.http.post('/api/billdesk-water', body.toString(), { 
+        responseType: 'text',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+          'Cache-Control': 'no-cache'
         }
-        console.error('HMWSSB: Received invalid response from BillDesk Payment Option page.');
-        return null;
-      }),
-      catchError(err => {
-        console.error('HMWSSB BillDesk Fetch Error:', err);
-        return of(null);
-      })
-    );
+      }).pipe(
+        map(html => this.processHtmlResponse(html, can)),
+        catchError(err => {
+          console.error('HMWSSB BillDesk Web Fetch Error:', err);
+          return of(null);
+        })
+      );
+    } else {
+      // Use native CapacitorHttp to avoid standard WebView POST redirect/body/CORS issues on mobile
+      const options = {
+        url: 'https://www.billdesk.com/pgidsk/pgmerc/hmwssb/HMWSSBNPaymentoption.jsp',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+          'Cache-Control': 'no-cache'
+        },
+        data: {
+          canNumber: can
+        },
+        responseType: 'text' as const
+      };
+      
+      return from(CapacitorHttp.post(options)).pipe(
+        map(response => {
+          const html = response.data;
+          return this.processHtmlResponse(html, can);
+        }),
+        catchError(err => {
+          console.error('HMWSSB BillDesk Native Fetch Error:', err);
+          return of(null);
+        })
+      );
+    }
+  }
+
+  private processHtmlResponse(html: any, can: string): HmwssbBillDetails | null {
+    if (html && typeof html === 'string' && html.length > 200) { 
+      const parsed = this.parseHmwssbHtml(html, can);
+      if (parsed && (parsed.totalAmountPayable >= 0 || (parsed.consumerName && parsed.consumerName !== 'Unknown'))) {
+        return parsed;
+      }
+    }
+    console.error('HMWSSB: Received invalid response from BillDesk Payment Option page.');
+    return null;
   }
 
   private parseHmwssbHtml(html: string, can: string): HmwssbBillDetails | null {

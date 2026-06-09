@@ -12,44 +12,19 @@ import { InterestScheme } from '../../services/interest.service';
   imports: [CommonModule, FormsModule, BaseChartDirective, CountUpDirective],
   template: `
     <div class="card-animate flex flex-col" style="animation-delay:0.05s">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 order-1">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div class="flex-1">
           <h2 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Loan Management</h2>
           <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ filteredLoans.length }} active loan accounts</p>
         </div>
-        <div class="flex items-center gap-2 w-full sm:w-auto">
-          <div class="flex-1 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-1 flex items-center">
-            <div class="relative w-full">
-              <input type="text" [(ngModel)]="loanSearchQuery" (ngModelChange)="onSearchChange($event)" placeholder="Search loans..."
-                     class="w-full pl-9 pr-4 py-2.5 bg-gray-50 dark:bg-gray-900 rounded-xl border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-xs text-gray-900 dark:text-white font-black placeholder:text-gray-400">
-              <svg class="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            </div>
-          </div>
-          <button (click)="onCreateLoan.emit()" class="px-5 py-3 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 active:scale-95 transition-all whitespace-nowrap">
-            <svg class="h-4 w-4 sm:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-            <span class="hidden sm:inline">New Loan</span>
-          </button>
-          <button (click)="onSendReminders.emit()" [disabled]="isSaving" class="px-6 py-4 bg-emerald-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 active:scale-95 transition-all whitespace-nowrap">
-            <svg class="h-4 w-4" [class.animate-pulse]="isSaving" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            <span class="hidden sm:inline">{{ isSaving ? 'Sending...' : 'Send All Reminders' }}</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Loan Filters Row -->
-      <div class="flex mb-10 order-3 lg:order-2">
-        <div class="p-1 bg-gray-100 dark:bg-gray-800/50 backdrop-blur-md rounded-xl flex gap-1 border border-gray-200 dark:border-gray-700/50 shadow-inner">
-          <button *ngFor="let status of ['Active', 'Inactive', 'All']"
-                  (click)="onStatusFilterChange(status)"
-                  [class.tab-active]="loanStatusFilter === status"
-                  class="px-5 py-2 text-[9px] font-black rounded-lg transition-all duration-300 text-gray-500 dark:text-gray-300 uppercase tracking-[0.2em]">
-            {{ status }}
-          </button>
-        </div>
+        <button (click)="onCreateLoan.emit()" class="px-5 py-3 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 active:scale-95 transition-all whitespace-nowrap">
+          <svg class="h-4 w-4 sm:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+          <span class="hidden sm:inline">New Loan</span>
+        </button>
       </div>
 
       <!-- Analytics & Insights -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 order-2 lg:order-3">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <!-- Bar Chart Card -->
         <div class="lg:col-span-2 bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700 h-[220px] sm:h-[320px] relative overflow-hidden card-animate">
           <div class="flex justify-between items-center mb-4 sm:mb-6">
@@ -120,8 +95,28 @@ import { InterestScheme } from '../../services/interest.service';
         </div>
       </div>
 
+      <!-- Search & Filters Row -->
+      <div class="flex flex-col md:flex-row gap-4 mb-8">
+        <div class="flex-1 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-1 flex items-center">
+          <div class="relative w-full">
+            <input type="text" [(ngModel)]="loanSearchQuery" (ngModelChange)="onSearchChange($event)" placeholder="Search loans..."
+                   class="w-full pl-9 pr-4 py-2.5 bg-gray-50 dark:bg-gray-900 rounded-xl border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-xs text-gray-900 dark:text-white font-black placeholder:text-gray-400">
+            <svg class="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+        </div>
+
+        <div class="p-1 bg-gray-100 dark:bg-gray-800/50 backdrop-blur-md rounded-xl flex gap-1 border border-gray-200 dark:border-gray-700/50 shadow-inner w-fit">
+          <button *ngFor="let status of ['Active', 'Inactive', 'All']"
+                  (click)="onStatusFilterChange(status)"
+                  [class.tab-active]="loanStatusFilter === status"
+                  class="px-5 py-2 text-[9px] font-black rounded-lg transition-all duration-300 text-gray-500 dark:text-gray-300 uppercase tracking-[0.2em] whitespace-nowrap">
+            {{ status }}
+          </button>
+        </div>
+      </div>
+
       <!-- Interest Cards -->
-      <div class="order-5">
+      <div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
           <div *ngFor="let loan of filteredLoans; trackBy: trackByLoanId; let i = index" 
                class="scheme-card bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden card-animate"
@@ -191,7 +186,7 @@ import { InterestScheme } from '../../services/interest.service';
                   </div>
                   <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl text-right border border-gray-100/50 dark:border-gray-700/50">
                     <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Monthly Int.</p>
-                    <p class="text-sm font-black text-indigo-600" [appCountUp]="(loan.amount * loan.interestRate / 100)" prefix="₹"></p>
+                    <p class="text-sm font-black text-indigo-600" [appCountUp]="getMonthlyInterest(loan)" prefix="₹"></p>
                   </div>
                 </div>
                 <div *ngIf="loan.status !== 'Inactive' && getPendingInterestForLoan(loan) > 0" class="mb-4 bg-rose-50/50 dark:bg-rose-900/10 p-3 rounded-2xl flex justify-between items-center border border-rose-100/30 dark:border-rose-900/20">
@@ -303,6 +298,15 @@ export class LoanManagementComponent implements OnInit {
     return sorted[0].date;
   }
 
+  getCurrentBalance(loan: InterestScheme): number {
+    const settled = (loan.settlements || []).reduce((sum, s) => sum + s.amount, 0);
+    return Math.max(0, loan.amount - settled);
+  }
+
+  getMonthlyInterest(loan: InterestScheme): number {
+    return this.getCurrentBalance(loan) * (loan.interestRate / 100);
+  }
+
   getPendingInterestForLoan(loan: InterestScheme): number {
     if (!loan.startDate) return 0;
     const now = new Date();
@@ -330,7 +334,7 @@ export class LoanManagementComponent implements OnInit {
       if (cycleDueDate.getTime() > date.getTime()) break;
       const settledBeforeCycle = (loan.settlements || []).reduce((sum, s) => {
         const sDate = this.parseLocalDateForReminder(s.date);
-        return (sDate && sDate.getTime() <= cycleStart.getTime()) ? sum + s.amount : sum;
+        return (sDate && sDate.getTime() < cycleDueDate.getTime()) ? sum + s.amount : sum;
       }, 0);
       const balanceAtStart = Math.max(0, loan.amount - settledBeforeCycle);
       totalDue += balanceAtStart * (loan.interestRate / 100);

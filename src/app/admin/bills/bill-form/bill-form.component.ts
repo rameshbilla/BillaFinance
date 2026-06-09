@@ -8,15 +8,15 @@ import { Bill } from '../../services/bill.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-xl border border-gray-100 dark:border-gray-800 p-8 animate-scale-in">
-      <div class="flex justify-between items-center mb-6">
+    <div class="bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-xl border border-gray-100 dark:border-gray-800 p-8 animate-scale-in flex flex-col max-h-[90vh]">
+      <div class="flex justify-between items-center mb-6 shrink-0">
         <h2 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{{ isEdit ? 'Update' : 'Create' }} Bill</h2>
         <button (click)="cancel.emit()" class="p-2 text-gray-400 hover:text-red-500 transition-colors">
           <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
 
-      <form [formGroup]="billForm" (ngSubmit)="onSubmit()" class="space-y-6">
+      <form [formGroup]="billForm" (ngSubmit)="onSubmit()" class="space-y-6 flex-1 overflow-y-auto custom-scrollbar pr-2">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Service Type</label>

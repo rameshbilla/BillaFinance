@@ -223,10 +223,15 @@ import { RentalHouse, RentalBill, RentalExpense, PastTenancy } from '../../servi
                       </div>
                       <div class="flex flex-col items-end">
                         <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">Electricity:</span>
-                        <span class="mt-1.5 text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider shadow-sm"
-                              [ngClass]="isHouseUtilityPaid(house, 'electricity') ? 'bg-emerald-500 text-white shadow-emerald-500/10' : 'bg-rose-500 text-white shadow-rose-500/10'">
-                          {{ isHouseUtilityPaid(house, 'electricity') ? 'Paid' : 'Unpaid' }}
-                        </span>
+                        <div class="flex items-center gap-1.5 mt-1">
+                          <span class="text-[10px] font-black" [class]="isHouseUtilityPaid(house, 'electricity') ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
+                            ₹{{ getHouseUtilityBill(house, 'electricity') }}
+                          </span>
+                          <span class="text-[7px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider shadow-sm"
+                                [ngClass]="isHouseUtilityPaid(house, 'electricity') ? 'bg-emerald-500 text-white shadow-emerald-500/10' : 'bg-rose-500 text-white shadow-rose-500/10'">
+                            {{ isHouseUtilityPaid(house, 'electricity') ? 'Paid' : 'Unpaid' }}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -348,10 +353,15 @@ import { RentalHouse, RentalBill, RentalExpense, PastTenancy } from '../../servi
                     <!-- Electricity Badge on List Thumbnail -->
                     <div class="text-left sm:text-right min-w-[50px]">
                       <span class="block text-[8px] font-black text-gray-400 uppercase tracking-widest font-sans">Electricity</span>
-                      <span class="inline-block mt-1 text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider shadow-sm"
-                            [ngClass]="isHouseUtilityPaid(house, 'electricity') ? 'bg-emerald-500 text-white shadow-emerald-500/10' : 'bg-rose-500 text-white shadow-rose-500/10'">
-                        {{ isHouseUtilityPaid(house, 'electricity') ? 'Paid' : 'Unpaid' }}
-                      </span>
+                      <div class="flex items-center justify-start sm:justify-end gap-1.5 mt-1">
+                        <span class="text-[10px] font-black" [class]="isHouseUtilityPaid(house, 'electricity') ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
+                          ₹{{ getHouseUtilityBill(house, 'electricity') }}
+                        </span>
+                        <span class="inline-block text-[7px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider shadow-sm"
+                              [ngClass]="isHouseUtilityPaid(house, 'electricity') ? 'bg-emerald-500 text-white shadow-emerald-500/10' : 'bg-rose-500 text-white shadow-rose-500/10'">
+                          {{ isHouseUtilityPaid(house, 'electricity') ? 'Paid' : 'Unpaid' }}
+                        </span>
+                      </div>
                     </div>
 
                     <div class="flex items-center gap-1.5">
@@ -600,12 +610,14 @@ import { RentalHouse, RentalBill, RentalExpense, PastTenancy } from '../../servi
                           </div>
                         </div>
                         <div class="flex items-center gap-2 w-full sm:w-auto">
-                          <button *ngIf="bill.rentAmount > 0" (click)="onPrintRentReceipt.emit({house, bill})" class="p-2 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all" title="Print/Download HRA Receipt">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                          <button *ngIf="bill.rentAmount > 0" (click)="onPrintRentReceipt.emit({house, bill})" class="p-2 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all" title="View/Download HRA Receipt">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                           </button>
-                          <button (click)="onEditBill.emit({bill, index: findIndex(bill, house)})" class="flex-1 sm:flex-none py-2 px-4 bg-gray-100 dark:bg-gray-700 text-[10px] font-black uppercase rounded-lg">Edit</button>
-                          <button (click)="onDeleteBill.emit(findIndex(bill, house))" class="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-all">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          <button (click)="onEditBill.emit({bill, index: findIndex(bill, house)})" class="p-2 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-all" title="Edit Bill">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                          </button>
+                          <button (click)="onDeleteBill.emit(findIndex(bill, house))" class="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-all" title="Delete Bill">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                           </button>
                         </div>
                       </div>
@@ -689,9 +701,9 @@ import { RentalHouse, RentalBill, RentalExpense, PastTenancy } from '../../servi
 
       <!-- Expense Modal -->
       @if (showExpenseForm && activeHouse) {
-        <div class="fixed inset-0 z-[110] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md px-0 sm:px-4">
-            <div class="bg-white dark:bg-gray-900 w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl animate-fade-up border border-gray-100 dark:border-gray-800">
-               <div class="p-8 sm:p-10">
+        <div class="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 overflow-hidden">
+            <div class="bg-white dark:bg-gray-900 w-full max-w-lg max-h-[90vh] rounded-[2.5rem] overflow-hidden shadow-2xl animate-fade-up border border-gray-100 dark:border-gray-800 flex flex-col">
+               <div class="p-8 sm:p-10 overflow-y-auto custom-scrollbar flex-1">
                   <div class="flex justify-between items-center mb-6">
                      <div>
                         <h3 class="text-xl font-black text-gray-900 dark:text-white tracking-tighter uppercase">Add Maintenance Expense</h3>
@@ -702,7 +714,7 @@ import { RentalHouse, RentalBill, RentalExpense, PastTenancy } from '../../servi
                      </button>
                   </div>
                   
-                  <div class="space-y-4">
+                  <div class="space-y-6">
                     <div>
                         <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Category</label>
                         <select [(ngModel)]="expenseFormCategory" class="w-full px-5 py-3 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 outline-none text-xs font-bold text-gray-700 dark:text-gray-300">
@@ -738,9 +750,9 @@ import { RentalHouse, RentalBill, RentalExpense, PastTenancy } from '../../servi
 
       <!-- Vacate Modal -->
       @if (showVacateForm && activeHouse) {
-        <div class="fixed inset-0 z-[110] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md px-0 sm:px-4">
-            <div class="bg-white dark:bg-gray-900 w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl animate-fade-up border border-gray-100 dark:border-gray-800">
-               <div class="p-8 sm:p-10">
+        <div class="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 overflow-hidden">
+            <div class="bg-white dark:bg-gray-900 w-full max-w-lg max-h-[90vh] rounded-[2.5rem] overflow-hidden shadow-2xl animate-fade-up border border-gray-100 dark:border-gray-800 flex flex-col">
+               <div class="p-8 sm:p-10 overflow-y-auto custom-scrollbar flex-1">
                   <div class="flex justify-between items-center mb-6">
                      <div>
                         <h3 class="text-xl font-black text-rose-600 tracking-tighter uppercase">Vacate Tenant & Settlement</h3>
@@ -751,7 +763,7 @@ import { RentalHouse, RentalBill, RentalExpense, PastTenancy } from '../../servi
                      </button>
                   </div>
                   
-                  <div class="space-y-4">
+                  <div class="space-y-6">
                     <div class="bg-indigo-50/50 dark:bg-indigo-900/10 p-4 rounded-3xl mb-2">
                       <div class="flex justify-between items-center text-xs font-black text-indigo-900 dark:text-indigo-300">
                         <span>ADVANCE DEPOSIT:</span>
@@ -847,7 +859,7 @@ export class RentalManagementComponent implements OnInit {
   vacateFormDeductionReason = '';
 
   // View mode and expansion state
-  viewMode: 'grid' | 'list' = 'grid';
+  viewMode: 'grid' | 'list' = 'list';
   expandedHouseIds: Record<string, boolean> = {};
   searchQuery: string = '';
 

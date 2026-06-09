@@ -51,23 +51,38 @@ export class AuthService {
     })
   );
 
+  private withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) => setTimeout(() => reject(new Error('Request timed out')), ms))
+    ]);
+  }
+
   public async getDocWithRetry(ref: any, maxRetries = 2): Promise<any> {
     let lastError;
     for (let i = 0; i <= maxRetries; i++) {
       try {
-        // On second retry, try to force network
-        if (i === 1) {
+        if (i === 0) {
+          // First try: use cache (instant, works offline)
+          return await this.withTimeout(getDoc(ref), 8000);
+        } else if (i === 1) {
+          // Second try: re-enable network and try from cache again
           await enableNetwork(this.firestore).catch(() => {});
-          return await getDocFromServer(ref);
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          return await this.withTimeout(getDoc(ref), 10000);
+        } else {
+          // Final try: force server fetch
+          await enableNetwork(this.firestore).catch(() => {});
+          return await this.withTimeout(getDocFromServer(ref), 12000);
         }
-        return await getDoc(ref);
       } catch (error: any) {
         lastError = error;
-        const msg = error.message?.toLowerCase() || '';
-        if ((msg.includes('offline') || msg.includes('network')) && i < maxRetries) {
-          // Force network re-enable
+        const msg = (error.message || '').toLowerCase();
+        const isRetryable = msg.includes('offline') || msg.includes('network') ||
+                            msg.includes('timed out') || msg.includes('unavailable');
+        if (isRetryable && i < maxRetries) {
           await enableNetwork(this.firestore).catch(() => {});
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 1500 * (i + 1)));
           continue;
         }
         throw error;
@@ -80,17 +95,24 @@ export class AuthService {
     let lastError;
     for (let i = 0; i <= maxRetries; i++) {
       try {
-        if (i === 1) {
+        if (i === 0) {
+          return await this.withTimeout(getDocs(q), 8000);
+        } else if (i === 1) {
           await enableNetwork(this.firestore).catch(() => {});
-          return await getDocsFromServer(q);
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          return await this.withTimeout(getDocs(q), 10000);
+        } else {
+          await enableNetwork(this.firestore).catch(() => {});
+          return await this.withTimeout(getDocsFromServer(q), 12000);
         }
-        return await getDocs(q);
       } catch (error: any) {
         lastError = error;
-        const msg = error.message?.toLowerCase() || '';
-        if ((msg.includes('offline') || msg.includes('network')) && i < maxRetries) {
+        const msg = (error.message || '').toLowerCase();
+        const isRetryable = msg.includes('offline') || msg.includes('network') ||
+                            msg.includes('timed out') || msg.includes('unavailable');
+        if (isRetryable && i < maxRetries) {
           await enableNetwork(this.firestore).catch(() => {});
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 1500 * (i + 1)));
           continue;
         }
         throw error;
@@ -171,7 +193,16 @@ export class AuthService {
 
     // 3. Customer login
     const lookupRef = doc(this.firestore, `customer_credentials/${clean}`);
-    const lookupSnap = await this.getDocWithRetry(lookupRef);
+    let lookupSnap: any;
+    try {
+      lookupSnap = await this.getDocWithRetry(lookupRef);
+    } catch (err: any) {
+      const msg = (err.message || '').toLowerCase();
+      if (msg.includes('timed out') || msg.includes('offline') || msg.includes('network') || msg.includes('unavailable')) {
+        throw new Error('Unable to connect to server. Please check your internet connection and try again.');
+      }
+      throw err;
+    }
 
     if (lookupSnap.exists()) {
       const data = lookupSnap.data();
