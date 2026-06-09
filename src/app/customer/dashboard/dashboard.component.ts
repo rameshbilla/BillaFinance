@@ -828,87 +828,156 @@ Chart.register(zoomPlugin);
         </div>
       }
 
-      <!-- HRA Rent Receipt Modal Overlay -->
-      <div *ngIf="showReceiptModal && selectedReceiptHouse && selectedReceiptBill" class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 overflow-hidden">
-         <div class="bg-white dark:bg-gray-900 w-full max-w-lg max-h-[90vh] rounded-[2.5rem] overflow-hidden shadow-2xl border border-gray-100 dark:border-gray-800 animate-in fade-in-50 zoom-in-95 duration-200 flex flex-col" (click)="$event.stopPropagation()">
-            <div class="p-6 sm:p-8 overflow-y-auto custom-scrollbar flex-1">
-               <!-- Modal Header -->
-               <div class="flex justify-between items-center mb-6">
-                  <div>
-                     <h3 class="text-xl font-black text-gray-900 dark:text-white tracking-tighter uppercase leading-none">Rent Receipt</h3>
-                     <p class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mt-1.5">HRA Documentation</p>
-                  </div>
-                  <button (click)="closeReceiptModal()" class="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:rotate-90 transition-all">
-                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
-                     </svg>
-                  </button>
-               </div>
 
-               <!-- Receipt Visual Body (Ticket Look) -->
-               <div class="bg-gray-50 dark:bg-gray-800/60 p-6 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700 relative overflow-hidden">
-                  <div class="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-8 bg-white dark:bg-gray-900 rounded-r-full -ml-2 border-r border-dashed border-gray-200 dark:border-gray-700"></div>
-                  <div class="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-8 bg-white dark:bg-gray-900 rounded-l-full -mr-2 border-l border-dashed border-gray-200 dark:border-gray-700"></div>
+      <!-- HRA Rent Receipt Modal Overlay — Premium Redesign -->
+      <div *ngIf="showReceiptModal && selectedReceiptHouse && selectedReceiptBill"
+           class="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-lg p-0 sm:p-4 overflow-hidden"
+           (click)="closeReceiptModal()">
+        <div class="bg-[#0f1117] w-full sm:max-w-md max-h-[95vh] sm:max-h-[90vh] rounded-t-[2rem] sm:rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 animate-in slide-in-from-bottom sm:zoom-in-95 duration-300 flex flex-col"
+             (click)="$event.stopPropagation()">
 
-                  <div class="flex justify-between items-start mb-6">
-                     <div>
-                        <h4 class="text-lg font-black text-indigo-600 dark:text-indigo-400 leading-none">BillaFinance</h4>
-                        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Digital Receipt</p>
-                     </div>
-                     <div class="text-right">
-                        <span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[8px] font-black uppercase tracking-widest rounded-md">Paid</span>
-                        <p class="text-[9px] font-bold text-gray-500 mt-1.5">No: R-{{selectedReceiptBill.year}}-{{selectedReceiptBill.month.toUpperCase()}}</p>
-                     </div>
-                  </div>
-
-                  <div class="grid grid-cols-2 gap-4 text-xs mb-6 border-b border-gray-200/50 dark:border-gray-700/50 pb-4">
-                     <div>
-                        <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Tenant</p>
-                        <p class="font-bold text-gray-800 dark:text-gray-200">{{selectedReceiptHouse.renterName}}</p>
-                        <p class="text-[10px] text-gray-400 mt-0.5">{{selectedReceiptHouse.renterPhone}}</p>
-                     </div>
-                     <div class="text-right">
-                        <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Property</p>
-                        <p class="font-bold text-gray-800 dark:text-gray-200">{{selectedReceiptHouse.houseName}}</p>
-                        <p class="text-[10px] text-gray-400 mt-0.5">Date: {{ (selectedReceiptBill.paidDate ? selectedReceiptBill.paidDate : selectedReceiptBill.billDate) | date:'dd/MM/yyyy' }}</p>
-                     </div>
-                  </div>
-
-                  <div class="space-y-2.5 text-xs">
-                     <div class="flex justify-between text-gray-600 dark:text-gray-400">
-                        <span>House Rent ({{selectedReceiptBill.month}} {{selectedReceiptBill.year}})</span>
-                        <span class="font-bold text-gray-800 dark:text-gray-200">₹{{selectedReceiptBill.rentAmount | number:'1.0-0'}}</span>
-                     </div>
-                     <div class="flex justify-between text-gray-600 dark:text-gray-400">
-                        <span>Electricity Charges</span>
-                        <span class="font-bold text-gray-800 dark:text-gray-200">₹{{selectedReceiptBill.electricBill | number:'1.0-0'}}</span>
-                     </div>
-                     <div class="flex justify-between text-gray-600 dark:text-gray-400">
-                        <span>Water Charges</span>
-                        <span class="font-bold text-gray-800 dark:text-gray-200">₹{{selectedReceiptBill.waterBill | number:'1.0-0'}}</span>
-                     </div>
-                     <div class="flex justify-between text-base font-black text-gray-900 dark:text-white border-t border-dashed border-gray-200 dark:border-gray-700 pt-3 mt-3">
-                        <span>Total Paid</span>
-                        <span class="text-indigo-600 dark:text-indigo-400">₹{{selectedReceiptBill.total | number:'1.0-0'}}</span>
-                     </div>
-                  </div>
-               </div>
-
-               <!-- Action Buttons -->
-               <div class="flex gap-4 mt-6">
-                  <button (click)="closeReceiptModal()" class="flex-1 py-3.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-2xl text-xs font-black uppercase tracking-wider transition-all">
-                     Close
-                  </button>
-                  <button (click)="downloadReceipt()" class="flex-1 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2">
-                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                     Download
-                  </button>
-               </div>
+          <!-- Receipt Header Gradient -->
+          <div class="relative px-6 pt-6 pb-5" style="background: linear-gradient(135deg, #1a1f2e, #0d1117)">
+            <div class="absolute inset-0 pointer-events-none" style="background: radial-gradient(ellipse at top left, rgba(99,102,241,0.15), transparent 60%)"></div>
+            <div class="flex justify-between items-start relative z-10">
+              <div class="flex items-center gap-3">
+                <!-- Property monogram -->
+                <div class="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-lg text-indigo-200 shadow-lg"
+                     style="background: linear-gradient(135deg, #312e81, #1e1b4b); border: 1.5px solid rgba(99,102,241,0.4);">
+                  {{ (selectedReceiptHouse.houseName || 'P').charAt(0).toUpperCase() }}
+                </div>
+                <div>
+                  <h3 class="text-base font-black text-white leading-none tracking-tight">Rent Receipt</h3>
+                  <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-[0.15em] mt-1">
+                    {{ selectedReceiptBill.month }} {{ selectedReceiptBill.year }}
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">✓ Paid</span>
+                <button (click)="closeReceiptModal()" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:rotate-90 transition-all">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
             </div>
-         </div>
+
+            <!-- Receipt Number + Date row -->
+            <div class="flex justify-between items-center mt-4 relative z-10">
+              <div>
+                <p class="text-[8px] font-black text-gray-500 uppercase tracking-[0.15em] mb-0.5">Receipt No.</p>
+                <p class="text-[10px] font-black text-gray-300 font-mono">R-{{ selectedReceiptBill.year }}-{{ selectedReceiptBill.month.toUpperCase() }}-{{ selectedReceiptBill.billDate | date:'ddHH' }}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-[8px] font-black text-gray-500 uppercase tracking-[0.15em] mb-0.5">Paid On</p>
+                <p class="text-[10px] font-black text-gray-300">{{ (selectedReceiptBill.paidDate ? selectedReceiptBill.paidDate : selectedReceiptBill.billDate) | date:'dd MMM, yyyy' }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dashed divider with punch holes -->
+          <div class="relative flex items-center px-6 py-0" style="background:#0f1117">
+            <div class="absolute -left-3 w-6 h-6 rounded-full bg-black z-10"></div>
+            <div class="flex-1 border-t-2 border-dashed border-white/10"></div>
+            <div class="absolute -right-3 w-6 h-6 rounded-full bg-black z-10"></div>
+          </div>
+
+          <!-- Receipt Body -->
+          <div class="px-6 py-5 overflow-y-auto flex-1 space-y-4" style="background:#0f1117">
+
+            <!-- Tenant ↔ Property row -->
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-white/4 rounded-2xl p-3.5 border border-white/6">
+                <p class="text-[7px] font-black text-gray-500 uppercase tracking-[0.15em] mb-1.5">
+                  <svg class="w-3 h-3 inline-block mr-0.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                  Tenant
+                </p>
+                <p class="text-xs font-black text-white truncate">{{ selectedReceiptHouse.renterName }}</p>
+                <p class="text-[9px] text-gray-500 font-mono mt-0.5">{{ selectedReceiptHouse.renterPhone }}</p>
+              </div>
+              <div class="bg-white/4 rounded-2xl p-3.5 border border-white/6">
+                <p class="text-[7px] font-black text-gray-500 uppercase tracking-[0.15em] mb-1.5">
+                  <svg class="w-3 h-3 inline-block mr-0.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 21V12h6v9"/></svg>
+                  Property
+                </p>
+                <p class="text-xs font-black text-white truncate">{{ selectedReceiptHouse.houseName }}</p>
+                <p class="text-[9px] text-gray-500 mt-0.5 truncate">{{ selectedReceiptHouse.fullAddress || 'Rental Property' }}</p>
+              </div>
+            </div>
+
+            <!-- Bill Breakdown -->
+            <div class="rounded-2xl overflow-hidden border border-white/8" style="background:#161b27">
+              <!-- Rent row -->
+              <div class="flex items-center justify-between px-4 py-3.5 border-b border-white/6">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-xl flex items-center justify-center" style="background:rgba(129,140,248,0.15)">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 21V12h6v9"/>
+                    </svg>
+                  </div>
+                  <span class="text-xs font-bold text-gray-300">House Rent</span>
+                </div>
+                <span class="text-sm font-black text-indigo-300">₹{{ selectedReceiptBill.rentAmount | number:'1.0-0' }}</span>
+              </div>
+              <!-- Electricity row -->
+              <div class="flex items-center justify-between px-4 py-3.5 border-b border-white/6" *ngIf="(selectedReceiptBill.electricBill || 0) > 0">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-xl flex items-center justify-center" style="background:rgba(251,191,36,0.15)">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                  </div>
+                  <span class="text-xs font-bold text-gray-300">Electricity</span>
+                </div>
+                <span class="text-sm font-black text-amber-300">₹{{ selectedReceiptBill.electricBill | number:'1.0-0' }}</span>
+              </div>
+              <!-- Water row -->
+              <div class="flex items-center justify-between px-4 py-3.5" *ngIf="(selectedReceiptBill.waterBill || 0) > 0">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-xl flex items-center justify-center" style="background:rgba(56,189,248,0.15)">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 2C6.48 2 3 8 3 12a9 9 0 0018 0c0-4-3.48-10-9-10z"/>
+                    </svg>
+                  </div>
+                  <span class="text-xs font-bold text-gray-300">Water</span>
+                </div>
+                <span class="text-sm font-black text-sky-300">₹{{ selectedReceiptBill.waterBill | number:'1.0-0' }}</span>
+              </div>
+            </div>
+
+            <!-- Total -->
+            <div class="flex items-center justify-between px-4 py-4 rounded-2xl" style="background:linear-gradient(135deg,rgba(99,102,241,0.18),rgba(99,102,241,0.06)); border:1px solid rgba(99,102,241,0.25)">
+              <div>
+                <p class="text-[9px] font-black text-indigo-400 uppercase tracking-[0.15em]">Total Paid</p>
+                <p class="text-[9px] text-gray-500 mt-0.5">All charges included</p>
+              </div>
+              <div class="text-right">
+                <p class="text-2xl font-black text-white tracking-tight">₹{{ selectedReceiptBill.total | number:'1.0-0' }}</p>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3 pb-2">
+              <button (click)="closeReceiptModal()"
+                      class="flex-none px-4 py-3.5 bg-white/6 hover:bg-white/10 text-gray-400 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all border border-white/8">
+                Close
+              </button>
+              <button (click)="downloadReceipt()"
+                      class="flex-1 py-3.5 text-white rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg"
+                      style="background:linear-gradient(135deg,#6366f1,#4f46e5); box-shadow:0 8px 24px rgba(99,102,241,0.3)">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Identity Popup Modal -->
+
       @if (showIdentityPopup && identityPayload) {
         <div class="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md px-0 sm:px-4 overflow-hidden">
             <div class="bg-white dark:bg-gray-900 w-full max-w-xl max-h-[90vh] rounded-t-[3rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl mobile-animate-slide duration-300 border border-gray-100 dark:border-gray-800 flex flex-col">

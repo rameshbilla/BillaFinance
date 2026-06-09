@@ -462,241 +462,585 @@ import { RentalHouse, RentalBill, RentalExpense, PastTenancy } from '../../servi
       }
     }
 
-      <!-- Billing Details Table -->
+      <!-- Billing Details / Property History Screen -->
       @if (rentalView === 'ledger' && activeHouse; as house) {
-        <div class="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-xl overflow-hidden animate-fade-up">
-          <div class="p-8 border-b border-gray-50 dark:border-gray-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div class="flex items-center gap-3">
-                <button (click)="onBackToHouses.emit()" class="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-500 hover:text-indigo-600 transition-colors">
-                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" /></svg>
-                </button>
-                <div>
-                  <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{{ house.houseName }} History</h3>
-                  <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Monthly breakdown and utility consumption</p>
-                </div>
+        <div class="ledger-screen animate-fade-up" id="property-history-screen">
+
+          <!-- ══════════════════════════════════════════════════════
+               HERO HEADER  (back btn · title · action buttons)
+          ══════════════════════════════════════════════════════ -->
+          <div class="ledger-hero">
+            <!-- Decorative overlays -->
+            <div class="ledger-hero-overlay"></div>
+            <!-- SVG property illustration backdrop -->
+            <svg class="ledger-hero-illustration" viewBox="0 0 200 120" fill="none" aria-hidden="true">
+              <path d="M20 80 L60 40 L100 80" stroke="rgba(99,102,241,0.25)" stroke-width="2" stroke-linejoin="round"/>
+              <rect x="30" y="80" width="60" height="35" rx="2" fill="rgba(99,102,241,0.08)" stroke="rgba(99,102,241,0.2)" stroke-width="1.5"/>
+              <rect x="44" y="90" width="12" height="25" rx="1" fill="rgba(99,102,241,0.18)"/>
+              <rect x="62" y="90" width="12" height="14" rx="1" fill="rgba(99,102,241,0.15)"/>
+              <path d="M80 80 L110 52 L140 80" stroke="rgba(139,92,246,0.2)" stroke-width="1.5" stroke-linejoin="round"/>
+              <rect x="88" y="80" width="44" height="30" rx="2" fill="rgba(139,92,246,0.07)" stroke="rgba(139,92,246,0.15)" stroke-width="1"/>
+              <rect x="100" y="89" width="9" height="21" rx="1" fill="rgba(139,92,246,0.15)"/>
+              <circle cx="160" cy="35" r="15" fill="rgba(251,191,36,0.06)" stroke="rgba(251,191,36,0.15)" stroke-width="1"/>
+              <line x1="160" y1="20" x2="160" y2="50" stroke="rgba(251,191,36,0.3)" stroke-width="1"/>
+              <line x1="145" y1="35" x2="175" y2="35" stroke="rgba(251,191,36,0.3)" stroke-width="1"/>
+            </svg>
+
+            <!-- Top bar -->
+            <div class="ledger-topbar">
+              <button (click)="onBackToHouses.emit()" class="ledger-back-btn" title="Back to properties">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+                </svg>
+              </button>
+              <div class="ledger-topbar-center">
+                <h1 class="ledger-hero-title">{{ house.houseName }}</h1>
+                <p class="ledger-hero-sub">
+                  <svg class="w-3 h-3 inline-block mr-1 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  </svg>
+                  {{ house.fullAddress || 'Address not set' }}
+                </p>
               </div>
-              <div class="flex gap-2 w-full sm:w-auto">
-                <button *ngIf="house.status === 'Occupied'" (click)="openVacateForm()" class="flex-1 sm:flex-none px-5 py-3 bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">Vacate Tenant</button>
-                <button (click)="onAddMonthlyRecord.emit()" class="flex-1 sm:flex-none px-5 py-3 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">Record Collection</button>
-              </div>
-          </div>
-          
-          <div class="p-8 relative">
-            <!-- Tenant / Property Details Panel -->
-            <div class="mb-8 p-6 bg-slate-50 dark:bg-slate-800/40 rounded-3xl border border-slate-100 dark:border-slate-800/60 shadow-sm">
-              <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
-                <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Property & Tenant Information</h4>
-                <span class="text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider shadow-sm"
-                      [ngClass]="house.status === 'Occupied' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'">
+              <div class="ledger-topbar-actions">
+                <span class="ledger-status-badge" [ngClass]="house.status === 'Occupied' ? 'ledger-status-occupied' : 'ledger-status-vacant'">
+                  <span class="ledger-status-dot" [ngClass]="house.status === 'Occupied' ? 'bg-emerald-400' : 'bg-gray-400'"></span>
                   {{ house.status }}
                 </span>
               </div>
-              
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Tenant Info -->
-                <div *ngIf="house.status === 'Occupied'" class="space-y-2 text-left">
-                  <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Active Tenant</p>
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
-                      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                    </div>
-                    <div class="min-w-0">
-                      <p class="text-sm font-black text-slate-900 dark:text-white leading-tight truncate" [title]="house.renterName">{{ house.renterName }}</p>
-                      <p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">{{ house.renterPhone }}</p>
-                    </div>
+            </div>
+
+            <!-- Action buttons row -->
+            <div class="ledger-action-row">
+              <button *ngIf="house.status === 'Occupied'" (click)="openVacateForm()" class="ledger-btn-danger">
+                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                Vacate Tenant
+              </button>
+              <button (click)="onAddMonthlyRecord.emit()" class="ledger-btn-primary">
+                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                </svg>
+                Record Collection
+              </button>
+              <button (click)="onEditProperty.emit(house)" class="ledger-btn-ghost" title="Edit property">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- ══════════════════════════════════════════════════════
+               STATS CARDS ROW
+          ══════════════════════════════════════════════════════ -->
+          <div class="ledger-stats-grid">
+            <!-- Monthly Rent -->
+            <div class="ledger-stat-card ledger-stat-indigo">
+              <div class="ledger-stat-icon-wrap" style="background:rgba(99,102,241,0.15)">
+                <!-- House / Rent icon -->
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 21V12h6v9"/>
+                </svg>
+              </div>
+              <div class="ledger-stat-body">
+                <p class="ledger-stat-label">Monthly Rent</p>
+                <p class="ledger-stat-value" style="color:var(--c-rent)">₹{{ (house.monthlyRent || 0).toLocaleString('en-IN') }}</p>
+                <p class="ledger-stat-sub">Due on 6th every month</p>
+              </div>
+            </div>
+
+            <!-- Pending Amount -->
+            <div class="ledger-stat-card ledger-stat-rose">
+              <div class="ledger-stat-icon-wrap" style="background:rgba(251,113,133,0.15)">
+                <!-- Alert / Pending icon -->
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#fb7185" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                </svg>
+              </div>
+              <div class="ledger-stat-body">
+                <p class="ledger-stat-label">Pending Amount</p>
+                <p class="ledger-stat-value" style="color:var(--c-due)" [appCountUp]="getLedgerPendingAmount(house)" prefix="₹"></p>
+                <p class="ledger-stat-sub" *ngIf="getLedgerPendingAmount(house) > 0" style="color:var(--c-due)">
+                  {{ getLedgerPendingBillsCount(house) }} Payment{{ getLedgerPendingBillsCount(house) > 1 ? 's' : '' }} Pending
+                </p>
+                <p class="ledger-stat-sub" *ngIf="getLedgerPendingAmount(house) === 0" style="color:var(--c-paid)">All Clear ✓</p>
+              </div>
+            </div>
+
+            <!-- Advance Deposit -->
+            <div class="ledger-stat-card ledger-stat-emerald">
+              <div class="ledger-stat-icon-wrap" style="background:rgba(52,211,153,0.15)">
+                <!-- Shield / Secure deposit icon -->
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 2l7 4v5c0 5-3.5 9.74-7 11-3.5-1.26-7-6-7-11V6l7-4z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4"/>
+                </svg>
+              </div>
+              <div class="ledger-stat-body">
+                <p class="ledger-stat-label">Advance Deposit</p>
+                <p class="ledger-stat-value" style="color:var(--c-paid)">₹{{ (house.advanceAmount || 0).toLocaleString('en-IN') }}</p>
+                <p class="ledger-stat-sub" style="color:var(--c-paid)">Refundable on exit</p>
+              </div>
+            </div>
+
+            <!-- Stay Duration -->
+            <div class="ledger-stat-card ledger-stat-sky">
+              <div class="ledger-stat-icon-wrap" style="background:rgba(56,189,248,0.15)">
+                <!-- Duration / Calendar icon -->
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.8">
+                  <rect x="3" y="4" width="18" height="18" rx="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M16 2v4M8 2v4M3 10h18"/>
+                  <circle cx="12" cy="15" r="2" fill="#38bdf8" stroke="none"/>
+                </svg>
+              </div>
+              <div class="ledger-stat-body">
+                <p class="ledger-stat-label">Stay Duration</p>
+                <p class="ledger-stat-value" style="color:var(--c-water)">
+                  {{ getLedgerStayYears(house) }}<span style="font-size:0.65rem;margin-left:2px">Yrs</span>
+                  <span class="ledger-months-badge" *ngIf="getLedgerStayExtraMonths(house) > 0">{{ getLedgerStayExtraMonths(house) }}m</span>
+                </p>
+                <p class="ledger-stat-sub" *ngIf="house.arrivedDate">Since {{ house.arrivedDate | date:'dd MMM, yyyy' }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══════════════════════════════════════════════════════
+               TENANT INFO CARD
+          ══════════════════════════════════════════════════════ -->
+          <div class="ledger-section-grid ledger-section-grid-full">
+            <div class="ledger-card" *ngIf="house.status === 'Occupied'">
+              <div class="ledger-card-header">
+                <!-- Monogram avatar with tenant initial -->
+                <div class="ledger-tenant-avatar">
+                  <span class="ledger-tenant-monogram">{{ (house.renterName || '?').charAt(0).toUpperCase() }}</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <h3 class="ledger-tenant-name">{{ house.renterName }}</h3>
+                    <span class="ledger-primary-badge">Primary Tenant</span>
                   </div>
-                  <div class="flex items-center gap-2 pt-1">
-                    <a *ngIf="house.renterPhone"
-                       href="tel:{{ house.renterPhone }}"
-                       (click)="$event.stopPropagation()"
-                       class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 rounded-xl text-white text-[9px] font-black uppercase tracking-wider flex items-center gap-1 transition-all shadow-sm">
-                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.387a12.035 12.035 0 01-7.108-7.108c-.155-.44.01-1.272.387-1.21l1.293-.97c.362-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
-                      </svg>
-                      Call
-                    </a>
-                    <button *ngIf="house.renterPhone"
-                            (click)="onSendRentReminder.emit(house)"
-                            class="px-3 py-1.5 bg-[#25D366] hover:bg-[#1ebe59] rounded-xl text-white text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm">
-                      <svg class="w-3.5 h-3.5 fill-current text-white" viewBox="0 0 24 24">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.529 5.855L0 24l6.335-1.51A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.808 9.808 0 01-5.001-1.368l-.36-.214-3.72.886.916-3.618-.235-.373A9.794 9.794 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
-                      </svg>
-                      WhatsApp
-                    </button>
+                  <p class="ledger-tenant-phone">{{ house.renterPhone }}</p>
+                </div>
+                <div class="ledger-tenant-actions">
+                  <a *ngIf="house.renterPhone" href="tel:{{ house.renterPhone }}" class="ledger-action-btn ledger-action-call" title="Call">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.387a12.035 12.035 0 01-7.108-7.108c-.155-.44.01-1.272.387-1.21l1.293-.97c.362-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/>
+                    </svg>
+                    Call
+                  </a>
+                  <button *ngIf="house.renterPhone" (click)="onSendRentReminder.emit(house)" class="ledger-action-btn ledger-action-whatsapp" title="WhatsApp">
+                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.529 5.855L0 24l6.335-1.51A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.808 9.808 0 01-5.001-1.368l-.36-.214-3.72.886.916-3.618-.235-.373A9.794 9.794 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
+                    </svg>
+                    WhatsApp
+                  </button>
+                  <button class="ledger-action-btn ledger-action-agree" title="Agreement">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    Agreement
+                  </button>
+                </div>
+              </div>
+
+              <!-- Tenancy Meta Row -->
+              <div class="ledger-tenancy-meta">
+                <div class="ledger-meta-item">
+                  <span class="ledger-meta-icon">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                  </span>
+                  <div>
+                    <p class="ledger-meta-label">Move-in Date</p>
+                    <p class="ledger-meta-value">{{ house.arrivedDate | date:'MMM dd, yyyy' }}</p>
                   </div>
                 </div>
-                <div *ngIf="house.status === 'Vacant'" class="space-y-1 text-left flex flex-col justify-center">
-                  <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Active Tenant</p>
-                  <p class="text-xs font-black text-slate-400 uppercase tracking-wide">No Active Tenant</p>
+                <div class="ledger-meta-item">
+                  <span class="ledger-meta-icon">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                  </span>
+                  <div>
+                    <p class="ledger-meta-label">Occupancy</p>
+                    <p class="ledger-meta-value">{{ getCompletedMonthsOccupied(house) }} Months</p>
+                  </div>
+                </div>
+                <div class="ledger-meta-item">
+                  <span class="ledger-meta-icon" style="background:rgba(52,211,153,0.15)">
+                    <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                  </span>
+                  <div>
+                    <p class="ledger-meta-label">Agreement Status</p>
+                    <p class="ledger-meta-value" style="color:#34d399">Active</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tenancy Progress Bar -->
+              <div class="ledger-progress-wrap">
+                <div class="ledger-progress-header">
+                  <span class="ledger-progress-label">Tenancy Progress</span>
+                  <span class="ledger-progress-pct">{{ getLedgerTenancyProgress(house) }}% Completed</span>
+                </div>
+                <div class="ledger-progress-track">
+                  <div class="ledger-progress-fill" [style.width]="getLedgerTenancyProgress(house) + '%'"></div>
+                </div>
+                <div class="ledger-progress-dates">
+                  <span>Started: {{ house.arrivedDate | date:'dd MMM, yyyy' }}</span>
+                  <span>Expected End: {{ getLedgerExpectedEnd(house) | date:'dd MMM, yyyy' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Vacant State -->
+            <div class="ledger-card" *ngIf="house.status === 'Vacant'">
+              <div class="flex items-center gap-4 py-4">
+                <div class="w-16 h-16 rounded-2xl bg-gray-800 flex items-center justify-center">
+                  <svg class="w-8 h-8 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="text-lg font-black text-white">No Active Tenant</h3>
+                  <p class="text-sm text-gray-400 mt-1">This property is currently vacant and available for rent.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══════════════════════════════════════════════════════
+               PAYMENT TIMELINE
+          ══════════════════════════════════════════════════════ -->
+          <div class="ledger-card">
+            <div class="ledger-card-title-row">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <h3 class="ledger-card-title">Payment Timeline</h3>
+              </div>
+            </div>
+
+            <!-- Bills list -->
+            <div class="ledger-timeline" *ngIf="(house.bills || []).length > 0; else noBills">
+              <div *ngFor="let bill of sortBills(house.bills); trackBy: trackByBillDate; let i = index; let last = last" class="ledger-timeline-item">
+                <!-- Vertical line -->
+                <div class="ledger-timeline-line" *ngIf="!last"></div>
+                <!-- Dot -->
+                <div class="ledger-timeline-dot" [ngClass]="bill.status.toLowerCase() === 'paid' ? 'ledger-dot-paid' : 'ledger-dot-pending'">
+                  <svg *ngIf="bill.status.toLowerCase() === 'paid'" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  <div *ngIf="bill.status.toLowerCase() !== 'paid'" class="w-2 h-2 rounded-full bg-white"></div>
                 </div>
 
-                <!-- Tenancy & Timeline Details -->
-                <div class="space-y-2 text-left">
-                  <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tenancy & Location</p>
-                  <div class="space-y-1 text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                    <p *ngIf="house.arrivedDate">Move-in Date: <span class="text-slate-900 dark:text-white font-black">{{ house.arrivedDate | date:'dd MMM yyyy' }}</span></p>
-                    <p *ngIf="house.status === 'Occupied' && house.arrivedDate">Occupancy: <span class="text-emerald-500 font-black">{{ getCompletedMonthsOccupied(house) }} Months completed</span></p>
-                    <p class="leading-relaxed mt-1" [title]="house.fullAddress || ''">Address: <span class="text-slate-900 dark:text-white font-black block mt-0.5">{{ house.fullAddress || 'Address Not Set' }}</span></p>
+                <!-- Bill Content -->
+                <div class="ledger-timeline-content" [ngClass]="bill.status.toLowerCase() === 'paid' ? 'ledger-bill-paid' : 'ledger-bill-pending'">
+                  <div class="ledger-bill-header">
+                    <div>
+                      <div class="flex items-center gap-2 mb-1">
+                        <span class="ledger-bill-month">{{ bill.billDate | date:'MMMM yyyy' }}</span>
+                        <span class="ledger-bill-status-badge" [ngClass]="bill.status.toLowerCase() === 'paid' ? 'ledger-badge-paid' : 'ledger-badge-pending'">
+                          {{ bill.status }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <button *ngIf="bill.rentAmount > 0" (click)="onPrintRentReceipt.emit({house, bill})" class="ledger-icon-btn" title="Download Receipt">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                      </button>
+                      <button (click)="onEditBill.emit({bill, index: findIndex(bill, house)})" class="ledger-icon-btn ledger-icon-edit" title="Edit Bill">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                        </svg>
+                      </button>
+                      <button (click)="onDeleteBill.emit(findIndex(bill, house))" class="ledger-icon-btn ledger-icon-delete" title="Delete Bill">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                <!-- Financial Details -->
-                <div class="space-y-2 text-left">
-                  <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Financial Summary</p>
-                  <div class="grid grid-cols-2 gap-4">
-                    <div>
-                      <span class="block text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Monthly Rent</span>
-                      <span class="block text-sm font-black text-slate-900 dark:text-white mt-0.5">₹{{ (house.monthlyRent || 0).toLocaleString('en-IN') }}</span>
+                  <!-- Breakdown rows -->
+                  <div class="ledger-bill-breakdown">
+                    <div class="ledger-breakdown-row">
+                      <span class="ledger-breakdown-label">Rent</span>
+                      <span class="ledger-breakdown-amount" style="color:#818cf8" [appCountUp]="bill.rentAmount" prefix="₹"></span>
+                      <span class="ledger-breakdown-badge" style="background:rgba(52,211,153,0.15);color:#34d399">✓ Paid</span>
                     </div>
-                    <div>
-                      <span class="block text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Advance Deposit</span>
-                      <span class="block text-sm font-black text-slate-900 dark:text-white mt-0.5">₹{{ (house.advanceAmount || 0).toLocaleString('en-IN') }}</span>
+                    <div class="ledger-breakdown-row">
+                      <span class="ledger-breakdown-label">Electricity</span>
+                      <span class="ledger-breakdown-amount" [style.color]="bill.status.toLowerCase() === 'pending' && bill.electricBill > 0 ? '#fb7185' : '#34d399'" [appCountUp]="bill.electricBill" prefix="₹"></span>
+                      <span class="ledger-breakdown-badge" [style]="bill.status.toLowerCase() === 'pending' && bill.electricBill > 0 ? 'background:rgba(251,113,133,0.15);color:#fb7185' : 'background:rgba(52,211,153,0.15);color:#34d399'">
+                        {{ bill.status.toLowerCase() === 'pending' && bill.electricBill > 0 ? 'Due' : '✓ Paid' }}
+                      </span>
                     </div>
-                  </div>
-                  <div class="pt-2 border-t border-slate-100 dark:border-slate-800/60 flex justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                    <span>Rent Increase Due:</span>
-                    <span class="font-black" [class]="isRentIncreaseDue(house) ? 'text-amber-500' : 'text-slate-900 dark:text-white'">
-                      {{ isRentIncreaseDue(house) ? 'Yes (Overdue)' : 'No' }}
-                    </span>
+                    <div class="ledger-breakdown-row">
+                      <span class="ledger-breakdown-label">Water</span>
+                      <span class="ledger-breakdown-amount" [style.color]="bill.status.toLowerCase() === 'pending' && bill.waterBill > 0 ? '#fb7185' : '#34d399'" [appCountUp]="bill.waterBill" prefix="₹"></span>
+                      <span class="ledger-breakdown-badge" [style]="bill.status.toLowerCase() === 'pending' && bill.waterBill > 0 ? 'background:rgba(251,113,133,0.15);color:#fb7185' : 'background:rgba(52,211,153,0.15);color:#34d399'">
+                        {{ bill.status.toLowerCase() === 'pending' && bill.waterBill > 0 ? 'Due' : '✓ Paid' }}
+                      </span>
+                    </div>
+                    <div class="ledger-breakdown-total" *ngIf="bill.status.toLowerCase() === 'pending'">
+                      <span class="ledger-breakdown-label font-black" style="color:#f9fafb">Total Due</span>
+                      <span class="font-black" style="color:#fb7185" [appCountUp]="(bill.electricBill || 0) + (bill.waterBill || 0)" prefix="₹"></span>
+                      <button (click)="onAddMonthlyRecord.emit()" class="ledger-collect-btn">Collect Payment</button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="space-y-8 relative">
-                  <div *ngFor="let bill of sortBills(house.bills); trackBy: trackByBillDate; let i = index" class="history-step group">
-                    <div *ngIf="i < house.bills.length - 1" class="stepper-line bg-indigo-500/20 dark:bg-indigo-500/10"></div>
-                    
-                    <div class="stepper-dot w-8 h-8 rounded-full flex items-center justify-center text-white shadow-lg z-10 transition-all group-hover:scale-110"
-                         [ngClass]="bill.status.toLowerCase() === 'paid' ? 'bg-green-500 shadow-green-500/30' : 'bg-rose-500 shadow-rose-500/30'">
-                      <svg *ngIf="bill.status.toLowerCase() === 'paid'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      <svg *ngIf="bill.status.toLowerCase() !== 'paid'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
-                      </svg>
-                    </div>
+            <ng-template #noBills>
+              <div class="ledger-empty-state">
+                <svg class="w-8 h-8 text-gray-600 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-widest">No payment records yet</p>
+                <button (click)="onAddMonthlyRecord.emit()" class="ledger-collect-btn mt-3">Record First Collection</button>
+              </div>
+            </ng-template>
+          </div>
 
-                    <div class="p-5 rounded-3xl border transition-all hover:shadow-md"
-                         [ngClass]="bill.status.toLowerCase() === 'paid' ? 
-                            'border-green-100 dark:border-green-900/30 hover:border-green-200 bg-green-50/10 dark:bg-green-950/5 shadow-sm' : 
-                            'border-rose-100 dark:border-rose-900/30 hover:border-rose-200 bg-rose-50/10 dark:bg-rose-950/5 shadow-sm'">
-                      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div class="min-w-0">
-                          <div class="flex items-center gap-2 mb-1">
-                            <p class="text-[9px] font-black uppercase tracking-widest leading-none" [class]="bill.status.toLowerCase() === 'paid' ? 'text-green-500' : 'text-red-500'">
-                              {{ bill.status.toLowerCase() === 'paid' ? 'Paid' : 'Unpaid' }}
-                            </p>
-                            <span class="text-[8px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-900 rounded font-black text-gray-400 uppercase tracking-tighter">Step {{ house.bills.length - i }}</span>
-                          </div>
-                          <p class="text-base font-black text-gray-900 dark:text-white leading-none mb-3">{{ bill.billDate | date:'MMMM dd, yyyy' }}</p>
-                          
-                          <div class="flex flex-wrap gap-x-4 gap-y-2">
-                            <div class="flex flex-col">
-                              <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Rent</span>
-                              <span class="text-xs font-bold text-green-500" [appCountUp]="bill.rentAmount" prefix="₹"></span>
-                            </div>
-                            <div class="flex items-center text-gray-200 dark:text-gray-700 text-xs px-1">/</div>
-                            <div class="flex flex-col">
-                              <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Electricity</span>
-                              <span class="text-xs font-bold" [class]="bill.status.toLowerCase() === 'pending' && bill.electricBill > 0 ? 'text-red-500' : 'text-green-500'" [appCountUp]="bill.electricBill" prefix="₹"></span>
-                            </div>
-                            <div class="flex items-center text-gray-200 dark:text-gray-700 text-xs px-1">/</div>
-                            <div class="flex flex-col">
-                              <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Water</span>
-                              <span class="text-xs font-bold" [class]="bill.status.toLowerCase() === 'pending' && bill.waterBill > 0 ? 'text-red-500' : 'text-green-500'" [appCountUp]="bill.waterBill" prefix="₹"></span>
-                            </div>
-                          </div>
-                        </div>
-                        <div class="flex items-center gap-2 w-full sm:w-auto">
-                          <button *ngIf="bill.rentAmount > 0" (click)="onPrintRentReceipt.emit({house, bill})" class="p-2 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all" title="View/Download HRA Receipt">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                          </button>
-                          <button (click)="onEditBill.emit({bill, index: findIndex(bill, house)})" class="p-2 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-all" title="Edit Bill">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                          </button>
-                          <button (click)="onDeleteBill.emit(findIndex(bill, house))" class="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-all" title="Delete Bill">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                          </button>
-                        </div>
-                      </div>
+          <!-- ══════════════════════════════════════════════════════
+               BILLS COLLECTION CHART
+          ══════════════════════════════════════════════════════ -->
+          <div class="ledger-card" *ngIf="(house.bills || []).length > 0">
+            <div class="ledger-card-title-row">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                <h3 class="ledger-card-title">Bills Collection Chart</h3>
+              </div>
+              <!-- Legend -->
+              <div class="flex items-center gap-3">
+                <span class="ledger-chart-legend" style="background:var(--c-rent)">Rent</span>
+                <span class="ledger-chart-legend" style="background:var(--c-electric)">Elec</span>
+                <span class="ledger-chart-legend" style="background:var(--c-water)">Water</span>
+              </div>
+            </div>
+            <div class="ledger-chart-wrap">
+              <canvas baseChart
+                [data]="getLedgerChartData(house)"
+                [options]="ledgerChartOptions"
+                type="bar">
+              </canvas>
+            </div>
+          </div>
+
+          <!-- ══════════════════════════════════════════════════════
+               MAINTENANCE & EXPENSE LOG + PROPERTY INFO  (2-col)
+          ══════════════════════════════════════════════════════ -->
+          <div class="ledger-two-col-grid">
+
+            <!-- Maintenance Log -->
+            <div class="ledger-card">
+              <div class="ledger-card-title-row">
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  </svg>
+                  <h3 class="ledger-card-title">Maintenance & Expense Log</h3>
+                </div>
+                <button (click)="openExpenseForm()" class="ledger-add-btn">
+                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                  </svg>
+                  Add Expense
+                </button>
+              </div>
+
+              <div class="space-y-3" *ngIf="(house.expenses || []).length > 0; else noExpenses">
+                <div *ngFor="let exp of house.expenses || []" class="ledger-expense-item">
+                  <!-- Per-category unique SVG icon -->
+                  <div class="ledger-expense-icon" [ngClass]="getExpenseCategoryClass(exp.category)">
+                    <!-- Plumbing -->
+                    <svg *ngIf="exp.category === 'Plumbing'" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v4m0 0a3 3 0 103 3M12 7a3 3 0 00-3 3m6 0H6m9 0a3 3 0 11-6 0M6 10H3m9 6v5"/>
+                    </svg>
+                    <!-- Electrical -->
+                    <svg *ngIf="exp.category === 'Electrical'" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    <!-- Painting -->
+                    <svg *ngIf="exp.category === 'Painting'" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+                    </svg>
+                    <!-- Cleaning -->
+                    <svg *ngIf="exp.category === 'Cleaning'" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    <!-- Tax -->
+                    <svg *ngIf="exp.category === 'Tax'" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
+                    </svg>
+                    <!-- Repairs -->
+                    <svg *ngIf="exp.category === 'Repairs'" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/>
+                    </svg>
+                    <!-- Other (fallback) -->
+                    <svg *ngIf="!['Plumbing','Electrical','Painting','Cleaning','Tax','Repairs'].includes(exp.category)" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="ledger-expense-title">{{ exp.description || exp.category }}</p>
+                    <p class="ledger-expense-date">{{ exp.date | date:'dd MMM yyyy' }}</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="ledger-expense-amount">₹{{ exp.amount.toLocaleString('en-IN') }}</span>
+                    <button (click)="onDeleteExpense.emit({houseId: house.id!, expenseId: exp.id})" class="ledger-icon-btn ledger-icon-delete">
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <!-- Total -->
+                <div class="ledger-expense-total">
+                  <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Expenses (This Year)</span>
+                  <span class="font-black text-rose-400" [appCountUp]="getLedgerYearExpenses(house)" prefix="₹"></span>
+                </div>
+              </div>
+
+              <ng-template #noExpenses>
+                <div class="ledger-empty-state">
+                  <svg class="w-6 h-6 text-gray-600 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                  </svg>
+                  <p class="text-gray-500 text-xs font-bold uppercase tracking-widest">No expenses logged</p>
+                </div>
+              </ng-template>
+            </div>
+
+            <!-- Property Information -->
+            <div class="ledger-card">
+              <div class="ledger-card-title-row">
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                  </svg>
+                  <h3 class="ledger-card-title">Property Information</h3>
+                </div>
+                <button (click)="onEditProperty.emit(house)" class="ledger-ghost-icon-btn" title="Edit">
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
+                  Edit
+                </button>
+              </div>
+
+              <div class="ledger-prop-grid">
+                <div class="ledger-prop-item">
+                  <span class="ledger-prop-label">Property Name</span>
+                  <span class="ledger-prop-value">{{ house.houseName }}</span>
+                </div>
+                <div class="ledger-prop-item">
+                  <span class="ledger-prop-label">Status</span>
+                  <span class="ledger-prop-value" [style.color]="house.status === 'Occupied' ? '#34d399' : '#94a3b8'">{{ house.status }}</span>
+                </div>
+                <div class="ledger-prop-item">
+                  <span class="ledger-prop-label">Monthly Rent</span>
+                  <span class="ledger-prop-value">₹{{ (house.monthlyRent || 0).toLocaleString('en-IN') }}</span>
+                </div>
+                <div class="ledger-prop-item">
+                  <span class="ledger-prop-label">Advance Deposit</span>
+                  <span class="ledger-prop-value">₹{{ (house.advanceAmount || 0).toLocaleString('en-IN') }}</span>
+                </div>
+                <div class="ledger-prop-item" *ngIf="house.electricMeterNo">
+                  <span class="ledger-prop-label">Electricity Meter</span>
+                  <span class="ledger-prop-value">{{ house.electricMeterNo }}</span>
+                </div>
+                <div class="ledger-prop-item" *ngIf="house.waterBillNo">
+                  <span class="ledger-prop-label">Water Bill No.</span>
+                  <span class="ledger-prop-value">{{ house.waterBillNo }}</span>
+                </div>
+                <div class="ledger-prop-item col-span-2" *ngIf="house.fullAddress">
+                  <span class="ledger-prop-label">Address</span>
+                  <span class="ledger-prop-value">{{ house.fullAddress }}</span>
+                </div>
+                <div class="ledger-prop-item">
+                  <span class="ledger-prop-label">Rent Increase</span>
+                  <span class="ledger-prop-value" [style.color]="isRentIncreaseDue(house) ? '#fbbf24' : '#34d399'">
+                    {{ isRentIncreaseDue(house) ? 'Overdue' : 'Not Due' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══════════════════════════════════════════════════════
+               PAST TENANCIES
+          ══════════════════════════════════════════════════════ -->
+          <div class="ledger-card" *ngIf="(house.pastTenancies || []).length > 0 || true">
+            <div class="ledger-card-title-row">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+                <h3 class="ledger-card-title">Past Tenancies</h3>
+              </div>
+              <span class="text-[10px] font-black text-indigo-400 cursor-pointer hover:text-indigo-300 transition-colors">View All Archives →</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" *ngIf="(house.pastTenancies || []).length > 0; else noPastTenancies">
+              <div *ngFor="let past of house.pastTenancies || []" class="ledger-past-card">
+                <div class="ledger-past-header">
+                  <div class="ledger-past-avatar">
+                    <svg class="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h4 class="ledger-past-name">{{ past.renterName }}</h4>
+                    <div class="flex items-center gap-1 mt-0.5">
+                      <svg class="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                      </svg>
+                      <span class="text-[10px] text-gray-500 font-medium">{{ past.arrivedDate | date:'MMM yyyy' }} – {{ past.vacatedDate | date:'MMM yyyy' }}</span>
                     </div>
                   </div>
+                  <span class="ledger-past-duration-badge">{{ past.bills.length }} Months</span>
+                </div>
+                <div class="ledger-past-stats">
+                  <div>
+                    <span class="ledger-prop-label">Deductions</span>
+                    <span class="text-xs font-black text-rose-400">₹{{ (past.deductions || 0).toLocaleString('en-IN') }}</span>
+                  </div>
+                  <div>
+                    <span class="ledger-prop-label">Refunded</span>
+                    <span class="text-xs font-black text-emerald-400">₹{{ (past.advanceRefunded || 0).toLocaleString('en-IN') }}</span>
+                  </div>
+                </div>
               </div>
+            </div>
+
+            <ng-template #noPastTenancies>
+              <div class="ledger-empty-state">
+                <svg class="w-6 h-6 text-gray-600 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-widest">No historical tenancy archives</p>
+              </div>
+            </ng-template>
           </div>
 
-          <!-- Expense Maintenance Log Section -->
-          <div class="p-8 border-t border-gray-50 dark:border-gray-800">
-             <div class="flex justify-between items-center mb-6">
-                <div>
-                   <h4 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Maintenance & Expense Log</h4>
-                   <p class="text-xs text-gray-400 uppercase font-bold mt-0.5">Track renovations, taxes, and repair costs</p>
-                </div>
-                <button (click)="openExpenseForm()" class="px-4 py-2.5 bg-amber-500 text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:shadow-lg transition-all">Add Expense</button>
-             </div>
-             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div *ngFor="let exp of house.expenses || []" class="bg-gray-50/70 dark:bg-gray-900/40 border border-gray-100 dark:border-gray-800 rounded-3xl p-5 flex justify-between items-center">
-                   <div>
-                      <div class="flex items-center gap-2 mb-1">
-                         <span class="px-2 py-0.5 bg-amber-100 text-amber-700 text-[8px] font-black uppercase tracking-widest rounded">{{ exp.category }}</span>
-                         <span class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">{{ exp.date | date:'mediumDate' }}</span>
-                      </div>
-                      <p class="text-xs font-black text-slate-800 dark:text-slate-200 mt-1 leading-snug">{{ exp.description }}</p>
-                   </div>
-                   <div class="flex items-center gap-3 text-right">
-                      <div>
-                         <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Amount</p>
-                         <p class="text-base font-black text-rose-500 leading-none">₹{{ exp.amount }}</p>
-                      </div>
-                      <button (click)="onDeleteExpense.emit({houseId: house.id!, expenseId: exp.id})" class="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-all">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
-                   </div>
-                </div>
-                <div *ngIf="!house.expenses || house.expenses.length === 0" class="col-span-full py-8 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-3xl opacity-50">
-                    <p class="text-gray-400 font-black uppercase tracking-widest text-[9px]">No maintenance expense logged</p>
-                </div>
-             </div>
-          </div>
-
-          <!-- Archived Tenancies Section -->
-          <div class="p-8 border-t border-gray-50 dark:border-gray-800 bg-gray-50/10">
-             <h4 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-4">Past Tenancies</h4>
-             <div class="space-y-4">
-                <div *ngFor="let past of house.pastTenancies || []" class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-3xl p-5 shadow-sm">
-                   <div class="flex flex-col sm:flex-row justify-between sm:items-center border-b border-gray-50 dark:border-gray-700/50 pb-3 mb-3 gap-2">
-                      <div>
-                         <h5 class="text-sm font-black text-slate-800 dark:text-white">{{ past.renterName }}</h5>
-                         <p class="text-[9px] font-bold text-gray-400 mt-0.5">{{ past.renterPhone }}</p>
-                      </div>
-                      <div class="sm:text-right">
-                         <span class="text-[8px] font-black bg-slate-100 text-slate-500 uppercase tracking-widest px-2 py-0.5 rounded">Archived Tenancy</span>
-                         <p class="text-[9px] font-bold text-indigo-500 mt-1 uppercase tracking-tight">{{ past.arrivedDate | date:'MMM yyyy' }} - {{ past.vacatedDate | date:'MMM yyyy' }}</p>
-                      </div>
-                   </div>
-                   <div class="grid grid-cols-3 gap-4 text-xs font-bold">
-                      <div>
-                         <span class="block text-[8px] font-black text-gray-400 uppercase tracking-widest">Deductions</span>
-                         <span class="text-rose-500">₹{{ past.deductions }}</span>
-                         <p *ngIf="past.deductionReason" class="text-[7px] text-gray-400 font-medium uppercase mt-0.5 leading-none">{{ past.deductionReason }}</p>
-                      </div>
-                      <div>
-                         <span class="block text-[8px] font-black text-gray-400 uppercase tracking-widest">Refunded Deposit</span>
-                         <span class="text-emerald-500">₹{{ past.advanceRefunded }}</span>
-                      </div>
-                      <div>
-                         <span class="block text-[8px] font-black text-gray-400 uppercase tracking-widest">Months Completed</span>
-                         <span>{{ past.bills.length }}</span>
-                      </div>
-                   </div>
-                </div>
-                <div *ngIf="!house.pastTenancies || house.pastTenancies.length === 0" class="py-8 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-3xl opacity-50">
-                    <p class="text-gray-400 font-black uppercase tracking-widest text-[9px]">No historical tenancy archives</p>
-                </div>
-             </div>
-          </div>
-        </div>
+        </div><!-- end .ledger-screen -->
       }
 
       <!-- Expense Modal -->
@@ -799,10 +1143,25 @@ import { RentalHouse, RentalBill, RentalExpense, PastTenancy } from '../../servi
     </div>
   `,
   styles: [`
+    /* ─── THEME COLOR TOKENS ─── */
+    :host {
+      --c-rent:     #818cf8; /* indigo-400  */
+      --c-electric: #fbbf24; /* amber-400   */
+      --c-water:    #38bdf8; /* sky-400     */
+      --c-paid:     #34d399; /* emerald-400 */
+      --c-due:      #fb7185; /* rose-400    */
+      --c-primary:  #6366f1; /* indigo-500  */
+      --c-bg-card:  #161b27;
+      --c-bg-screen:#0f1117;
+    }
+
+    /* ─── existing animations ─── */
     .card-animate { animation: fadeInUp 0.5s ease both; }
     @keyframes fadeInUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
     .animate-fade-in { animation: fadeIn 0.2s ease-out both; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+    .animate-fade-up { animation: fadeUp 0.4s ease both; }
     @media (max-width: 639px) { .chart-touch-wrapper { touch-action: none; } }
     .history-step { position: relative; padding-left: 3.5rem; }
     .stepper-line { position: absolute; left: 1rem; top: 2.25rem; bottom: -2rem; width: 2px; transform: translateX(-50%); }
@@ -812,6 +1171,371 @@ import { RentalHouse, RentalBill, RentalExpense, PastTenancy } from '../../servi
     .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
     .rotate-y-180 { transform: rotateY(180deg); }
     .flipped { transform: rotateY(180deg); }
+
+    /* ─── LEDGER SCREEN ─── */
+    .ledger-screen {
+      display: flex; flex-direction: column; gap: 1rem;
+      background: #0f1117; border-radius: 1.5rem;
+      overflow: hidden; min-height: 100vh;
+    }
+    @media (min-width: 640px) { .ledger-screen { gap: 1.25rem; } }
+
+    /* Hero */
+    .ledger-hero {
+      position: relative; min-height: 160px;
+      background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 50%, #1a1430 100%);
+      padding: 1rem;
+      display: flex; flex-direction: column; justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    @media (min-width: 640px) { .ledger-hero { min-height: 180px; padding: 1.25rem 1.5rem; } }
+    /* Property illustration backdrop */
+    .ledger-hero-illustration {
+      position: absolute; right: 0; bottom: 0; width: 240px; height: 120px;
+      opacity: 0.7; pointer-events: none;
+    }
+    @media (max-width: 480px) { .ledger-hero-illustration { width: 160px; height: 80px; } }
+    .ledger-hero-overlay {
+      position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(ellipse at top right, rgba(99,102,241,0.12) 0%, transparent 60%),
+                  radial-gradient(ellipse at bottom left, rgba(139,92,246,0.08) 0%, transparent 60%);
+    }
+    .ledger-topbar {
+      position: relative; z-index: 1;
+      display: flex; align-items: flex-start; gap: 0.75rem;
+    }
+    .ledger-back-btn {
+      flex-shrink: 0; width: 2rem; height: 2rem; border-radius: 50%;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+      color: #e2e8f0; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .ledger-back-btn:hover { background: rgba(99,102,241,0.3); border-color: rgba(99,102,241,0.5); }
+    .ledger-topbar-center { flex: 1; min-width: 0; }
+    .ledger-hero-title {
+      font-size: 1.2rem; font-weight: 900; color: #f8fafc;
+      letter-spacing: -0.03em; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    @media (min-width: 640px) { .ledger-hero-title { font-size: 1.5rem; } }
+    .ledger-hero-sub {
+      font-size: 0.65rem; color: rgba(255,255,255,0.45); margin-top: 0.25rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .ledger-topbar-actions { flex-shrink: 0; display: flex; align-items: center; gap: 0.5rem; }
+    .ledger-status-badge {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 0.25rem 0.6rem; border-radius: 9999px; border: 1px solid;
+    }
+    .ledger-status-occupied { background: rgba(52,211,153,0.1); color: #34d399; border-color: rgba(52,211,153,0.3); }
+    .ledger-status-vacant   { background: rgba(148,163,184,0.1); color: #94a3b8; border-color: rgba(148,163,184,0.3); }
+    .ledger-status-dot { width: 0.4rem; height: 0.4rem; border-radius: 50%; display: inline-block; }
+    .ledger-action-row {
+      position: relative; z-index: 1; display: flex; align-items: center; gap: 0.5rem;
+      flex-wrap: wrap; margin-top: 0.75rem;
+    }
+    .ledger-btn-danger {
+      padding: 0.45rem 0.9rem; background: #ef4444; color: #fff;
+      font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      border-radius: 0.6rem; cursor: pointer; transition: all 0.2s;
+      border: none; white-space: nowrap;
+    }
+    .ledger-btn-danger:hover { background: #dc2626; box-shadow: 0 4px 12px rgba(239,68,68,0.4); }
+    .ledger-btn-primary {
+      padding: 0.45rem 0.9rem; background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      border-radius: 0.6rem; cursor: pointer; transition: all 0.2s; border: none; white-space: nowrap;
+    }
+    .ledger-btn-primary:hover { box-shadow: 0 4px 12px rgba(99,102,241,0.5); }
+    .ledger-btn-ghost {
+      padding: 0.45rem 0.65rem; background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1;
+      border-radius: 0.6rem; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ledger-btn-ghost:hover { background: rgba(255,255,255,0.12); }
+
+    /* Stats grid */
+    .ledger-stats-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;
+      padding: 0 0.75rem;
+    }
+    @media (min-width: 640px) { .ledger-stats-grid { grid-template-columns: repeat(4,1fr); gap: 0.75rem; padding: 0 1rem; } }
+    .ledger-stat-card {
+      background: #161b27; border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 1rem; padding: 0.85rem 0.75rem;
+      display: flex; align-items: flex-start; gap: 0.65rem;
+      transition: transform 0.2s;
+    }
+    .ledger-stat-card:hover { transform: translateY(-2px); }
+    .ledger-stat-icon-wrap {
+      width: 2.1rem; height: 2.1rem; border-radius: 0.6rem;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .ledger-stat-body { min-width: 0; flex: 1; }
+    .ledger-stat-label { font-size: 0.55rem; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em; }
+    .ledger-stat-value { font-size: 1.05rem; font-weight: 900; margin-top: 0.1rem; line-height: 1.1; }
+    .ledger-stat-sub { font-size: 0.55rem; font-weight: 600; color: rgba(255,255,255,0.35); margin-top: 0.15rem; }
+    .ledger-months-badge {
+      display: inline-block; font-size: 0.55rem; font-weight: 800;
+      background: rgba(56,189,248,0.15); color: #38bdf8;
+      padding: 0.1rem 0.4rem; border-radius: 0.3rem; margin-left: 0.2rem;
+    }
+
+    /* Cards */
+    .ledger-card {
+      background: #161b27; border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 1.25rem; padding: 1rem;
+      margin: 0 0.75rem;
+    }
+    @media (min-width: 640px) { .ledger-card { padding: 1.25rem; margin: 0 1rem; } }
+    .ledger-card-title-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .ledger-card-title { font-size: 0.8rem; font-weight: 900; color: #f1f5f9; letter-spacing: -0.01em; }
+    .ledger-card-header {
+      display: flex; align-items: flex-start; gap: 0.75rem; flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .ledger-section-grid-full .ledger-card { /* full width already */ }
+
+    /* Tenant */
+    .ledger-tenant-avatar {
+      width: 2.8rem; height: 2.8rem; border-radius: 50%;
+      background: linear-gradient(135deg, #312e81, #1e1b4b);
+      border: 2px solid rgba(99,102,241,0.4);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .ledger-tenant-monogram {
+      font-size: 1.15rem; font-weight: 900; color: #a5b4fc;
+      line-height: 1; letter-spacing: -0.02em;
+      text-shadow: 0 0 12px rgba(165,180,252,0.4);
+    }
+    .ledger-tenant-name { font-size: 1rem; font-weight: 900; color: #f8fafc; letter-spacing: -0.02em; }
+    .ledger-primary-badge {
+      font-size: 0.55rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
+      background: rgba(99,102,241,0.2); color: #818cf8; border: 1px solid rgba(99,102,241,0.35);
+      padding: 0.15rem 0.5rem; border-radius: 9999px;
+    }
+    .ledger-tenant-phone { font-size: 0.75rem; font-weight: 700; color: rgba(255,255,255,0.45); margin-top: 0.15rem; }
+    .ledger-tenant-actions {
+      display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
+      width: 100%; margin-top: 0.5rem;
+    }
+    @media (min-width: 480px) { .ledger-tenant-actions { width: auto; margin-top: 0; } }
+    .ledger-action-btn {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 0.35rem 0.7rem; border-radius: 0.5rem; cursor: pointer;
+      border: none; transition: all 0.2s; white-space: nowrap; text-decoration: none;
+    }
+    .ledger-action-call    { background: #3b82f6; color: #fff; }
+    .ledger-action-call:hover { background: #2563eb; }
+    .ledger-action-whatsapp { background: #25D366; color: #fff; }
+    .ledger-action-whatsapp:hover { background: #1ebe59; }
+    .ledger-action-agree   { background: rgba(255,255,255,0.08); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.12); }
+    .ledger-action-agree:hover { background: rgba(255,255,255,0.14); }
+
+    /* Tenancy meta row */
+    .ledger-tenancy-meta {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 0.5rem; margin-bottom: 1rem;
+      background: rgba(255,255,255,0.03); border-radius: 0.75rem; padding: 0.75rem;
+    }
+    @media (min-width: 480px) { .ledger-tenancy-meta { grid-template-columns: repeat(3,1fr); } }
+    .ledger-meta-item { display: flex; align-items: center; gap: 0.5rem; }
+    .ledger-meta-icon {
+      width: 1.75rem; height: 1.75rem; border-radius: 0.5rem; flex-shrink: 0;
+      background: rgba(99,102,241,0.15); color: #818cf8;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ledger-meta-label { font-size: 0.55rem; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.07em; }
+    .ledger-meta-value { font-size: 0.75rem; font-weight: 800; color: #e2e8f0; margin-top: 0.05rem; }
+
+    /* Progress bar */
+    .ledger-progress-wrap { margin-top: 0.5rem; }
+    .ledger-progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+    .ledger-progress-label { font-size: 0.65rem; font-weight: 700; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.07em; }
+    .ledger-progress-pct { font-size: 0.65rem; font-weight: 800; color: #818cf8; }
+    .ledger-progress-track { height: 0.45rem; background: rgba(255,255,255,0.08); border-radius: 9999px; overflow: hidden; }
+    .ledger-progress-fill {
+      height: 100%; border-radius: 9999px;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+    }
+    .ledger-progress-dates { display: flex; justify-content: space-between; margin-top: 0.3rem; }
+    .ledger-progress-dates span { font-size: 0.55rem; color: rgba(255,255,255,0.3); font-weight: 600; }
+
+    /* Chart section */
+    .ledger-chart-wrap {
+      height: 220px; position: relative;
+    }
+    @media (min-width: 640px) { .ledger-chart-wrap { height: 260px; } }
+    .ledger-chart-legend {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      font-size: 0.55rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
+      color: #fff; padding: 0.2rem 0.5rem; border-radius: 0.35rem; opacity: 0.9;
+    }
+
+    /* Two-col grid */
+    .ledger-two-col-grid {
+      display: grid; grid-template-columns: 1fr; gap: 1rem;
+      padding: 0 0.75rem;
+    }
+    @media (min-width: 768px) { .ledger-two-col-grid { grid-template-columns: 1fr 1fr; } }
+    .ledger-two-col-grid .ledger-card { margin: 0; }
+
+    /* Timeline */
+    .ledger-timeline { display: flex; flex-direction: column; gap: 0; }
+    .ledger-timeline-item { position: relative; display: flex; gap: 0.75rem; padding-bottom: 1rem; }
+    .ledger-timeline-item:last-child { padding-bottom: 0; }
+    .ledger-timeline-line {
+      position: absolute; left: 0.6rem; top: 1.5rem; bottom: 0;
+      width: 2px; background: rgba(255,255,255,0.08);
+    }
+    .ledger-timeline-dot {
+      width: 1.25rem; height: 1.25rem; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; position: relative; z-index: 1;
+      margin-top: 0.15rem; color: #fff;
+    }
+    .ledger-dot-paid    { background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,0.5); }
+    .ledger-dot-pending { background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.5); }
+    .ledger-timeline-content {
+      flex: 1; border-radius: 0.85rem; padding: 0.85rem;
+      border: 1px solid; margin-bottom: 0;
+    }
+    .ledger-bill-paid    { border-color: rgba(34,197,94,0.15); background: rgba(34,197,94,0.04); }
+    .ledger-bill-pending { border-color: rgba(239,68,68,0.2); background: rgba(239,68,68,0.04); }
+    .ledger-bill-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.65rem; }
+    .ledger-bill-month { font-size: 0.8rem; font-weight: 900; color: #f1f5f9; }
+    .ledger-bill-status-badge {
+      font-size: 0.55rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
+      padding: 0.15rem 0.5rem; border-radius: 0.3rem;
+    }
+    .ledger-badge-paid    { background: rgba(34,197,94,0.15); color: #4ade80; }
+    .ledger-badge-pending { background: rgba(239,68,68,0.15); color: #fb7185; }
+    .ledger-bill-breakdown { display: flex; flex-direction: column; gap: 0.35rem; }
+    .ledger-breakdown-row {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.35rem 0.5rem; background: rgba(255,255,255,0.03); border-radius: 0.4rem;
+    }
+    .ledger-breakdown-label { flex: 1; font-size: 0.65rem; font-weight: 700; color: rgba(255,255,255,0.5); }
+    .ledger-breakdown-amount { font-size: 0.75rem; font-weight: 800; }
+    .ledger-breakdown-badge {
+      font-size: 0.5rem; font-weight: 800; padding: 0.12rem 0.4rem; border-radius: 0.25rem;
+      text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0;
+    }
+    .ledger-breakdown-total {
+      display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+      padding: 0.5rem; background: rgba(239,68,68,0.08); border-radius: 0.5rem;
+      border-top: 1px solid rgba(239,68,68,0.15); margin-top: 0.25rem;
+    }
+    .ledger-collect-btn {
+      margin-left: auto; padding: 0.35rem 0.75rem;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff; font-size: 0.6rem; font-weight: 800;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      border-radius: 0.5rem; border: none; cursor: pointer; transition: all 0.2s;
+    }
+    .ledger-collect-btn:hover { box-shadow: 0 4px 12px rgba(239,68,68,0.4); }
+
+    /* Icon buttons */
+    .ledger-icon-btn {
+      width: 1.6rem; height: 1.6rem; border-radius: 0.4rem; border: none;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s; color: rgba(255,255,255,0.4);
+      background: rgba(255,255,255,0.06);
+    }
+    .ledger-icon-btn:hover { background: rgba(255,255,255,0.12); color: #e2e8f0; }
+    .ledger-icon-edit:hover  { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    .ledger-icon-delete:hover { background: rgba(239,68,68,0.15); color: #fb7185; }
+
+    /* Add / ghost buttons */
+    .ledger-add-btn {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 0.35rem 0.7rem; border-radius: 0.5rem; cursor: pointer;
+      background: rgba(251,191,36,0.12); color: #fbbf24;
+      border: 1px solid rgba(251,191,36,0.25); transition: all 0.2s;
+    }
+    .ledger-add-btn:hover { background: rgba(251,191,36,0.2); }
+    .ledger-ghost-icon-btn {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 0.35rem 0.6rem; border-radius: 0.5rem; cursor: pointer;
+      background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5);
+      border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s;
+    }
+    .ledger-ghost-icon-btn:hover { background: rgba(255,255,255,0.1); color: #e2e8f0; }
+
+    /* Expense items */
+    .ledger-expense-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.65rem 0.75rem; background: rgba(255,255,255,0.03);
+      border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.05);
+      transition: all 0.2s;
+    }
+    .ledger-expense-item:hover { background: rgba(255,255,255,0.05); }
+    .ledger-expense-icon {
+      width: 2rem; height: 2rem; border-radius: 0.6rem; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ledger-expense-icon-plumbing  { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .ledger-expense-icon-painting  { background: rgba(168,85,247,0.15); color: #c084fc; }
+    .ledger-expense-icon-electrical{ background: rgba(251,191,36,0.15); color: #fbbf24; }
+    .ledger-expense-icon-default   { background: rgba(156,163,175,0.15); color: #9ca3af; }
+    .ledger-expense-title { font-size: 0.72rem; font-weight: 800; color: #e2e8f0; }
+    .ledger-expense-date  { font-size: 0.57rem; font-weight: 600; color: rgba(255,255,255,0.35); margin-top: 0.1rem; }
+    .ledger-expense-amount { font-size: 0.85rem; font-weight: 900; color: #fb7185; white-space: nowrap; }
+    .ledger-expense-total {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.6rem 0.75rem; background: rgba(251,113,133,0.06);
+      border-radius: 0.6rem; border-top: 1px solid rgba(251,113,133,0.15);
+      margin-top: 0.5rem;
+    }
+
+    /* Property grid */
+    .ledger-prop-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
+    }
+    .ledger-prop-item { display: flex; flex-direction: column; gap: 0.15rem; }
+    .ledger-prop-label { font-size: 0.55rem; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.07em; }
+    .ledger-prop-value { font-size: 0.75rem; font-weight: 800; color: #f1f5f9; line-height: 1.3; }
+    .col-span-2 { grid-column: span 2; }
+
+    /* Past tenancies */
+    .ledger-past-card {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 0.85rem; padding: 0.85rem; transition: all 0.2s;
+    }
+    .ledger-past-card:hover { background: rgba(255,255,255,0.05); }
+    .ledger-past-header { display: flex; align-items: flex-start; gap: 0.65rem; margin-bottom: 0.65rem; }
+    .ledger-past-avatar {
+      width: 2rem; height: 2rem; border-radius: 50%; flex-shrink: 0;
+      background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center;
+    }
+    .ledger-past-name { font-size: 0.78rem; font-weight: 800; color: #f1f5f9; }
+    .ledger-past-duration-badge {
+      font-size: 0.55rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+      background: rgba(99,102,241,0.15); color: #818cf8;
+      padding: 0.2rem 0.5rem; border-radius: 9999px; white-space: nowrap; flex-shrink: 0;
+    }
+    .ledger-past-stats {
+      display: flex; gap: 1rem; padding-top: 0.5rem;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .ledger-past-stats > div { display: flex; flex-direction: column; gap: 0.1rem; }
+
+    /* Empty state */
+    .ledger-empty-state {
+      padding: 2rem 1rem; text-align: center;
+      border: 1px dashed rgba(255,255,255,0.08); border-radius: 0.75rem;
+    }
+
+    /* Bottom padding for mobile nav clearance */
+    .ledger-screen { padding-bottom: 1.5rem; }
   `]
 })
 export class RentalManagementComponent implements OnInit {
@@ -1083,6 +1807,60 @@ export class RentalManagementComponent implements OnInit {
     this.vacateFormRefund = Math.max(0, advance - (this.vacateFormDeductions || 0));
   }
 
+  // ─── Ledger helper methods ───────────────────────────────────────────
+
+  getLedgerPendingAmount(house: RentalHouse): number {
+    return (house.bills || []).filter(b => b.status?.toLowerCase() === 'pending')
+      .reduce((sum, b) => sum + (b.electricBill || 0) + (b.waterBill || 0), 0);
+  }
+
+  getLedgerPendingBillsCount(house: RentalHouse): number {
+    return (house.bills || []).filter(b => b.status?.toLowerCase() === 'pending').length;
+  }
+
+  getLedgerStayYears(house: RentalHouse): number {
+    if (!house.arrivedDate) return 0;
+    const months = this.getCompletedMonthsOccupied(house);
+    return Math.floor(months / 12);
+  }
+
+  getLedgerStayExtraMonths(house: RentalHouse): number {
+    const months = this.getCompletedMonthsOccupied(house);
+    return months % 12;
+  }
+
+  getLedgerTenancyProgress(house: RentalHouse): number {
+    if (!house.arrivedDate) return 0;
+    const totalMonths = 24; // assume 2-year agreement as base
+    const completed = this.getCompletedMonthsOccupied(house);
+    return Math.min(100, Math.round((completed / totalMonths) * 100));
+  }
+
+  getLedgerExpectedEnd(house: RentalHouse): Date {
+    if (!house.arrivedDate) return new Date();
+    const d = new Date(house.arrivedDate);
+    d.setFullYear(d.getFullYear() + 3); // assume 3-year tenancy
+    return d;
+  }
+
+  getLedgerYearExpenses(house: RentalHouse): number {
+    const year = new Date().getFullYear();
+    return (house.expenses || [])
+      .filter(e => new Date(e.date).getFullYear() === year)
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+  }
+
+  getExpenseCategoryClass(category: string): string {
+    const map: Record<string, string> = {
+      'Plumbing':    'ledger-expense-icon ledger-expense-icon-plumbing',
+      'Electrical':  'ledger-expense-icon ledger-expense-icon-electrical',
+      'Painting':    'ledger-expense-icon ledger-expense-icon-painting',
+    };
+    return map[category] || 'ledger-expense-icon ledger-expense-icon-default';
+  }
+
+  // ─────────────────────────────────────────────────────────────────────
+
   submitVacate() {
     if (!this.activeHouse?.id) return;
     this.onVacateTenant.emit({
@@ -1096,4 +1874,87 @@ export class RentalManagementComponent implements OnInit {
     });
     this.showVacateForm = false;
   }
+
+  // ─── Bills Collection Chart ────────────────────────────────────────────
+
+  getLedgerChartData(house: RentalHouse): any {
+    const bills = [...(house.bills || [])].sort((a, b) =>
+      new Date(a.billDate).getTime() - new Date(b.billDate).getTime()
+    ).slice(-12); // last 12 months
+
+    const labels = bills.map(b => {
+      const d = new Date(b.billDate);
+      return d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
+    });
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Rent',
+          data: bills.map(b => b.rentAmount || 0),
+          backgroundColor: 'rgba(129,140,248,0.8)',   // --c-rent
+          borderColor: '#818cf8',
+          borderWidth: 1,
+          borderRadius: 4,
+          stack: 'bills'
+        },
+        {
+          label: 'Electricity',
+          data: bills.map(b => b.electricBill || 0),
+          backgroundColor: 'rgba(251,191,36,0.8)',    // --c-electric
+          borderColor: '#fbbf24',
+          borderWidth: 1,
+          borderRadius: 4,
+          stack: 'bills'
+        },
+        {
+          label: 'Water',
+          data: bills.map(b => b.waterBill || 0),
+          backgroundColor: 'rgba(56,189,248,0.8)',    // --c-water
+          borderColor: '#38bdf8',
+          borderWidth: 1,
+          borderRadius: 4,
+          stack: 'bills'
+        }
+      ]
+    };
+  }
+
+  ledgerChartOptions: any = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1e293b',
+        titleColor: '#94a3b8',
+        bodyColor: '#f8fafc',
+        borderColor: 'rgba(255,255,255,0.1)',
+        borderWidth: 1,
+        padding: 12,
+        callbacks: {
+          label: (ctx: any) => ` ₹${(ctx.raw || 0).toLocaleString('en-IN')}`
+        }
+      }
+    },
+    scales: {
+      x: {
+        stacked: true,
+        grid: { color: 'rgba(255,255,255,0.04)' },
+        ticks: { color: '#64748b', font: { size: 10, weight: '700' } },
+        border: { display: false }
+      },
+      y: {
+        stacked: true,
+        grid: { color: 'rgba(255,255,255,0.04)' },
+        ticks: {
+          color: '#64748b', font: { size: 10, weight: '700' },
+          callback: (v: any) => '₹' + Number(v).toLocaleString('en-IN')
+        },
+        border: { display: false }
+      }
+    },
+    animation: { duration: 600, easing: 'easeInOutQuart' }
+  };
 }
