@@ -1,6 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { Firestore, collection, addDoc, collectionData, doc, updateDoc, deleteDoc, docData, query, where } from '@angular/fire/firestore';
-import { Observable } from 'rxjs';
+import { Observable, BehaviorSubject, Subscription, firstValueFrom } from 'rxjs';
+import { TspdclService } from './tspdcl.service';
+import { HmwssbService } from './hmwssb.service';
+import { AuthService } from '../../services/auth.service';
 
 export interface RentalBill {
   id?: string;
@@ -66,6 +69,123 @@ export interface RentalHouse {
 export class RentalService {
   private firestore = inject(Firestore);
   private rentalCollection = collection(this.firestore, 'rentals');
+
+  private authService = inject(AuthService);
+  private tspdclService = inject(TspdclService);
+  private hmwssbService = inject(HmwssbService);
+
+  private rentalUtilityBills$ = new BehaviorSubject<Record<string, {
+    electricity?: number;
+    water?: number;
+    electricityPaid?: boolean;
+    waterPaid?: boolean;
+    electricityPaidDate?: string;
+    waterPaidDate?: string;
+  }>>({});
+
+  public rentalUtilityBills = this.rentalUtilityBills$.asObservable();
+  private fetchSubscription?: Subscription;
+  private activeSyncUid?: string;
+
+  constructor() {
+    this.authService.userProfile$.subscribe(profile => {
+      if (profile && (profile.role === 'admin' || profile.role === 'super-admin')) {
+        const hasBillsAndRentals = profile.role === 'super-admin' || 
+          (profile.tabConfig?.bills !== false || profile.tabConfig?.rentals === true);
+        if (hasBillsAndRentals) {
+          this.ensureGlobalSync(profile.uid);
+        }
+      } else {
+        this.clearGlobalSync();
+      }
+    });
+  }
+
+  private ensureGlobalSync(adminUid: string) {
+    if (this.fetchSubscription && this.activeSyncUid === adminUid) return;
+    
+    this.clearGlobalSync();
+    this.activeSyncUid = adminUid;
+    
+    this.fetchSubscription = this.getHouses(adminUid).subscribe({
+      next: (houses) => {
+        houses.forEach(house => {
+          if (house.id && !this.rentalUtilityBills$.value[house.id]) {
+            this.syncRentalUtilityBills(house);
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Error in global houses sync:', err);
+      }
+    });
+  }
+
+  private clearGlobalSync() {
+    if (this.fetchSubscription) {
+      this.fetchSubscription.unsubscribe();
+      this.fetchSubscription = undefined;
+    }
+    this.activeSyncUid = undefined;
+    this.rentalUtilityBills$.next({});
+  }
+
+  async syncRentalUtilityBills(house: RentalHouse): Promise<any> {
+    if (!house.id) return;
+
+    const currentMap = this.rentalUtilityBills$.value;
+    const nextValues = {
+      ...(currentMap[house.id] || {})
+    };
+
+    try {
+      await Promise.all([
+        house.electricMeterNo
+          ? firstValueFrom(this.tspdclService.fetchBillDetails(house.electricMeterNo)).then(details => {
+              if (details?.success) {
+                nextValues.electricity = this.getLiveUtilityAmount(details);
+                nextValues.electricityPaid = this.isLiveBillPaid(details);
+                nextValues.electricityPaidDate = this.isLiveBillPaid(details) ? this.getLiveBillDisplayDate(details) : '';
+              }
+            })
+          : Promise.resolve(),
+        house.waterBillNo
+          ? firstValueFrom(this.hmwssbService.fetchBillDetails(house.waterBillNo)).then(details => {
+              if (details?.success) {
+                nextValues.water = this.getLiveUtilityAmount(details);
+                nextValues.waterPaid = this.isLiveBillPaid(details);
+                nextValues.waterPaidDate = this.isLiveBillPaid(details) ? this.getLiveBillDisplayDate(details) : '';
+              }
+            })
+          : Promise.resolve()
+      ]);
+
+      const updatedMap = {
+        ...this.rentalUtilityBills$.value,
+        [house.id]: nextValues
+      };
+      this.rentalUtilityBills$.next(updatedMap);
+      return nextValues;
+    } catch (e) {
+      console.error('Failed to sync rental utility bills globally:', e);
+    }
+  }
+
+  private getLiveUtilityAmount(details: any): number {
+    const amount = details?.isPaid && details?.paidAmount !== undefined
+      ? details.paidAmount
+      : details?.totalAmountPayable;
+    return Number(amount) || 0;
+  }
+
+  private isLiveBillPaid(details: any): boolean {
+    return details?.isPaid === true || String(details?.amountLabel || '').toLowerCase().includes('paid');
+  }
+
+  private getLiveBillDisplayDate(details: any): string {
+    if (!details) return '--';
+    return this.isLiveBillPaid(details) ? (details.paidDate || details.dueDate || '--') : (details.dueDate || '--');
+  }
 
   getHouses(adminUid?: string): Observable<RentalHouse[]> {
     if (adminUid) {

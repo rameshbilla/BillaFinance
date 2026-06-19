@@ -1284,6 +1284,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
         @if (!isSuperAdmin && activeTab === 'rentals' && showRentalsTab) {
           <app-rental-management
             [houses]="houses"
+            [bills]="bills"
             [activeHouseId]="activeHouseId"
             [activeHouse]="getActiveHouse() || null"
             [rentalView]="rentalView"
@@ -1293,6 +1294,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
             [chartData]="rentalBarChartData"
             [rentalUtilityBills]="rentalUtilityBills"
             [refetchingHouseIds]="refetchingHouseIds"
+            [trackedServices]="trackedServices"
             (onRegisterProperty)="openRentalHouseForm()"
             (onEditProperty)="openRentalHouseForm($event)"
             (onDeleteProperty)="deleteRentalHouse($event)"
@@ -2646,20 +2648,77 @@ export class AdminDashboardComponent implements OnInit {
     return { collected, pending, months };
   }
 
+  normalizeServiceNumber(num: any): string {
+    if (num === null || num === undefined) return '';
+    const str = String(num).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    return str.replace(/^0+/, '');
+  }
+
   getHouseUtilityBill(house: RentalHouse, type: 'electricity' | 'water'): number {
+    // 1. Check local monthly bills first for the latest recorded value
+    const bills = house.bills || [];
+    if (bills.length > 0) {
+      const sorted = [...bills].sort((a, b) => new Date(b.billDate).getTime() - new Date(a.billDate).getTime());
+      const latestBill = sorted[0];
+      const amt = type === 'electricity' ? (latestBill.electricBill || 0) : (latestBill.waterBill || 0);
+      if (amt > 0) {
+        return amt;
+      }
+    }
+
     const serviceNo = type === 'electricity' ? house.electricMeterNo : house.waterBillNo;
     if (!serviceNo) return 0;
 
+    // 2. Check global bills next
+    const cleanServiceNo = this.normalizeServiceNumber(serviceNo);
+    if (cleanServiceNo) {
+      const matchingBills = (this.bills || []).filter(b => 
+        b.serviceNumber &&
+        this.normalizeServiceNumber(b.serviceNumber) === cleanServiceNo &&
+        b.serviceType?.toLowerCase() === type.toLowerCase() &&
+        !b.isDeleted
+      );
+      if (matchingBills.length > 0) {
+        const sortedBills = [...matchingBills].sort((a, b) => (b.dueDate || '').localeCompare(a.dueDate || ''));
+        return sortedBills[0].amount || 0;
+      }
+    }
+
+    // 3. Check cached sync details
     const cachedAmount = house.id ? this.rentalUtilityBills[house.id]?.[type] : undefined;
     if (cachedAmount !== undefined) return cachedAmount;
     
+    // 4. Check tracked services
     const service = this.trackedServices.find(s => 
-      s.serviceNumber?.trim() === serviceNo.trim() && s.serviceType === type
+      s.serviceNumber && this.normalizeServiceNumber(s.serviceNumber) === cleanServiceNo && s.serviceType === type
     );
     return service?.lastAmount || 0;
   }
 
   isHouseUtilityPaid(house: RentalHouse, type: 'electricity' | 'water'): boolean {
+    const serviceNo = type === 'electricity' ? house.electricMeterNo : house.waterBillNo;
+    if (!serviceNo) return false;
+
+    const cleanServiceNo = this.normalizeServiceNumber(serviceNo);
+    if (!cleanServiceNo) return false;
+
+    // 1. Check global bills first
+    const matchingBills = (this.bills || []).filter(b => 
+      b.serviceNumber &&
+      this.normalizeServiceNumber(b.serviceNumber) === cleanServiceNo &&
+      b.serviceType?.toLowerCase() === type.toLowerCase() &&
+      !b.isDeleted
+    );
+    if (matchingBills.length > 0) {
+      const sortedBills = [...matchingBills].sort((a, b) => (b.dueDate || '').localeCompare(a.dueDate || ''));
+      const latestGlobalBill = sortedBills[0];
+      const statusStr = (latestGlobalBill.status || '').toLowerCase();
+      if (statusStr === 'completed' || statusStr === 'paid') {
+        return true;
+      }
+    }
+
+    // 2. Check local monthly bills next
     const bills = house.bills || [];
     if (bills.length > 0) {
       const sorted = [...bills].sort((a, b) => new Date(b.billDate).getTime() - new Date(a.billDate).getTime());
@@ -2670,25 +2729,56 @@ export class AdminDashboardComponent implements OnInit {
       }
       if (statusStr === 'pending') {
         const amt = type === 'electricity' ? (latestBill.electricBill || 0) : (latestBill.waterBill || 0);
-        return amt === 0;
+        if (amt === 0) {
+          return true;
+        }
       }
     }
 
-    if (!house.id) return false;
-
-    const cached = this.rentalUtilityBills[house.id];
-    if (cached) {
-      return type === 'electricity' ? cached.electricityPaid === true : cached.waterPaid === true;
+    // 3. Check cached sync details
+    if (house.id) {
+      const cached = this.rentalUtilityBills[house.id];
+      if (cached) {
+        const isPaid = type === 'electricity' ? cached.electricityPaid === true : cached.waterPaid === true;
+        if (isPaid) return true;
+      }
     }
 
-    const serviceNo = type === 'electricity' ? house.electricMeterNo : house.waterBillNo;
+    // 4. Check tracked service status
     const service = this.trackedServices.find(s =>
-      s.serviceNumber?.trim() === serviceNo?.trim() && s.serviceType === type
+      s.serviceNumber && this.normalizeServiceNumber(s.serviceNumber) === cleanServiceNo && s.serviceType === type
     );
-    return service ? this.isTrackedServicePaid(service) : false;
+    if (service && this.isTrackedServicePaid(service)) {
+      return true;
+    }
+
+    return false;
   }
 
   getHouseUtilityPaidDate(house: RentalHouse, type: 'electricity' | 'water'): string {
+    const serviceNo = type === 'electricity' ? house.electricMeterNo : house.waterBillNo;
+    if (!serviceNo) return '';
+
+    const cleanServiceNo = this.normalizeServiceNumber(serviceNo);
+    if (!cleanServiceNo) return '';
+
+    // 1. Check global bills first
+    const matchingBills = (this.bills || []).filter(b => 
+      b.serviceNumber &&
+      this.normalizeServiceNumber(b.serviceNumber) === cleanServiceNo &&
+      b.serviceType?.toLowerCase() === type.toLowerCase() &&
+      !b.isDeleted
+    );
+    if (matchingBills.length > 0) {
+      const sortedBills = [...matchingBills].sort((a, b) => (b.dueDate || '').localeCompare(a.dueDate || ''));
+      const latestGlobalBill = sortedBills[0];
+      const statusStr = (latestGlobalBill.status || '').toLowerCase();
+      if (statusStr === 'completed' || statusStr === 'paid') {
+        return latestGlobalBill.paidDate || latestGlobalBill.dueDate || '';
+      }
+    }
+
+    // 2. Check local monthly bills next
     const bills = house.bills || [];
     if (bills.length > 0) {
       const sorted = [...bills].sort((a, b) => new Date(b.billDate).getTime() - new Date(a.billDate).getTime());
@@ -2705,18 +2795,24 @@ export class AdminDashboardComponent implements OnInit {
       }
     }
 
-    if (!house.id) return '';
-
-    const cached = this.rentalUtilityBills[house.id];
-    if (cached) {
-      return type === 'electricity' ? cached.electricityPaidDate || '' : cached.waterPaidDate || '';
+    // 3. Check cached sync details
+    if (house.id) {
+      const cached = this.rentalUtilityBills[house.id];
+      if (cached) {
+        const date = type === 'electricity' ? cached.electricityPaidDate : cached.waterPaidDate;
+        if (date) return date;
+      }
     }
 
-    const serviceNo = type === 'electricity' ? house.electricMeterNo : house.waterBillNo;
+    // 4. Check tracked services
     const service = this.trackedServices.find(s =>
-      s.serviceNumber?.trim() === serviceNo?.trim() && s.serviceType === type
+      s.serviceNumber && this.normalizeServiceNumber(s.serviceNumber) === cleanServiceNo && s.serviceType === type
     );
-    return service?.lastPaidDate || '';
+    if (service && this.isTrackedServicePaid(service)) {
+      return service.lastPaidDate || '';
+    }
+
+    return '';
   }
 
   isRentIncreaseDue(house: RentalHouse): boolean {
@@ -3496,6 +3592,9 @@ export class AdminDashboardComponent implements OnInit {
       this.rentalService.getHouses(filterUid).subscribe(data => {
         this.houses = data;
         this.updateRentalAnalytics();
+      });
+      this.rentalService.rentalUtilityBills.subscribe(bills => {
+        this.rentalUtilityBills = bills;
       });
 
       this.loadStoredRecords();
@@ -4569,43 +4668,9 @@ export class AdminDashboardComponent implements OnInit {
 
   private async syncRentalUtilityBills(house: RentalHouse, patchMonthlyBillForm = false) {
     if (!house.id) return;
-
-    const nextValues: {
-      electricity?: number;
-      water?: number;
-      electricityPaid?: boolean;
-      waterPaid?: boolean;
-      electricityPaidDate?: string;
-      waterPaidDate?: string;
-    } = {
-      ...(this.rentalUtilityBills[house.id] || {})
-    };
-
     try {
-      await Promise.all([
-        house.electricMeterNo
-          ? firstValueFrom(this.tspdclService.fetchBillDetails(house.electricMeterNo)).then(details => {
-              if (details?.success) {
-                nextValues.electricity = this.getLiveUtilityAmount(details);
-                nextValues.electricityPaid = this.isLiveBillPaid(details);
-                nextValues.electricityPaidDate = this.isLiveBillPaid(details) ? this.getLiveBillDisplayDate(details) : '';
-              }
-            })
-          : Promise.resolve(),
-        house.waterBillNo
-          ? firstValueFrom(this.hmwssbService.fetchBillDetails(house.waterBillNo)).then(details => {
-              if (details?.success) {
-                nextValues.water = this.getLiveUtilityAmount(details);
-                nextValues.waterPaid = this.isLiveBillPaid(details);
-                nextValues.waterPaidDate = this.isLiveBillPaid(details) ? this.getLiveBillDisplayDate(details) : '';
-              }
-            })
-          : Promise.resolve()
-      ]);
-
-      this.rentalUtilityBills[house.id] = nextValues;
-
-      if (patchMonthlyBillForm && this.showMonthlyBillForm && this.activeHouseId === house.id && this.editingBillIndex === null) {
+      const nextValues = await this.rentalService.syncRentalUtilityBills(house);
+      if (nextValues && patchMonthlyBillForm && this.showMonthlyBillForm && this.activeHouseId === house.id && this.editingBillIndex === null) {
         this.monthlyBillForm.patchValue({
           electricBill: nextValues.electricity ?? this.monthlyBillForm.value.electricBill ?? 0,
           waterBill: nextValues.water ?? this.monthlyBillForm.value.waterBill ?? 0
@@ -5178,6 +5243,28 @@ export class AdminDashboardComponent implements OnInit {
 
   isTrackedServicePaid(service: TrackedService | null | undefined): boolean {
     if (!service) return false;
+
+    // Check global bills first
+    if (service.serviceNumber) {
+      const cleanServiceNo = this.normalizeServiceNumber(service.serviceNumber);
+      if (cleanServiceNo) {
+        const matchingBills = (this.bills || []).filter(b => 
+          b.serviceNumber &&
+          this.normalizeServiceNumber(b.serviceNumber) === cleanServiceNo &&
+          b.serviceType?.toLowerCase() === service.serviceType?.toLowerCase() &&
+          !b.isDeleted
+        );
+        if (matchingBills.length > 0) {
+          const sortedBills = [...matchingBills].sort((a, b) => (b.dueDate || '').localeCompare(a.dueDate || ''));
+          const latestGlobalBill = sortedBills[0];
+          const statusStr = (latestGlobalBill.status || '').toLowerCase();
+          if (statusStr === 'completed' || statusStr === 'paid') {
+            return true;
+          }
+        }
+      }
+    }
+
     return service.lastBillStatus === 'paid' || String(service.lastAmountLabel || '').toLowerCase().includes('paid');
   }
 

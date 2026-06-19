@@ -15,8 +15,9 @@ import {
   arrayUnion,
   getDoc
 } from '@angular/fire/firestore';
-import { Observable, from, of, firstValueFrom } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { Observable, from, of, firstValueFrom, BehaviorSubject, Subscription } from 'rxjs';
+import { map, switchMap, tap } from 'rxjs/operators';
+import { AuthService } from '../../services/auth.service';
 import { TspdclService } from './tspdcl.service';
 import { HmwssbService } from './hmwssb.service';
 
@@ -91,9 +92,74 @@ export class BillService {
   private firestore = inject(Firestore);
   private tspdclService = inject(TspdclService);
   private hmwssbService = inject(HmwssbService);
+  private authService = inject(AuthService);
+
   private billsCollection = collection(this.firestore, 'bills');
   private trackedServicesCollection = collection(this.firestore, 'tracked_services');
   private storedRecordsCollection = collection(this.firestore, 'stored_bill_records');
+
+  private globalBills$ = new BehaviorSubject<Bill[]>([]);
+  public bills$ = this.globalBills$.asObservable();
+  private fetchSubscription?: Subscription;
+  private activeSyncUid?: string;
+
+  constructor() {
+    this.authService.userProfile$.subscribe(profile => {
+      if (profile && (profile.role === 'admin' || profile.role === 'super-admin')) {
+        const hasBillsAndRentals = profile.role === 'super-admin' ||
+          (profile.tabConfig?.bills !== false || profile.tabConfig?.rentals === true);
+        if (hasBillsAndRentals) {
+          this.ensureGlobalSync(profile.uid);
+        }
+      } else {
+        this.clearGlobalSync();
+      }
+    });
+  }
+
+  private ensureGlobalSync(adminUid: string) {
+    if (this.fetchSubscription && this.activeSyncUid === adminUid) return;
+
+    this.clearGlobalSync();
+    this.activeSyncUid = adminUid;
+
+    const q = query(
+      this.billsCollection,
+      where('adminUid', '==', adminUid),
+      where('isDeleted', '!=', true),
+      orderBy('dueDate', 'desc')
+    );
+    this.fetchSubscription = (collectionData(q, { idField: 'id' }) as Observable<Bill[]>).subscribe({
+      next: (bills) => {
+        this.globalBills$.next(bills);
+      },
+      error: (err) => {
+        console.error('Error fetching bills globally:', err);
+      }
+    });
+  }
+
+  private clearGlobalSync() {
+    if (this.fetchSubscription) {
+      this.fetchSubscription.unsubscribe();
+      this.fetchSubscription = undefined;
+    }
+    this.activeSyncUid = undefined;
+    this.globalBills$.next([]);
+  }
+
+  updateGlobalBills(bills: any | Bill) {
+    const billsArray = Array.isArray(bills) ? bills : [bills];
+    const current = this.globalBills$.value;
+    const map = new Map<string, Bill>();
+    current.forEach(b => {
+      if (b.id) map.set(b.id, b);
+    });
+    billsArray.forEach(b => {
+      if (b.id) map.set(b.id, b);
+    });
+    this.globalBills$.next(Array.from(map.values()));
+  }
 
   // --- Tracked Services Management ---
   getTrackedServices(adminUid: string): Observable<TrackedService[]> {
@@ -116,13 +182,11 @@ export class BillService {
 
   // --- Bill Operations ---
   getBills(adminUid: string): Observable<Bill[]> {
-    const q = query(
-      this.billsCollection,
-      where('adminUid', '==', adminUid),
-      where('isDeleted', '!=', true),
-      orderBy('dueDate', 'desc')
+    this.ensureGlobalSync(adminUid);
+    return this.bills$.pipe(
+      map(bills => bills.filter(b => b.adminUid === adminUid && !b.isDeleted)
+        .sort((a, b) => (b.dueDate || '').localeCompare(a.dueDate || '')))
     );
-    return collectionData(q, { idField: 'id' }) as Observable<Bill[]>;
   }
 
   getServiceBillHistory(serviceNumber: string): Observable<Bill[]> {
@@ -132,7 +196,13 @@ export class BillService {
       where('isDeleted', '!=', true),
       orderBy('dueDate', 'desc')
     );
-    return collectionData(q, { idField: 'id' }) as Observable<Bill[]>;
+    return (collectionData(q, { idField: 'id' }) as Observable<Bill[]>).pipe(
+      tap(bills => this.updateGlobalBills(bills)),
+      switchMap(() => this.bills$.pipe(
+        map(bills => bills.filter(b => b.serviceNumber === serviceNumber && !b.isDeleted)
+          .sort((a, b) => (b.dueDate || '').localeCompare(a.dueDate || '')))
+      ))
+    );
   }
 
   getBillsByFilters(adminUid: string, filters: {
@@ -155,7 +225,20 @@ export class BillService {
     constraints.push(orderBy('dueDate', 'desc'));
 
     const q = query(this.billsCollection, ...constraints);
-    return collectionData(q, { idField: 'id' }) as Observable<Bill[]>;
+    return (collectionData(q, { idField: 'id' }) as Observable<Bill[]>).pipe(
+      tap(bills => this.updateGlobalBills(bills)),
+      switchMap(() => this.bills$.pipe(
+        map(bills => bills.filter(b => {
+          if (b.adminUid !== adminUid) return false;
+          if (b.isDeleted) return false;
+          if (filters.status && b.status !== filters.status) return false;
+          if (filters.serviceType && b.serviceType !== filters.serviceType) return false;
+          if (filters.year && b.year !== Number(filters.year)) return false;
+          if (filters.month && b.month !== filters.month) return false;
+          return true;
+        }).sort((a, b) => (b.dueDate || '').localeCompare(a.dueDate || '')))
+      ))
+    );
   }
 
   getPaidBills(adminUid: string, year?: number, month?: string): Observable<Bill[]> {
@@ -169,12 +252,24 @@ export class BillService {
     constraints.push(orderBy('isDeleted'));
     constraints.push(orderBy('paidDate', 'desc'));
     const q = query(this.billsCollection, ...constraints);
-    return collectionData(q, { idField: 'id' }) as Observable<Bill[]>;
+    return (collectionData(q, { idField: 'id' }) as Observable<Bill[]>).pipe(
+      tap(bills => this.updateGlobalBills(bills)),
+      switchMap(() => this.bills$.pipe(
+        map(bills => bills.filter(b => {
+          if (b.adminUid !== adminUid) return false;
+          if (b.status !== 'completed') return false;
+          if (b.isDeleted) return false;
+          if (year && b.year !== year) return false;
+          if (month && b.month !== month) return false;
+          return true;
+        }).sort((a, b) => (b.paidDate || b.dueDate || '').localeCompare(a.paidDate || a.dueDate || '')))
+      ))
+    );
   }
 
   async addBill(bill: Partial<Bill>): Promise<any> {
     const date = new Date(bill.dueDate!);
-    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const month = months[date.getMonth()];
     const year = date.getFullYear();
 
@@ -203,7 +298,10 @@ export class BillService {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
-    return addDoc(this.billsCollection, newBill);
+    const docRef = await addDoc(this.billsCollection, newBill);
+    const addedBill = { ...newBill, id: docRef.id } as Bill;
+    this.updateGlobalBills(addedBill);
+    return docRef;
   }
 
   updateBill(id: string, updates: Partial<Bill>): Promise<void> {
@@ -211,6 +309,9 @@ export class BillService {
     return updateDoc(billDoc, {
       ...updates,
       updatedAt: serverTimestamp()
+    }).then(() => {
+      const current = this.globalBills$.value;
+      this.globalBills$.next(current.map(b => b.id === id ? ({ ...b, ...updates } as Bill) : b));
     });
   }
 
@@ -222,46 +323,76 @@ export class BillService {
     const currentBill = docSnap.data() as Bill;
     const currentTotalPaid = currentBill.totalPaid || currentBill.paidAmount || 0;
     const newTotalPaid = currentTotalPaid + payment.amount;
-    
+
     // Auto complete if fully paid
     const isFullyPaid = newTotalPaid >= currentBill.amount;
 
-    return updateDoc(billDoc, {
-      payments: arrayUnion({
-        ...payment,
-        addedAt: new Date().toISOString()
-      }),
+    const record = {
+      ...payment,
+      addedAt: new Date().toISOString()
+    };
+
+    const updates: any = {
+      payments: arrayUnion(record),
       totalPaid: newTotalPaid,
       // Keep backward compatibility fields
       paidDate: isFullyPaid ? payment.date : currentBill.paidDate || payment.date,
       paidAmount: newTotalPaid,
       status: isFullyPaid ? 'completed' : currentBill.status,
       updatedAt: serverTimestamp()
+    };
+
+    return updateDoc(billDoc, updates).then(() => {
+      const current = this.globalBills$.value;
+      this.globalBills$.next(current.map(b => {
+        if (b.id === id) {
+          const updatedPayments = [...(b.payments || [])];
+          updatedPayments.push(record);
+          return {
+            ...b,
+            ...updates,
+            payments: updatedPayments,
+            updatedAt: new Date()
+          } as Bill;
+        }
+        return b;
+      }));
     });
   }
 
   markBillAsPaid(id: string, paidDate: string, paidAmount: number, reference?: string, gmailSnippet?: string): Promise<void> {
     const billDoc = doc(this.firestore, `bills/${id}`);
-    return updateDoc(billDoc, {
+    const updates: Partial<Bill> = {
       status: 'completed',
       paidDate,
       paidAmount,
       paidReference: reference || '',
       gmailSnippet: gmailSnippet || '',
-      updatedAt: serverTimestamp()
+      updatedAt: serverTimestamp() as any
+    };
+    return updateDoc(billDoc, updates).then(() => {
+      const current = this.globalBills$.value;
+      this.globalBills$.next(current.map(b => b.id === id ? ({ ...b, ...updates } as Bill) : b));
     });
   }
 
   deleteBill(id: string, hardDelete: boolean = false): Promise<void> {
     const billDoc = doc(this.firestore, `bills/${id}`);
-    if (hardDelete) {
-      return deleteDoc(billDoc);
-    } else {
-      return updateDoc(billDoc, {
+    const promise = hardDelete
+      ? deleteDoc(billDoc)
+      : updateDoc(billDoc, {
         isDeleted: true,
         updatedAt: serverTimestamp()
       });
-    }
+
+    return promise.then(() => {
+      const current = this.globalBills$.value;
+      if (hardDelete) {
+        this.globalBills$.next(current.filter(b => b.id !== id));
+      } else {
+        this.globalBills$.next(current.map(b => b.id === id ? { ...b, isDeleted: true } : b).filter(b => !b.isDeleted));
+      }
+    });
   }
 
   // Mock Sync from Servers based on Service Numbers
@@ -273,7 +404,7 @@ export class BillService {
   }
 
   async processSync(adminUid: string, services: TrackedService[]): Promise<any> {
-    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const now = new Date();
     const currentMonth = months[now.getMonth()];
     const currentYear = now.getFullYear();
@@ -289,10 +420,10 @@ export class BillService {
       );
 
       const existingData = await new Promise<any[]>(res => {
-         const sub = collectionData(existingQ, { idField: 'id' }).subscribe(data => {
-           res(data);
-           sub.unsubscribe();
-         });
+        const sub = collectionData(existingQ, { idField: 'id' }).subscribe(data => {
+          res(data);
+          sub.unsubscribe();
+        });
       });
 
       let liveBill: any = null;
@@ -329,62 +460,62 @@ export class BillService {
         let billData: Partial<Bill> | null = null;
 
         if (service.serviceType === 'electricity') {
-            if (liveBill && liveBill.success) {
-              billData = {
-                serviceType: 'electricity',
-                provider: service.provider,
-                serviceNumber: service.serviceNumber,
-                amount: liveBill.totalAmountPayable || 0,
-                dueDate: this.toIsoBillDate(liveBill.dueDate) || new Date(now.getFullYear(), now.getMonth(), 15).toISOString().split('T')[0],
-                status: liveBill.isPaid ? 'completed' : 'pending',
-                paidDate: liveBill.isPaid ? (this.toIsoBillDate(liveBill.paidDate) || new Date().toISOString().split('T')[0]) : undefined,
-                paidAmount: liveBill.isPaid ? liveBill.paidAmount || liveBill.totalAmountPayable || 0 : undefined,
-                totalPaid: liveBill.isPaid ? liveBill.paidAmount || liveBill.totalAmountPayable || 0 : undefined,
-                notes: `Auto-synced from TGSPDCL website for ${liveBill.consumerName}.`,
-                adminUid: adminUid
-              };
+          if (liveBill && liveBill.success) {
+            billData = {
+              serviceType: 'electricity',
+              provider: service.provider,
+              serviceNumber: service.serviceNumber,
+              amount: liveBill.totalAmountPayable || 0,
+              dueDate: this.toIsoBillDate(liveBill.dueDate) || new Date(now.getFullYear(), now.getMonth(), 15).toISOString().split('T')[0],
+              status: liveBill.isPaid ? 'completed' : 'pending',
+              paidDate: liveBill.isPaid ? (this.toIsoBillDate(liveBill.paidDate) || new Date().toISOString().split('T')[0]) : undefined,
+              paidAmount: liveBill.isPaid ? liveBill.paidAmount || liveBill.totalAmountPayable || 0 : undefined,
+              totalPaid: liveBill.isPaid ? liveBill.paidAmount || liveBill.totalAmountPayable || 0 : undefined,
+              notes: `Auto-synced from TGSPDCL website for ${liveBill.consumerName}.`,
+              adminUid: adminUid
+            };
 
-              // Auto-store in archives
-              await this.autoStoreBillRecord({
-                consumerName: liveBill.consumerName || service.title || 'Unnamed',
-                serviceNumber: service.serviceNumber,
-                amount: liveBill.totalAmountPayable || 0,
-                date: new Date().toISOString().split('T')[0],
-                adminUid: adminUid
-              });
-            }
+            // Auto-store in archives
+            await this.autoStoreBillRecord({
+              consumerName: liveBill.consumerName || service.title || 'Unnamed',
+              serviceNumber: service.serviceNumber,
+              amount: liveBill.totalAmountPayable || 0,
+              date: new Date().toISOString().split('T')[0],
+              adminUid: adminUid
+            });
+          }
         } else if (service.serviceType === 'water') {
-            if (liveBill && liveBill.success) {
-              billData = {
-                serviceType: 'water',
-                provider: service.provider,
-                serviceNumber: service.serviceNumber,
-                amount: liveBill.totalAmountPayable || 0,
-                dueDate: this.toIsoBillDate(liveBill.dueDate) || new Date(now.getFullYear(), now.getMonth(), 20).toISOString().split('T')[0],
-                status: liveBill.isPaid ? 'completed' : 'pending',
-                paidDate: liveBill.isPaid ? (this.toIsoBillDate(liveBill.paidDate) || new Date().toISOString().split('T')[0]) : undefined,
-                paidAmount: liveBill.isPaid ? liveBill.paidAmount || liveBill.totalAmountPayable || 0 : undefined,
-                totalPaid: liveBill.isPaid ? liveBill.paidAmount || liveBill.totalAmountPayable || 0 : undefined,
-                notes: `Auto-synced from HMWSSB website for ${liveBill.consumerName}.`,
-                adminUid: adminUid
-              };
+          if (liveBill && liveBill.success) {
+            billData = {
+              serviceType: 'water',
+              provider: service.provider,
+              serviceNumber: service.serviceNumber,
+              amount: liveBill.totalAmountPayable || 0,
+              dueDate: this.toIsoBillDate(liveBill.dueDate) || new Date(now.getFullYear(), now.getMonth(), 20).toISOString().split('T')[0],
+              status: liveBill.isPaid ? 'completed' : 'pending',
+              paidDate: liveBill.isPaid ? (this.toIsoBillDate(liveBill.paidDate) || new Date().toISOString().split('T')[0]) : undefined,
+              paidAmount: liveBill.isPaid ? liveBill.paidAmount || liveBill.totalAmountPayable || 0 : undefined,
+              totalPaid: liveBill.isPaid ? liveBill.paidAmount || liveBill.totalAmountPayable || 0 : undefined,
+              notes: `Auto-synced from HMWSSB website for ${liveBill.consumerName}.`,
+              adminUid: adminUid
+            };
 
-              // Auto-store in archives
-              await this.autoStoreBillRecord({
-                consumerName: liveBill.consumerName || service.title || 'Unnamed',
-                serviceNumber: service.serviceNumber,
-                amount: liveBill.totalAmountPayable || 0,
-                date: new Date().toISOString().split('T')[0],
-                adminUid: adminUid
-              });
-            }
+            // Auto-store in archives
+            await this.autoStoreBillRecord({
+              consumerName: liveBill.consumerName || service.title || 'Unnamed',
+              serviceNumber: service.serviceNumber,
+              amount: liveBill.totalAmountPayable || 0,
+              date: new Date().toISOString().split('T')[0],
+              adminUid: adminUid
+            });
+          }
         }
 
         // Fallback or other service types
         if (!billData) {
           let mockAmount = Math.floor(Math.random() * (2500 - 500 + 1)) + 500;
           let mockDueDate = new Date(now.getFullYear(), now.getMonth(), 28).toISOString().split('T')[0];
-          
+
           billData = {
             serviceType: service.serviceType as any,
             provider: service.provider,
@@ -439,14 +570,14 @@ export class BillService {
     let constraints: any[] = [where('adminUid', '==', adminUid)];
     if (year) constraints.push(where('year', '==', year));
     constraints.push(orderBy('date', 'desc'));
-    
+
     const q = query(this.storedRecordsCollection, ...constraints);
     return collectionData(q, { idField: 'id' }) as Observable<StoredBillRecord[]>;
   }
 
   getStoredRecordsByService(serviceNumber: string): Observable<StoredBillRecord[]> {
     const q = query(
-      this.storedRecordsCollection, 
+      this.storedRecordsCollection,
       where('serviceNumber', '==', serviceNumber),
       orderBy('date', 'desc')
     );
@@ -455,8 +586,8 @@ export class BillService {
 
   addStoredRecord(record: Partial<StoredBillRecord>): Promise<any> {
     const date = record.date ? new Date(record.date) : new Date();
-    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-    
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
     const data = {
       ...record,
       year: date.getFullYear(),
@@ -470,7 +601,7 @@ export class BillService {
     if (!record.serviceNumber || !record.adminUid || !record.amount) return;
 
     const date = record.date ? new Date(record.date) : new Date();
-    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const month = months[date.getMonth()];
     const year = date.getFullYear();
 
@@ -481,7 +612,7 @@ export class BillService {
       where('month', '==', month),
       where('year', '==', year)
     );
-    
+
     const existing = await firstValueFrom(collectionData(q).pipe(map(docs => docs)));
     if (existing && existing.length > 0) {
       console.log('Record already exists for this month. Skipping auto-store.');

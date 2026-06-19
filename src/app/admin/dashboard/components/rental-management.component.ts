@@ -5,6 +5,7 @@ import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 import { CountUpDirective } from '../../../shared/directives/count-up.directive';
 import { RentalHouse, RentalBill, RentalExpense, PastTenancy } from '../../services/rental.service';
+import { Bill, TrackedService } from '../../services/bill.service';
 
 @Component({
   selector: 'app-rental-management',
@@ -736,21 +737,21 @@ import { RentalHouse, RentalBill, RentalExpense, PastTenancy } from '../../servi
                 <!-- Vertical line -->
                 <div class="ledger-timeline-line" *ngIf="!last"></div>
                 <!-- Dot -->
-                <div class="ledger-timeline-dot" [ngClass]="bill.status.toLowerCase() === 'paid' ? 'ledger-dot-paid' : 'ledger-dot-pending'">
-                  <svg *ngIf="bill.status.toLowerCase() === 'paid'" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <div class="ledger-timeline-dot" [ngClass]="isMonthlyBillFullyPaid(house, bill) ? 'ledger-dot-paid' : 'ledger-dot-pending'">
+                  <svg *ngIf="isMonthlyBillFullyPaid(house, bill)" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                   </svg>
-                  <div *ngIf="bill.status.toLowerCase() !== 'paid'" class="w-2 h-2 rounded-full bg-white"></div>
+                  <div *ngIf="!isMonthlyBillFullyPaid(house, bill)" class="w-2 h-2 rounded-full bg-white"></div>
                 </div>
 
                 <!-- Bill Content -->
-                <div class="ledger-timeline-content" [ngClass]="bill.status.toLowerCase() === 'paid' ? 'ledger-bill-paid' : 'ledger-bill-pending'">
+                <div class="ledger-timeline-content" [ngClass]="isMonthlyBillFullyPaid(house, bill) ? 'ledger-bill-paid' : 'ledger-bill-pending'">
                   <div class="ledger-bill-header">
                     <div>
                       <div class="flex items-center gap-2 mb-1">
                         <span class="ledger-bill-month">{{ bill.billDate | date:'MMMM yyyy' }}</span>
-                        <span class="ledger-bill-status-badge" [ngClass]="bill.status.toLowerCase() === 'paid' ? 'ledger-badge-paid' : 'ledger-badge-pending'">
-                          {{ bill.status }}
+                        <span class="ledger-bill-status-badge" [ngClass]="isMonthlyBillFullyPaid(house, bill) ? 'ledger-badge-paid' : 'ledger-badge-pending'">
+                          {{ isMonthlyBillFullyPaid(house, bill) ? 'Paid' : 'Pending' }}
                         </span>
                       </div>
                     </div>
@@ -782,21 +783,21 @@ import { RentalHouse, RentalBill, RentalExpense, PastTenancy } from '../../servi
                     </div>
                     <div class="ledger-breakdown-row">
                       <span class="ledger-breakdown-label">Electricity</span>
-                      <span class="ledger-breakdown-amount" [style.color]="bill.status.toLowerCase() === 'pending' && bill.electricBill > 0 ? '#fb7185' : '#34d399'" [appCountUp]="bill.electricBill" prefix="₹"></span>
-                      <span class="ledger-breakdown-badge" [style]="bill.status.toLowerCase() === 'pending' && bill.electricBill > 0 ? 'background:rgba(251,113,133,0.15);color:#fb7185' : 'background:rgba(52,211,153,0.15);color:#34d399'">
-                        {{ bill.status.toLowerCase() === 'pending' && bill.electricBill > 0 ? 'Due' : '✓ Paid' }}
+                      <span class="ledger-breakdown-amount" [style.color]="!isMonthlyUtilityPaid(house, bill, 'electricity') && bill.electricBill > 0 ? '#fb7185' : '#34d399'" [appCountUp]="bill.electricBill" prefix="₹"></span>
+                      <span class="ledger-breakdown-badge" [style]="!isMonthlyUtilityPaid(house, bill, 'electricity') && bill.electricBill > 0 ? 'background:rgba(251,113,133,0.15);color:#fb7185' : 'background:rgba(52,211,153,0.15);color:#34d399'">
+                        {{ (!isMonthlyUtilityPaid(house, bill, 'electricity') && bill.electricBill > 0) ? 'Due' : '✓ Paid' }}
                       </span>
                     </div>
                     <div class="ledger-breakdown-row">
                       <span class="ledger-breakdown-label">Water</span>
-                      <span class="ledger-breakdown-amount" [style.color]="bill.status.toLowerCase() === 'pending' && bill.waterBill > 0 ? '#fb7185' : '#34d399'" [appCountUp]="bill.waterBill" prefix="₹"></span>
-                      <span class="ledger-breakdown-badge" [style]="bill.status.toLowerCase() === 'pending' && bill.waterBill > 0 ? 'background:rgba(251,113,133,0.15);color:#fb7185' : 'background:rgba(52,211,153,0.15);color:#34d399'">
-                        {{ bill.status.toLowerCase() === 'pending' && bill.waterBill > 0 ? 'Due' : '✓ Paid' }}
+                      <span class="ledger-breakdown-amount" [style.color]="!isMonthlyUtilityPaid(house, bill, 'water') && bill.waterBill > 0 ? '#fb7185' : '#34d399'" [appCountUp]="bill.waterBill" prefix="₹"></span>
+                      <span class="ledger-breakdown-badge" [style]="!isMonthlyUtilityPaid(house, bill, 'water') && bill.waterBill > 0 ? 'background:rgba(251,113,133,0.15);color:#fb7185' : 'background:rgba(52,211,153,0.15);color:#34d399'">
+                        {{ (!isMonthlyUtilityPaid(house, bill, 'water') && bill.waterBill > 0) ? 'Due' : '✓ Paid' }}
                       </span>
                     </div>
-                    <div class="ledger-breakdown-total" *ngIf="bill.status.toLowerCase() === 'pending'">
+                    <div class="ledger-breakdown-total" *ngIf="!isMonthlyBillFullyPaid(house, bill)">
                       <span class="ledger-breakdown-label font-black" style="color:#f9fafb">Total Due</span>
-                      <span class="font-black" style="color:#fb7185" [appCountUp]="(bill.electricBill || 0) + (bill.waterBill || 0)" prefix="₹"></span>
+                      <span class="font-black" style="color:#fb7185" [appCountUp]="getMonthlyPendingTotal(house, bill)" prefix="₹"></span>
                       <button (click)="onAddMonthlyRecord.emit()" class="ledger-collect-btn">Collect Payment</button>
                     </div>
                   </div>
@@ -1235,6 +1236,7 @@ import { RentalHouse, RentalBill, RentalExpense, PastTenancy } from '../../servi
       flex-wrap: wrap; margin-top: 0.75rem;
     }
     .ledger-btn-danger {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
       padding: 0.45rem 0.9rem; background: #ef4444; color: #fff;
       font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
       border-radius: 0.6rem; cursor: pointer; transition: all 0.2s;
@@ -1242,6 +1244,7 @@ import { RentalHouse, RentalBill, RentalExpense, PastTenancy } from '../../servi
     }
     .ledger-btn-danger:hover { background: #dc2626; box-shadow: 0 4px 12px rgba(239,68,68,0.4); }
     .ledger-btn-primary {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
       padding: 0.45rem 0.9rem; background: linear-gradient(135deg, #6366f1, #8b5cf6);
       color: #fff; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
       border-radius: 0.6rem; cursor: pointer; transition: all 0.2s; border: none; white-space: nowrap;
@@ -1540,6 +1543,8 @@ import { RentalHouse, RentalBill, RentalExpense, PastTenancy } from '../../servi
 })
 export class RentalManagementComponent implements OnInit {
   @Input() houses: RentalHouse[] = [];
+  @Input() bills: Bill[] = [];
+  @Input() trackedServices: TrackedService[] = [];
   @Input() activeHouseId: string | null = null;
   @Input() activeHouse: RentalHouse | null = null;
   @Input() rentalView: 'houses' | 'ledger' = 'houses';
@@ -1664,7 +1669,7 @@ export class RentalManagementComponent implements OnInit {
   getHouseStats(house: RentalHouse) {
     const bills = house.bills || [];
     const collected = bills.filter(b => b.rentAmount > 0).reduce((sum, b) => sum + (b.rentAmount || 0), 0);
-    let pending = bills.filter(b => b.status && b.status.toLowerCase() === 'pending').reduce((sum, b) => sum + (b.electricBill || 0) + (b.waterBill || 0), 0);
+    let pending = bills.reduce((sum, b) => sum + this.getMonthlyPendingTotal(house, b), 0);
     const months = bills.length;
 
     if (house.status === 'Occupied' && house.arrivedDate) {
@@ -1700,11 +1705,77 @@ export class RentalManagementComponent implements OnInit {
     return { collected, pending, months, expensesTotal, netYield };
   }
 
+  normalizeServiceNumber(num: any): string {
+    if (num === null || num === undefined) return '';
+    const str = String(num).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    return str.replace(/^0+/, '');
+  }
+
   getHouseUtilityBill(house: RentalHouse, type: 'electricity' | 'water'): number {
-    return this.rentalUtilityBills[house.id!]?.[type] || 0;
+    // 1. Check local monthly bills first for the latest recorded value
+    const bills = house.bills || [];
+    if (bills.length > 0) {
+      const sorted = [...bills].sort((a, b) => new Date(b.billDate).getTime() - new Date(a.billDate).getTime());
+      const latestBill = sorted[0];
+      const amt = type === 'electricity' ? (latestBill.electricBill || 0) : (latestBill.waterBill || 0);
+      if (amt > 0) {
+        return amt;
+      }
+    }
+
+    const serviceNo = type === 'electricity' ? house.electricMeterNo : house.waterBillNo;
+    if (!serviceNo) return 0;
+
+    // 2. Check global bills next
+    const cleanServiceNo = this.normalizeServiceNumber(serviceNo);
+    if (cleanServiceNo) {
+      const matchingBills = (this.bills || []).filter(b => 
+        b.serviceNumber &&
+        this.normalizeServiceNumber(b.serviceNumber) === cleanServiceNo &&
+        b.serviceType?.toLowerCase() === type.toLowerCase() &&
+        !b.isDeleted
+      );
+      if (matchingBills.length > 0) {
+        const sortedBills = [...matchingBills].sort((a, b) => (b.dueDate || '').localeCompare(a.dueDate || ''));
+        return sortedBills[0].amount || 0;
+      }
+    }
+
+    // 3. Check cached sync details
+    const cachedAmount = house.id ? this.rentalUtilityBills[house.id]?.[type] : undefined;
+    if (cachedAmount !== undefined) return cachedAmount;
+    
+    // 4. Check tracked services
+    const service = (this.trackedServices || []).find(s => 
+      s.serviceNumber && this.normalizeServiceNumber(s.serviceNumber) === cleanServiceNo && s.serviceType === type
+    );
+    return service?.lastAmount || 0;
   }
 
   isHouseUtilityPaid(house: RentalHouse, type: 'electricity' | 'water'): boolean {
+    const serviceNo = type === 'electricity' ? house.electricMeterNo : house.waterBillNo;
+    if (!serviceNo) return false;
+
+    const cleanServiceNo = this.normalizeServiceNumber(serviceNo);
+    if (!cleanServiceNo) return false;
+
+    // 1. Check global bills first
+    const matchingBills = (this.bills || []).filter(b => 
+      b.serviceNumber &&
+      this.normalizeServiceNumber(b.serviceNumber) === cleanServiceNo &&
+      b.serviceType?.toLowerCase() === type.toLowerCase() &&
+      !b.isDeleted
+    );
+    if (matchingBills.length > 0) {
+      const sortedBills = [...matchingBills].sort((a, b) => (b.dueDate || '').localeCompare(a.dueDate || ''));
+      const latestGlobalBill = sortedBills[0];
+      const statusStr = (latestGlobalBill.status || '').toLowerCase();
+      if (statusStr === 'completed' || statusStr === 'paid') {
+        return true;
+      }
+    }
+
+    // 2. Check local monthly bills next
     const bills = house.bills || [];
     if (bills.length > 0) {
       const sorted = [...bills].sort((a, b) => new Date(b.billDate).getTime() - new Date(a.billDate).getTime());
@@ -1715,16 +1786,56 @@ export class RentalManagementComponent implements OnInit {
       }
       if (statusStr === 'pending') {
         const amt = type === 'electricity' ? (latestBill.electricBill || 0) : (latestBill.waterBill || 0);
-        return amt === 0;
+        if (amt === 0) {
+          return true;
+        }
       }
     }
 
-    if (!house.id) return false;
-    const cached = this.rentalUtilityBills[house.id];
-    return cached ? (type === 'electricity' ? cached.electricityPaid === true : cached.waterPaid === true) : false;
+    // 3. Check cached sync details
+    if (house.id) {
+      const cached = this.rentalUtilityBills[house.id];
+      if (cached) {
+        const isPaid = type === 'electricity' ? cached.electricityPaid === true : cached.waterPaid === true;
+        if (isPaid) return true;
+      }
+    }
+
+    // 4. Check tracked services status
+    const service = (this.trackedServices || []).find(s => 
+      s.serviceNumber && this.normalizeServiceNumber(s.serviceNumber) === cleanServiceNo && s.serviceType === type
+    );
+    if (service && (service.lastBillStatus === 'paid' || String(service.lastAmountLabel || '').toLowerCase().includes('paid'))) {
+      return true;
+    }
+
+    return false;
   }
 
   getHouseUtilityPaidDate(house: RentalHouse, type: 'electricity' | 'water'): string {
+    const serviceNo = type === 'electricity' ? house.electricMeterNo : house.waterBillNo;
+    if (!serviceNo) return '';
+
+    const cleanServiceNo = this.normalizeServiceNumber(serviceNo);
+    if (!cleanServiceNo) return '';
+
+    // 1. Check global bills first
+    const matchingBills = (this.bills || []).filter(b => 
+      b.serviceNumber &&
+      this.normalizeServiceNumber(b.serviceNumber) === cleanServiceNo &&
+      b.serviceType?.toLowerCase() === type.toLowerCase() &&
+      !b.isDeleted
+    );
+    if (matchingBills.length > 0) {
+      const sortedBills = [...matchingBills].sort((a, b) => (b.dueDate || '').localeCompare(a.dueDate || ''));
+      const latestGlobalBill = sortedBills[0];
+      const statusStr = (latestGlobalBill.status || '').toLowerCase();
+      if (statusStr === 'completed' || statusStr === 'paid') {
+        return latestGlobalBill.paidDate || latestGlobalBill.dueDate || '';
+      }
+    }
+
+    // 2. Check local monthly bills next
     const bills = house.bills || [];
     if (bills.length > 0) {
       const sorted = [...bills].sort((a, b) => new Date(b.billDate).getTime() - new Date(a.billDate).getTime());
@@ -1741,9 +1852,110 @@ export class RentalManagementComponent implements OnInit {
       }
     }
 
-    if (!house.id) return '';
-    const cached = this.rentalUtilityBills[house.id];
-    return cached ? (type === 'electricity' ? cached.electricityPaidDate || '' : cached.waterPaidDate || '') : '';
+    // 3. Check cached sync details
+    if (house.id) {
+      const cached = this.rentalUtilityBills[house.id];
+      if (cached) {
+        const date = type === 'electricity' ? cached.electricityPaidDate : cached.waterPaidDate;
+        if (date) return date;
+      }
+    }
+
+    // 4. Check tracked services
+    const service = (this.trackedServices || []).find(s => 
+      s.serviceNumber && this.normalizeServiceNumber(s.serviceNumber) === cleanServiceNo && s.serviceType === type
+    );
+    if (service && (service.lastBillStatus === 'paid' || String(service.lastAmountLabel || '').toLowerCase().includes('paid'))) {
+      return service.lastPaidDate || '';
+    }
+
+    return '';
+  }
+
+  isMonthlyUtilityPaid(house: RentalHouse, bill: RentalBill, type: 'electricity' | 'water'): boolean {
+    if (bill.status?.toLowerCase() === 'paid') {
+      return true;
+    }
+
+    const amt = type === 'electricity' ? (bill.electricBill || 0) : (bill.waterBill || 0);
+    if (amt === 0) {
+      return true;
+    }
+
+    const serviceNo = type === 'electricity' ? house.electricMeterNo : house.waterBillNo;
+    if (!serviceNo) {
+      return false;
+    }
+
+    const cleanServiceNo = this.normalizeServiceNumber(serviceNo);
+    if (!cleanServiceNo) {
+      return false;
+    }
+
+    const billMonthLower = (bill.month || '').toLowerCase();
+    const billYear = bill.year;
+
+    // 1. Search global bills for a matching record
+    const matchingBills = (this.bills || []).filter(b => {
+      if (b.isDeleted) return false;
+      if (!b.serviceNumber || this.normalizeServiceNumber(b.serviceNumber) !== cleanServiceNo) return false;
+      if (b.serviceType?.toLowerCase() !== type.toLowerCase()) return false;
+
+      // Match by month and year
+      if (b.month && b.year) {
+        const bMonthLower = String(b.month).toLowerCase();
+        const monthMatches = bMonthLower.includes(billMonthLower) || billMonthLower.includes(bMonthLower);
+        const yearMatches = b.year === billYear;
+        if (monthMatches && yearMatches) {
+          return true;
+        }
+      }
+
+      // Fallback matching: if amount matches exactly, it's highly likely to be the same month's bill
+      if (b.amount === amt) {
+        return true;
+      }
+
+      return false;
+    });
+
+    if (matchingBills.length > 0) {
+      const isPaidInGlobal = matchingBills.some(b => {
+        const statusStr = (b.status || '').toLowerCase();
+        return statusStr === 'completed' || statusStr === 'paid';
+      });
+      if (isPaidInGlobal) {
+        return true;
+      }
+    }
+
+    // 2. Also check tracked services last synced status (if the amount matches and it's paid)
+    const service = (this.trackedServices || []).find(s => 
+      s.serviceNumber && this.normalizeServiceNumber(s.serviceNumber) === cleanServiceNo && s.serviceType === type
+    );
+    if (service) {
+      const lastAmount = service.lastAmount || 0;
+      const isStatusPaid = service.lastBillStatus === 'paid' || String(service.lastAmountLabel || '').toLowerCase().includes('paid');
+      if (isStatusPaid && lastAmount === amt) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  getMonthlyPendingTotal(house: RentalHouse, bill: RentalBill): number {
+    const elecDue = !this.isMonthlyUtilityPaid(house, bill, 'electricity') ? (bill.electricBill || 0) : 0;
+    const waterDue = !this.isMonthlyUtilityPaid(house, bill, 'water') ? (bill.waterBill || 0) : 0;
+    return elecDue + waterDue;
+  }
+
+  isMonthlyBillFullyPaid(house: RentalHouse, bill: RentalBill): boolean {
+    if (bill.status?.toLowerCase() === 'paid') return true;
+    const rentPaid = bill.rentAmount > 0;
+    const elecPaid = this.isMonthlyUtilityPaid(house, bill, 'electricity');
+    const waterPaid = this.isMonthlyUtilityPaid(house, bill, 'water');
+    return rentPaid && elecPaid && waterPaid;
   }
 
   isRentIncreaseDue(house: RentalHouse): boolean {
@@ -1810,12 +2022,12 @@ export class RentalManagementComponent implements OnInit {
   // ─── Ledger helper methods ───────────────────────────────────────────
 
   getLedgerPendingAmount(house: RentalHouse): number {
-    return (house.bills || []).filter(b => b.status?.toLowerCase() === 'pending')
-      .reduce((sum, b) => sum + (b.electricBill || 0) + (b.waterBill || 0), 0);
+    return (house.bills || [])
+      .reduce((sum, b) => sum + this.getMonthlyPendingTotal(house, b), 0);
   }
 
   getLedgerPendingBillsCount(house: RentalHouse): number {
-    return (house.bills || []).filter(b => b.status?.toLowerCase() === 'pending').length;
+    return (house.bills || []).filter(b => !this.isMonthlyBillFullyPaid(house, b)).length;
   }
 
   getLedgerStayYears(house: RentalHouse): number {
