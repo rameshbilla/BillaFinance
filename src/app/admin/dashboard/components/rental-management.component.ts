@@ -505,8 +505,8 @@ import { Bill, TrackedService } from '../../services/bill.service';
                 </p>
               </div>
               <div class="ledger-topbar-actions">
-                <span class="ledger-status-badge" [ngClass]="house.status === 'Occupied' ? 'ledger-status-occupied' : 'ledger-status-vacant'">
-                  <span class="ledger-status-dot" [ngClass]="house.status === 'Occupied' ? 'bg-emerald-400' : 'bg-gray-400'"></span>
+                <span class="ledger-status-badge" [ngClass]="house.status.toLowerCase() === 'occupied' ? 'ledger-status-occupied' : 'ledger-status-vacant'">
+                  <span class="ledger-status-dot" [ngClass]="house.status.toLowerCase() === 'occupied' ? 'bg-emerald-400' : 'bg-gray-400'"></span>
                   {{ house.status }}
                 </span>
               </div>
@@ -514,7 +514,7 @@ import { Bill, TrackedService } from '../../services/bill.service';
 
             <!-- Action buttons row -->
             <div class="ledger-action-row">
-              <button *ngIf="house.status === 'Occupied'" (click)="openVacateForm()" class="ledger-btn-danger">
+              <button *ngIf="house.status.toLowerCase() === 'occupied'" (click)="openVacateForm()" class="ledger-btn-danger">
                 <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                 </svg>
@@ -1873,7 +1873,7 @@ export class RentalManagementComponent implements OnInit {
   }
 
   isMonthlyUtilityPaid(house: RentalHouse, bill: RentalBill, type: 'electricity' | 'water'): boolean {
-    if (bill.status?.toLowerCase() === 'paid') {
+    if (bill.status.toLowerCase() === 'paid') {
       return true;
     }
 
@@ -1951,7 +1951,7 @@ export class RentalManagementComponent implements OnInit {
   }
 
   isMonthlyBillFullyPaid(house: RentalHouse, bill: RentalBill): boolean {
-    if (bill.status?.toLowerCase() === 'paid') return true;
+    if (bill.status.toLowerCase() === 'paid') return true;
     const rentPaid = bill.rentAmount > 0;
     const elecPaid = this.isMonthlyUtilityPaid(house, bill, 'electricity');
     const waterPaid = this.isMonthlyUtilityPaid(house, bill, 'water');
