@@ -2119,36 +2119,102 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                              }
                           </div>
                           <div class="space-y-2">
-                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Renter Name <span class="text-red-500">*</span></label>
-                             <input type="text" formControlName="renterName" placeholder="Full name of tenant" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold" [class.ring-2]="rentalHouseForm.get('renterName')?.invalid && rentalHouseForm.get('renterName')?.touched" [class.ring-red-500]="rentalHouseForm.get('renterName')?.invalid && rentalHouseForm.get('renterName')?.touched">
-                             @if (rentalHouseForm.get('renterName')?.invalid && rentalHouseForm.get('renterName')?.touched) {
-                                <p class="text-xs text-red-500 font-semibold mt-1 px-1">Tenant Name is required</p>
-                             }
-                          </div>
-                          <div class="space-y-2">
-                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Renter Phone <span class="text-red-500">*</span></label>
-                             <input type="tel" formControlName="renterPhone" placeholder="10 digit number" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold" [class.ring-2]="rentalHouseForm.get('renterPhone')?.invalid && rentalHouseForm.get('renterPhone')?.touched" [class.ring-red-500]="rentalHouseForm.get('renterPhone')?.invalid && rentalHouseForm.get('renterPhone')?.touched">
-                             @if (rentalHouseForm.get('renterPhone')?.touched) {
-                                @if (rentalHouseForm.get('renterPhone')?.hasError('required')) {
-                                   <p class="text-xs text-red-500 font-semibold mt-1 px-1">Phone number is required</p>
-                                } @else if (rentalHouseForm.get('renterPhone')?.invalid) {
-                                   <p class="text-xs text-red-500 font-semibold mt-1 px-1">Must be a valid 10-digit number</p>
+                              <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Renter Name <span class="text-red-500">*</span></label>
+                              <!-- Customer Picker Input -->
+                              <div class="relative">
+                                <input type="text"
+                                       [value]="renterSearchQuery"
+                                       (input)="onRenterSearchChange($any($event.target).value)"
+                                       (focus)="showRenterDropdown = true"
+                                       (blur)="onRenterSearchBlur()"
+                                       placeholder="Type name or phone to search customers..."
+                                       autocomplete="off"
+                                       class="w-full pl-6 pr-10 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold"
+                                       [class.ring-2]="rentalHouseForm.get('renterName')?.invalid && rentalHouseForm.get('renterName')?.touched"
+                                       [class.ring-red-500]="rentalHouseForm.get('renterName')?.invalid && rentalHouseForm.get('renterName')?.touched">
+                                <!-- Clear / Lock indicator -->
+                                @if (renterSelectedFromList && renterSearchQuery) {
+                                  <button type="button" (click)="onRenterSearchChange('')"
+                                          class="absolute inset-y-0 right-3 flex items-center text-indigo-500 hover:text-red-500 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                  </button>
+                                } @else {
+                                  <span class="absolute inset-y-0 right-3 flex items-center text-gray-400 pointer-events-none">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                      <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                    </svg>
+                                  </span>
                                 }
-                             }
-                          </div>
-                          <div class="space-y-2">
-                             <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">
-                               Tenant Aadhar Number
-                               <span class="ml-1 text-[9px] normal-case font-medium text-gray-300 dark:text-gray-600 tracking-normal">(optional)</span>
-                             </label>
-                             <input type="text" formControlName="renterAadhar" placeholder="12-digit Aadhar number" maxlength="12" inputmode="numeric"
-                                    class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold tracking-[0.25em]"
-                                    [class.ring-2]="rentalHouseForm.get('renterAadhar')?.invalid && rentalHouseForm.get('renterAadhar')?.touched"
-                                    [class.ring-red-500]="rentalHouseForm.get('renterAadhar')?.invalid && rentalHouseForm.get('renterAadhar')?.touched">
-                             @if (rentalHouseForm.get('renterAadhar')?.invalid && rentalHouseForm.get('renterAadhar')?.touched) {
-                                <p class="text-xs text-red-500 font-semibold mt-1 px-1">Aadhar must be exactly 12 digits</p>
-                             }
-                          </div>
+                                <!-- Customer dropdown -->
+                                @if (showRenterDropdown && filteredRenterCustomers.length > 0) {
+                                  <div class="absolute z-50 top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-xl max-h-52 overflow-y-auto">
+                                    @for (cust of filteredRenterCustomers; track cust.id) {
+                                      <button type="button" (click)="selectRenterFromCustomer(cust)"
+                                              class="w-full px-5 py-3 flex items-center gap-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all text-left group border-b border-gray-50 dark:border-gray-700/50 last:border-b-0">
+                                        <div class="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center shrink-0 text-indigo-600 dark:text-indigo-400 font-black text-xs">
+                                          {{ (cust.name || '?').charAt(0).toUpperCase() }}
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                          <p class="text-sm font-black text-gray-900 dark:text-white truncate">{{ cust.name }}</p>
+                                          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ cust.phone }}</p>
+                                        </div>
+                                        <svg class="w-4 h-4 text-gray-300 group-hover:text-indigo-500 transition-all shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"/>
+                                        </svg>
+                                      </button>
+                                    }
+                                  </div>
+                                }
+                              </div>
+                              @if (rentalHouseForm.get('renterName')?.invalid && rentalHouseForm.get('renterName')?.touched) {
+                                 <p class="text-xs text-red-500 font-semibold mt-1 px-1">Tenant Name is required</p>
+                              }
+                              <!-- hidden form control keeps validation working -->
+                              <input type="hidden" formControlName="renterName">
+                           </div>
+                           <div class="space-y-2">
+                              <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1 flex items-center gap-2">
+                                Renter Phone <span class="text-red-500">*</span>
+                                @if (renterSelectedFromList) {
+                                  <span class="text-[8px] font-black px-1.5 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Auto-filled</span>
+                                }
+                              </label>
+                              <input type="tel" formControlName="renterPhone" placeholder="10 digit number"
+                                     class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold"
+                                     [readonly]="renterSelectedFromList"
+                                     [class.opacity-70]="renterSelectedFromList"
+                                     [class.cursor-not-allowed]="renterSelectedFromList"
+                                     [class.ring-2]="rentalHouseForm.get('renterPhone')?.invalid && rentalHouseForm.get('renterPhone')?.touched"
+                                     [class.ring-red-500]="rentalHouseForm.get('renterPhone')?.invalid && rentalHouseForm.get('renterPhone')?.touched">
+                              @if (rentalHouseForm.get('renterPhone')?.touched) {
+                                 @if (rentalHouseForm.get('renterPhone')?.hasError('required')) {
+                                    <p class="text-xs text-red-500 font-semibold mt-1 px-1">Phone number is required</p>
+                                 } @else if (rentalHouseForm.get('renterPhone')?.invalid) {
+                                    <p class="text-xs text-red-500 font-semibold mt-1 px-1">Must be a valid 10-digit number</p>
+                                 }
+                              }
+                           </div>
+                           <div class="space-y-2">
+                              <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1 flex items-center gap-2">
+                                Tenant Aadhar Number
+                                <span class="ml-1 text-[9px] normal-case font-medium text-gray-300 dark:text-gray-600 tracking-normal">(optional)</span>
+                                @if (renterSelectedFromList) {
+                                  <span class="text-[8px] font-black px-1.5 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Auto-filled</span>
+                                }
+                              </label>
+                              <input type="text" formControlName="renterAadhar" placeholder="12-digit Aadhar number" maxlength="12" inputmode="numeric"
+                                     class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold tracking-[0.25em]"
+                                     [readonly]="renterSelectedFromList"
+                                     [class.opacity-70]="renterSelectedFromList"
+                                     [class.cursor-not-allowed]="renterSelectedFromList"
+                                     [class.ring-2]="rentalHouseForm.get('renterAadhar')?.invalid && rentalHouseForm.get('renterAadhar')?.touched"
+                                     [class.ring-red-500]="rentalHouseForm.get('renterAadhar')?.invalid && rentalHouseForm.get('renterAadhar')?.touched">
+                              @if (rentalHouseForm.get('renterAadhar')?.invalid && rentalHouseForm.get('renterAadhar')?.touched) {
+                                 <p class="text-xs text-red-500 font-semibold mt-1 px-1">Aadhar must be exactly 12 digits</p>
+                              }
+                           </div>
                           <div class="space-y-2">
                              <label class="text-xs font-black text-gray-400 uppercase tracking-widest px-1">Arrived Date <span class="text-red-500">*</span></label>
                              <input type="date" formControlName="arrivedDate" class="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-gray-900 dark:text-white font-bold" [class.ring-2]="rentalHouseForm.get('arrivedDate')?.invalid && rentalHouseForm.get('arrivedDate')?.touched" [class.ring-red-500]="rentalHouseForm.get('arrivedDate')?.invalid && rentalHouseForm.get('arrivedDate')?.touched">
@@ -3046,6 +3112,11 @@ export class AdminDashboardComponent implements OnInit {
   existingMode = false;
   pickerSearch = '';
   isSuperAdmin = false;
+
+  // ─── Renter Customer Picker (Property Registration Form) ───────────────
+  renterSearchQuery = '';
+  showRenterDropdown = false;
+  renterSelectedFromList = false;
 
   showAccountsModal = false;
   selectedCustomerForAccounts: Customer | null = null;
@@ -4337,6 +4408,40 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
+  // ─── Renter Customer Picker for Property Form ──────────────────────────
+  get filteredRenterCustomers() {
+    if (!this.allCustomers) return [];
+    const q = (this.renterSearchQuery || '').toLowerCase().trim();
+    if (!q) return this.allCustomers.slice(0, 20); // show first 20 when no query
+    return this.allCustomers.filter(c =>
+      (c.name?.toLowerCase().includes(q)) ||
+      (c.phone?.includes(q))
+    ).slice(0, 20);
+  }
+
+  selectRenterFromCustomer(cust: Customer) {
+    this.renterSelectedFromList = true;
+    this.showRenterDropdown = false;
+    this.renterSearchQuery = cust.name || '';
+    this.rentalHouseForm.patchValue({
+      renterName: cust.name || '',
+      renterPhone: cust.phone || '',
+      renterAadhar: (cust as any).aadhar || ''
+    });
+  }
+
+  onRenterSearchChange(value: string) {
+    this.renterSearchQuery = value;
+    this.renterSelectedFromList = false;
+    this.showRenterDropdown = true;
+    this.rentalHouseForm.patchValue({ renterName: value, renterPhone: '', renterAadhar: '' });
+  }
+
+  onRenterSearchBlur() {
+    // Delay to allow click on dropdown items to register
+    setTimeout(() => { this.showRenterDropdown = false; }, 200);
+  }
+
   async saveCustomer() {
     if (this.customerForm.valid) {
       this.isSaving = true;
@@ -4553,9 +4658,16 @@ export class AdminDashboardComponent implements OnInit {
 
   // Rental Methods
   openRentalHouseForm(house?: RentalHouse) {
+    // Reset renter picker state
+    this.renterSearchQuery = '';
+    this.showRenterDropdown = false;
+    this.renterSelectedFromList = false;
+
     if (house) {
       this.isRentalEditMode = true;
       this.editingRentalId = house.id || null;
+      this.renterSearchQuery = house.renterName || '';
+      this.renterSelectedFromList = !!(house.renterName); // treat existing as selected
       this.rentalHouseForm.patchValue({
         houseName: house.houseName,
         advanceAmount: house.advanceAmount,

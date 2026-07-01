@@ -1,4 +1,4 @@
-import { Component, inject, Input, Output, EventEmitter, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, Input, Output, EventEmitter, OnInit, OnChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BaseChartDirective } from 'ng2-charts';
@@ -836,7 +836,7 @@ import { Bill, TrackedService } from '../../services/bill.service';
             </div>
             <div class="ledger-chart-wrap">
               <canvas baseChart
-                [data]="getLedgerChartData(house)"
+                [data]="ledgerChartCache[house.id!] || getLedgerChartData(house)"
                 [options]="ledgerChartOptions"
                 type="bar">
               </canvas>
@@ -1541,7 +1541,7 @@ import { Bill, TrackedService } from '../../services/bill.service';
     .ledger-screen { padding-bottom: 1.5rem; }
   `]
 })
-export class RentalManagementComponent implements OnInit {
+export class RentalManagementComponent implements OnInit, OnChanges {
   @Input() houses: RentalHouse[] = [];
   @Input() bills: Bill[] = [];
   @Input() trackedServices: TrackedService[] = [];
@@ -1623,10 +1623,30 @@ export class RentalManagementComponent implements OnInit {
     }
   };
 
+  // Cache for Bills Collection chart data, keyed by house ID.
+  // Avoids calling getLedgerChartData() on every change-detection cycle (scroll, etc.)
+  ledgerChartCache: Record<string, any> = {};
+
   ngOnInit() {}
 
   ngOnChanges() {
     this.rentalChart?.update();
+    // Rebuild ledger chart cache whenever houses data changes
+    this._rebuildLedgerChartCache();
+  }
+
+  private _rebuildLedgerChartCache() {
+    const next: Record<string, any> = {};
+    for (const house of this.houses) {
+      if (house.id) {
+        next[house.id] = this.getLedgerChartData(house);
+      }
+    }
+    // Also include activeHouse if not already in houses list
+    if (this.activeHouse?.id && !next[this.activeHouse.id]) {
+      next[this.activeHouse.id] = this.getLedgerChartData(this.activeHouse);
+    }
+    this.ledgerChartCache = next;
   }
 
   getLastRentCollected(house: RentalHouse): string {
