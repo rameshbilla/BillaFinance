@@ -15,10 +15,7 @@ import { Bill, TrackedService } from '../../services/bill.service';
     <div class="card-animate space-y-8" style="animation-delay:0.05s">
       
       @if (rentalView === 'houses') {
-        <div class="mb-6">
-          <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">House Management</h2>
-          <p class="text-sm font-medium text-gray-500 mt-1">{{ searchQuery ? filteredHouses.length + ' of ' : '' }}{{ houses.length }} registered properties</p>
-        </div>
+
 
         <!-- Rental Analytics Chart -->
         <div class="bg-white dark:bg-gray-800 p-5 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-sm mb-8">

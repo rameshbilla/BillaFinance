@@ -115,13 +115,106 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
       .animate-slide-up { animation: slideUp 0.3s ease-out both; }
     </style>
 
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-950 font-sans transition-colors duration-500 overflow-x-hidden w-full relative max-w-full-mobile">
+    <div class="min-h-screen bg-[#f0f4f9] dark:bg-gray-950 font-sans transition-colors duration-500 overflow-x-hidden w-full flex flex-col lg:flex-row relative">
+      <!-- DESKTOP SIDEBAR -->
+      <aside class="hidden lg:flex flex-col w-72 bg-[#09152b] dark:bg-gray-900 shrink-0 h-screen sticky top-0 justify-between p-6 z-30 shadow-xl border-r border-gray-800/10">
+         <div class="space-y-8">
+            <!-- Logo area -->
+            <div class="flex items-center gap-3 px-2">
+               <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                  <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+               </div>
+               <span class="text-xl font-black text-white tracking-tight">FinDash</span>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="space-y-1.5">
+               <!-- Overview -->
+               <button (click)="activeTab = 'overview'; activeMobileMenu = 'overview'"
+                       [class]="activeTab === 'overview' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'"
+                       class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-left">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                  Overview
+               </button>
+
+               <!-- Loans -->
+               <button *ngIf="showInterestTab" (click)="activeTab = 'interest'; activeMobileMenu = 'interest'"
+                       [class]="activeTab === 'interest' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'"
+                       class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-left">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  Loans
+               </button>
+
+               <!-- Chitti -->
+               <button *ngIf="showChittiTab" (click)="activeTab = 'chitti'; activeMobileMenu = 'chitti'"
+                       [class]="activeTab === 'chitti' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'"
+                       class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-left">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                  Chitti Schemes
+               </button>
+
+               <!-- Bills -->
+               <button *ngIf="showBillsTab" (click)="activeTab = 'bills'; activeMobileMenu = 'bills'"
+                       [class]="activeTab === 'bills' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'"
+                       class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all text-left">
+                  <div class="flex items-center gap-3">
+                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                     Utility Bills
+                  </div>
+                  <span *ngIf="billStats.pendingAmount > 0" class="px-1.5 py-0.5 bg-rose-500 text-white text-[9px] rounded-md animate-pulse">
+                     {{ billStats.pendingAmount | currency:'INR':'symbol':'1.0-0' }}
+                  </span>
+               </button>
+
+               <!-- Rentals -->
+               <button *ngIf="showRentalsTab" (click)="activeTab = 'rentals'; activeMobileMenu = 'rentals'"
+                       [class]="activeTab === 'rentals' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'"
+                       class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-left">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                  Rental Properties
+               </button>
+
+               <!-- Customers -->
+               <button *ngIf="showCustomersTab" (click)="activeTab = 'customers'; activeMobileMenu = 'customers'"
+                       [class]="activeTab === 'customers' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'"
+                       class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-left">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                  Customers
+               </button>
+
+               <!-- Security Settings -->
+               <button (click)="activeTab = 'security'; activeMobileMenu = 'security'"
+                       [class]="activeTab === 'security' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'"
+                       class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-left">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                  Security Settings
+               </button>
+            </nav>
+         </div>
+
+         <!-- Help Card at bottom -->
+         <div class="bg-gradient-to-br from-indigo-950 to-indigo-900/50 p-4 rounded-2xl border border-indigo-800/40 text-slate-200 shadow-lg flex flex-col gap-2">
+            <div class="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0 shadow-inner">
+               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+               <p class="text-xs font-black text-white">Need Help?</p>
+               <p class="text-[10px] text-slate-400 leading-tight mt-1">View documentation or contact support.</p>
+            </div>
+            <button class="w-full py-2 bg-indigo-650 hover:bg-indigo-600 text-white font-black text-[9px] uppercase tracking-widest rounded-xl transition-all shadow-md">
+               Contact Support
+            </button>
+         </div>
+      </aside>
+
+      <!-- RIGHT CONTENT AREA -->
+      <div class="flex-1 flex flex-col min-h-screen min-w-0">
       <!-- Decorative Background Glows (Subtle) -->
       <div class="absolute top-0 left-0 w-96 h-96 bg-purple-500/5 rounded-full filter blur-[100px] pointer-events-none"></div>
       <div class="absolute bottom-0 right-0 w-96 h-96 bg-pink-500/5 rounded-full filter blur-[100px] pointer-events-none"></div>
 
       <!-- Top Navigation -->
-      <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl sticky top-0 z-50 border-b border-gray-200/60 dark:border-gray-700/60 shadow-sm transition-all duration-300 animate-fade-down">
+      <nav class="lg:hidden bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl sticky top-0 z-50 border-b border-gray-200/60 dark:border-gray-700/60 shadow-sm transition-all duration-300 animate-fade-down">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between h-16 items-center">
             <div class="flex items-center space-x-3">
@@ -213,10 +306,97 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
         </div>
       </nav>
 
-      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-32 sm:pb-8 relative z-10 animate-fade-up delay-100">
+      <!-- DESKTOP TOP BAR (PAGE HEADER) -->
+        <header class="hidden lg:flex bg-[#f0f4f9] dark:bg-gray-950 items-center justify-between px-8 py-6 sticky top-0 z-20 transition-all duration-300">
+           <div>
+              <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">
+                 {{ activeTab === 'overview' ? 'Business Overview' :
+                    activeTab === 'interest' ? 'Loans Management' :
+                    activeTab === 'chitti' ? 'Chitti Schemes' :
+                    activeTab === 'bills' ? 'Utility Bills' :
+                    activeTab === 'rentals' ? 'Rental Properties' :
+                    activeTab === 'customers' ? 'Customers Directory' :
+                    activeTab === 'security' ? 'Security settings' : 'Dashboard' }}
+              </h2>
+              <p class="text-xs font-semibold text-gray-400 tracking-wider mt-2.5 uppercase leading-none">
+                 {{ activeTab === 'overview' ? 'Aggregated statistics and metrics for your operations' :
+                    activeTab === 'interest' ? 'Track borrower balances and interest payments' :
+                    activeTab === 'chitti' ? 'Manage active chit schemes and collections' :
+                    activeTab === 'bills' ? 'Utility tracking and automated bill retrieval' :
+                    activeTab === 'rentals' ? 'Monitor housing tenancies, rent, and utility bills' :
+                    activeTab === 'customers' ? 'Manage customer profile details and records' :
+                    activeTab === 'security' ? 'Manage your secure login credentials' : 'Operations and administrative panel' }}
+              </p>
+           </div>
+           
+           <div class="flex items-center gap-3" *ngIf="authService.userProfile$ | async as profile">
+              <!-- DATA Switch -->
+              <div *ngIf="activeTab === 'overview'" class="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-2xl p-2.5 shadow-sm border border-gray-150 dark:border-gray-700">
+                 <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest pl-1.5">DATA</span>
+                 <label class="relative inline-flex items-center cursor-pointer scale-90">
+                    <input type="checkbox" [(ngModel)]="showOverviewData" class="sr-only peer">
+                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                 </label>
+              </div>
+
+              <!-- Year select dropdown -->
+              <div *ngIf="activeTab === 'overview'" class="bg-white dark:bg-gray-800 rounded-2xl p-2.5 shadow-sm border border-gray-150 dark:border-gray-700 flex items-center pr-1.5 relative">
+                 <svg class="w-3.5 h-3.5 text-gray-400 absolute left-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                 <select [(ngModel)]="selectedOverviewYear" (ngModelChange)="generateOverviewChart($event)"
+                         class="bg-transparent border-none outline-none text-xs font-black text-gray-700 dark:text-gray-300 pl-8 pr-8 py-1 cursor-pointer appearance-none">
+                    <option [ngValue]="-1">All Years</option>
+                    <option *ngFor="let y of availableOverviewYears" [ngValue]="y">{{y}}</option>
+                 </select>
+                 <svg class="w-3.5 h-3.5 text-gray-400 absolute right-2.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+              </div>
+
+              <!-- Theme Toggle -->
+              <button (click)="toggleTheme()" class="p-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-300 border border-gray-150 dark:border-gray-750 rounded-2xl shadow-sm transition-all">
+                 <svg *ngIf="!isDarkMode" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                 <svg *ngIf="isDarkMode" class="w-4 h-4 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+              </button>
+
+              <!-- Notifications -->
+              <button class="p-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-300 border border-gray-150 dark:border-gray-750 rounded-2xl shadow-sm relative transition-all">
+                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                 <span class="absolute top-2.5 right-2.5 w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+              </button>
+
+              <!-- User profile dropdown / Avatar button -->
+              <div class="relative more-menu-container flex items-center">
+                 <button (click)="toggleMoreMenu($event)" class="flex items-center gap-1.5 p-1 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-150 dark:border-gray-700 rounded-2xl shadow-sm transition-all">
+                    <div class="w-7 h-7 rounded-xl bg-indigo-650 text-white flex items-center justify-center font-black text-xs uppercase shadow-sm">
+                       {{ (profile.displayName || 'A').charAt(0) }}
+                    </div>
+                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                 </button>
+                 
+                 <!-- Dropdown menu -->
+                 <div *ngIf="showMoreMenu" class="absolute right-0 top-full mt-2 w-56 rounded-2xl shadow-2xl border border-gray-150 dark:border-gray-850 bg-white dark:bg-gray-900 z-50 overflow-hidden">
+                    <div class="py-2 flex flex-col">
+                       <button (click)="selectMoreMenu('profile')" class="flex items-center gap-3 px-4 py-3 text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors w-full text-left">
+                          <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                          My Profile
+                       </button>
+                       <button (click)="selectMoreMenu('security')" class="flex items-center gap-3 px-4 py-3 text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors w-full text-left">
+                          <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                          Change Password
+                       </button>
+                       <hr class="border-gray-100 dark:border-gray-800 my-1">
+                       <button (click)="logout()" class="flex items-center gap-3 px-4 py-3 text-xs font-black uppercase tracking-widest text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors w-full text-left">
+                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                          Secure Logout
+                       </button>
+                    </div>
+                 </div>
+              </div>
+           </div>
+        </header>
+
+        <main class="flex-1 p-6 lg:p-8 bg-[#f0f4f9] dark:bg-gray-950 relative z-10 animate-fade-up delay-100">
 
         <!-- Tab Switcher (Only for regular admins) -->
-        <div *ngIf="!isSuperAdmin" class="hidden sm:flex p-1.5 bg-gray-200/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl w-full sm:max-w-md mb-8 relative gap-1 overflow-x-auto no-scrollbar whitespace-nowrap border border-gray-100 dark:border-gray-700">
+        <div *ngIf="!isSuperAdmin" class="hidden sm:flex lg:hidden p-1.5 bg-gray-200/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl w-full sm:max-w-md mb-8 relative gap-1 overflow-x-auto no-scrollbar whitespace-nowrap border border-gray-100 dark:border-gray-700">
           <button (click)="activeTab = 'overview'; activeMobileMenu = 'overview'"
                   [class.tab-active]="activeTab === 'overview'"
                   class="flex-1 py-2 px-4 text-xs font-black rounded-xl transition-all duration-500 text-gray-500 dark:text-gray-400 z-10">
@@ -251,128 +431,413 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
         <!-- ═══════════ ADMIN OVERVIEW VIEW ═══════════ -->
         @if (!isSuperAdmin && activeTab === 'overview') {
            <div class="space-y-8 card-animate">
-              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-                 <div>
-                    <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Business Overview</h2>
-                    <p class="text-sm font-medium text-gray-500 mt-1">Aggregated statistics and metrics for your operations.</p>
-                 </div>
-                 <div class="flex items-center gap-3 mt-4 sm:mt-0">
-                    <div class="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-2xl p-2 shadow-sm border border-gray-100 dark:border-gray-700">
-                       <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest pl-2 hidden sm:inline">DATA</span>
-                       <label class="relative inline-flex items-center cursor-pointer scale-75 sm:scale-90">
-                          <input type="checkbox" [(ngModel)]="showOverviewData" class="sr-only peer">
-                          <div style="border-radius: 10px;" class="w-10 h-5 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
-                       </label>
+              @if (!showOverviewData) {
+                 <!-- ═══════════ MOBILE VIEW ONLY LAYOUT (lg:hidden) ═══════════ -->
+                 <div class="lg:hidden animate-fade-in duration-300">
+                    <!-- Blue Gradient Top Background Section -->
+                    <div class="-mx-4 px-4 pt-4 pb-20 bg-gradient-to-r from-blue-700 to-indigo-600 dark:from-blue-900 dark:to-indigo-850 -mt-6">
+                       <!-- Sub-Tabs Selector styled for blue header -->
+                       <div class="flex justify-center mb-6">
+                          <div class="inline-flex p-1 bg-white/10 dark:bg-black/25 backdrop-blur rounded-2xl border border-white/10 shadow-inner">
+                             <button (click)="overviewSubTab = 'finance'" 
+                                     [class]="overviewSubTab === 'finance' ? 'bg-white text-indigo-700 shadow-md font-black' : 'text-white/80 hover:text-white font-bold'"
+                                     class="px-5 py-2 rounded-xl text-[10px] uppercase tracking-widest transition-all">
+                                Finance
+                             </button>
+                             <button (click)="overviewSubTab = 'rentals'" 
+                                     [class]="overviewSubTab === 'rentals' ? 'bg-white text-indigo-700 shadow-md font-black' : 'text-white/80 hover:text-white font-bold'"
+                                     class="px-5 py-2 rounded-xl text-[10px] uppercase tracking-widest transition-all">
+                                Rentals
+                             </button>
+                          </div>
+                       </div>
+
+                       <!-- Mobile Chart Cards sitting on the blue background (inset with margins) -->
+                       @if (overviewSubTab === 'finance') {
+                          <div class="bg-white dark:bg-gray-900 rounded-[2rem] p-4 shadow-xl border border-gray-100/10 dark:border-gray-800 animate-in zoom-in-95 duration-500 mx-2">
+                             <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-xs font-black text-gray-500 uppercase tracking-widest">Financial Trends ({{ selectedOverviewYear }})</h3>
+                                <div class="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800 p-0.5 rounded-xl border border-gray-100 dark:border-gray-700">
+                                   <button (click)="panChart('overview', 100)" class="p-1 hover:bg-white dark:hover:bg-gray-700 rounded-md text-gray-500 hover:text-indigo-600 transition-all"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
+                                   <button (click)="zoomChart('overview', 1.1)" class="p-1 hover:bg-white dark:hover:bg-gray-700 rounded-md text-gray-500 hover:text-indigo-600 transition-all"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg></button>
+                                   <button (click)="resetChartZoom('overview')" class="p-1 hover:bg-white dark:hover:bg-gray-700 rounded-md text-gray-500 hover:text-indigo-600 transition-all"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+                                   <button (click)="zoomChart('overview', 0.9)" class="p-1 hover:bg-white dark:hover:bg-gray-700 rounded-md text-gray-500 hover:text-indigo-600 transition-all"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" /></svg></button>
+                                   <button (click)="panChart('overview', -100)" class="p-1 hover:bg-white dark:hover:bg-gray-700 rounded-md text-gray-500 hover:text-indigo-600 transition-all"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg></button>
+                                </div>
+                             </div>
+                             <div class="w-full h-[240px] chart-touch-wrapper" (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
+                                <canvas #overviewChart="base-chart" baseChart [data]="overviewChartData" [options]="overviewChartOptions" [type]="overviewChartType"></canvas>
+                             </div>
+                          </div>
+                       } @else if (overviewSubTab === 'rentals') {
+                          <div class="bg-white dark:bg-gray-900 rounded-[2rem] p-4 shadow-xl border border-gray-100/10 dark:border-gray-800 animate-in zoom-in-95 duration-500 mx-2">
+                             <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-xs font-black text-gray-500 uppercase tracking-widest">Rent Collected per Room</h3>
+                                <div class="flex gap-2">
+                                   <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                   <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                </div>
+                             </div>
+                             <div class="w-full h-[240px] chart-touch-wrapper" (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
+                                <canvas #rentalOverviewChart="base-chart" baseChart [data]="rentalOverviewChartData" [options]="rentalOverviewChartOptions" [type]="rentalOverviewChartType"></canvas>
+                             </div>
+                          </div>
+                       }
                     </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-2 shadow-sm border border-gray-100 dark:border-gray-700">
-                       <select [(ngModel)]="selectedOverviewYear" (ngModelChange)="generateOverviewChart($event)"
-                               class="bg-transparent border-none outline-none text-sm font-bold text-gray-700 dark:text-gray-300 pr-8 cursor-pointer">
-                          <option [ngValue]="-1">All Years</option>
-                          <option *ngFor="let y of availableOverviewYears" [ngValue]="y">{{y}}</option>
-                       </select>
+
+                    <!-- White/Slate Gray Bottom Main Content Area -->
+                    <div class="-mx-4 bg-slate-50 dark:bg-gray-950 rounded-t-[2.5rem] -mt-16 pt-20 px-4 pb-12 relative z-0 shadow-[0_-15px_40px_rgba(0,0,0,0.03)] border-t border-gray-100 dark:border-gray-900">
+                       @if (overviewSubTab === 'finance') {
+                          <!-- Premium Colored KPI stack rows matching the Mockup -->
+                          <div class="flex flex-col gap-3">
+                             <!-- Row 1: Given Loans -->
+                             <div class="bg-blue-50/70 dark:bg-blue-950/20 p-4.5 rounded-[1.5rem] border border-blue-100/40 dark:border-blue-900/30 flex items-center justify-between shadow-sm active:scale-98 transition-all">
+                                <div class="flex items-center gap-3">
+                                   <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 shadow-sm">
+                                      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                   </div>
+                                   <div>
+                                      <p class="text-xs font-black text-blue-900 dark:text-blue-200 uppercase tracking-tight">Total Given Loans</p>
+                                      <p class="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 mt-1 uppercase tracking-tighter">▲ 18.4% vs 2025</p>
+                                   </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                   <h3 class="text-base font-black text-blue-950 dark:text-white tracking-tighter" [appCountUp]="totalGivenLoans" prefix="₹"></h3>
+                                   <svg class="w-4 h-4 text-blue-400 dark:text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                </div>
+                             </div>
+
+                             <!-- Row 2: Settlements -->
+                             <div class="bg-emerald-50/70 dark:bg-emerald-950/20 p-4.5 rounded-[1.5rem] border border-emerald-100/40 dark:border-emerald-900/30 flex items-center justify-between shadow-sm active:scale-98 transition-all">
+                                <div class="flex items-center gap-3">
+                                   <div class="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 shadow-sm">
+                                      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                   </div>
+                                   <div>
+                                      <p class="text-xs font-black text-emerald-900 dark:text-emerald-200 uppercase tracking-tight">Total Settlements</p>
+                                      <p class="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 mt-1 uppercase tracking-tighter">▲ 12.7% vs 2025</p>
+                                   </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                   <h3 class="text-base font-black text-emerald-950 dark:text-white tracking-tighter" [appCountUp]="totalSettlement" prefix="₹"></h3>
+                                   <svg class="w-4 h-4 text-emerald-400 dark:text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                </div>
+                             </div>
+
+                             <!-- Row 3: Pending Principal -->
+                             <div class="bg-rose-50/70 dark:bg-rose-950/20 p-4.5 rounded-[1.5rem] border border-rose-100/40 dark:border-rose-900/30 flex items-center justify-between shadow-sm active:scale-98 transition-all">
+                                <div class="flex items-center gap-3">
+                                   <div class="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0 shadow-sm">
+                                      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                   </div>
+                                   <div>
+                                      <p class="text-xs font-black text-rose-900 dark:text-rose-200 uppercase tracking-tight">Pending Principal</p>
+                                      <p class="text-[9px] font-bold text-rose-600 dark:text-rose-400 mt-1 uppercase tracking-tighter">▼ 8.2% vs 2025</p>
+                                   </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                   <h3 class="text-base font-black text-rose-950 dark:text-white tracking-tighter" [appCountUp]="totalPendingPrincipal" prefix="₹"></h3>
+                                   <svg class="w-4 h-4 text-rose-400 dark:text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                </div>
+                             </div>
+
+                             <!-- Row 4: Interest Collected -->
+                             <div class="bg-purple-50/70 dark:bg-purple-950/20 p-4.5 rounded-[1.5rem] border border-purple-100/40 dark:border-purple-900/30 flex items-center justify-between shadow-sm active:scale-98 transition-all">
+                                <div class="flex items-center gap-3">
+                                   <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0 shadow-sm">
+                                      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                                   </div>
+                                   <div>
+                                      <p class="text-xs font-black text-purple-900 dark:text-purple-200 uppercase tracking-tight">Interest Collected</p>
+                                      <p class="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 mt-1 uppercase tracking-tighter">▲ 15.6% vs 2025</p>
+                                   </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                   <h3 class="text-base font-black text-purple-950 dark:text-white tracking-tighter" [appCountUp]="totalCollectedInterest" prefix="₹"></h3>
+                                   <svg class="w-4 h-4 text-purple-400 dark:text-purple-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                </div>
+                             </div>
+
+                             <!-- Row 5: Pending Interest -->
+                             <div class="bg-orange-50/70 dark:bg-orange-950/20 p-4.5 rounded-[1.5rem] border border-orange-100/40 dark:border-orange-900/30 flex items-center justify-between shadow-sm active:scale-98 transition-all">
+                                <div class="flex items-center gap-3">
+                                   <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center text-orange-650 dark:text-orange-400 shrink-0 shadow-sm">
+                                      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                   </div>
+                                   <div>
+                                      <p class="text-xs font-black text-orange-900 dark:text-orange-200 uppercase tracking-tight">Pending Interest</p>
+                                      <p class="text-[9px] font-bold text-orange-600 dark:text-orange-400 mt-1 uppercase tracking-tighter">▲ 9.3% vs 2025</p>
+                                   </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                   <h3 class="text-base font-black text-orange-950 dark:text-white tracking-tighter" [appCountUp]="totalPendingInterest" prefix="₹"></h3>
+                                   <svg class="w-4 h-4 text-orange-400 dark:text-orange-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                </div>
+                             </div>
+                          </div>
+                       } @else if (overviewSubTab === 'rentals') {
+                          <!-- Mobile Rental stats & list -->
+                          <div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                             <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-white dark:bg-gray-900 p-4.5 rounded-[1.5rem] border border-gray-150/40 dark:border-gray-800 shadow-sm">
+                                   <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Total Rent</span>
+                                   <h4 class="text-base font-black text-emerald-600 dark:text-emerald-400 leading-none" [appCountUp]="rentalStats.totalCollectedRent" prefix="₹"></h4>
+                                </div>
+                                <div class="bg-white dark:bg-gray-900 p-4.5 rounded-[1.5rem] border border-gray-150/40 dark:border-gray-800 shadow-sm">
+                                   <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Pending</span>
+                                   <h4 class="text-base font-black text-amber-600 dark:text-amber-400 leading-none" [appCountUp]="rentalStats.totalPendingRent" prefix="₹"></h4>
+                                </div>
+                                <div class="bg-white dark:bg-gray-900 p-4.5 rounded-[1.5rem] border border-gray-150/40 dark:border-gray-800 shadow-sm">
+                                   <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Occupancy</span>
+                                   <h4 class="text-base font-black text-blue-650 dark:text-blue-400 leading-none">{{ rentalStats.occupancyRate }}%</h4>
+                                </div>
+                                <div class="bg-white dark:bg-gray-900 p-4.5 rounded-[1.5rem] border border-gray-150/40 dark:border-gray-800 shadow-sm">
+                                   <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Rooms</span>
+                                   <h4 class="text-base font-black text-purple-650 dark:text-purple-400 leading-none">{{ rentalStats.occupiedHouses }} / {{ rentalStats.totalHouses }}</h4>
+                                </div>
+                             </div>
+
+                             <div class="bg-white dark:bg-gray-900 p-5 rounded-[2rem] border border-gray-150/40 dark:border-gray-800 shadow-sm">
+                                <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-4">Latest Rent Collections</h4>
+                                <div class="space-y-3 max-h-[220px] overflow-y-auto no-scrollbar">
+                                   @for (pay of rentalStats.recentPayments; track $index) {
+                                      <div class="flex items-center justify-between p-3.5 rounded-2xl bg-gray-50/50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-800/60">
+                                         <div class="min-w-0">
+                                            <p class="text-xs font-black text-gray-900 dark:text-white uppercase truncate">{{ pay.houseName }}</p>
+                                            <p class="text-[9px] text-gray-450 font-bold uppercase tracking-wide truncate mt-0.5">{{ pay.renterName }} • {{ pay.date | date:'MMM dd, yyyy' }}</p>
+                                         </div>
+                                         <div class="text-right shrink-0">
+                                            <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 block">+₹{{ pay.amount }}</span>
+                                         </div>
+                                      </div>
+                                   }
+                                   @if (rentalStats.recentPayments.length === 0) {
+                                      <div class="py-8 text-center text-gray-455 dark:text-slate-500 italic text-xs">
+                                         No paid rent records found.
+                                      </div>
+                                   }
+                                </div>
+                             </div>
+                          </div>
+                       }
                     </div>
                  </div>
-              </div>
 
-               @if (!showOverviewData) {
-                  <!-- Line Chart -->
-                  <div class="bg-white dark:bg-gray-900 rounded-[1.5rem] p-2 sm:p-2 shadow-sm border border-gray-100 dark:border-gray-800 animate-in zoom-in-95 duration-500">
-                     <div class="flex justify-between items-center mb-6 px-4 pt-4">
-                        <h3 class="text-sm font-black text-gray-500 uppercase tracking-widest">Financial Trends ({{ selectedOverviewYear }})</h3>
-                        <div class="flex items-center gap-2">
-                           <div class="flex items-center bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur rounded-xl border border-gray-200 dark:border-gray-700 p-1 shadow-sm">
-                              <button (click)="panChart('overview', 100)" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Move Left">
-                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                              </button>
-                              <button (click)="zoomChart('overview', 1.1)" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Zoom In">
-                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
-                              </button>
-                              <button (click)="resetChartZoom('overview')" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Reset Zoom">
-                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                              </button>
-                              <button (click)="zoomChart('overview', 0.9)" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Zoom Out">
-                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" /></svg>
-                              </button>
-                              <button (click)="panChart('overview', -100)" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Move Right">
-                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-                              </button>
-                           </div>
-                           <p class="text-[10px] font-bold text-indigo-500/60 uppercase tracking-widest italic hidden sm:block">Scroll to Zoom</p>
-                        </div>
-                     </div>
-                     <div class="w-full h-[300px] chart-touch-wrapper"
-                          (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
-                        <canvas #overviewChart="base-chart" baseChart [data]="overviewChartData" [options]="overviewChartOptions" [type]="overviewChartType"></canvas>
-                     </div>
-                  </div>
+                 <!-- ═══════════ DESKTOP ONLY VIEW LAYOUT (hidden lg:block) ═══════════ -->
+                 <div class="hidden lg:block space-y-8 animate-fade-in duration-300">
+                    <!-- Sub-Tabs Selector inside Desktop View -->
+                    <div class="flex justify-center mb-6">
+                       <div class="inline-flex p-1 bg-white dark:bg-gray-800 backdrop-blur rounded-2xl border border-gray-150 dark:border-gray-800/60 shadow-inner">
+                          <button (click)="overviewSubTab = 'finance'" 
+                                  [class]="overviewSubTab === 'finance' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'"
+                                  class="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+                             Finance Overview
+                          </button>
+                          <button (click)="overviewSubTab = 'rentals'" 
+                                  [class]="overviewSubTab === 'rentals' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'"
+                                  class="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+                             Rental Overview
+                          </button>
+                       </div>
+                    </div>
 
-                  <!-- KPIs -->
-                  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                     <div class="bg-blue-50 dark:bg-blue-900/20 p-4 sm:p-5 rounded-3xl border border-blue-100 dark:border-blue-800/50">
-                        <p class="text-[8px] sm:text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 leading-none">Total Given Loans</p>
-                        <p class="text-lg sm:text-xl font-black text-blue-700 dark:text-blue-300 tracking-tighter" [appCountUp]="totalGivenLoans" prefix="₹"></p>
-                     </div>
-                     <div class="bg-emerald-50 dark:bg-emerald-900/20 p-4 sm:p-5 rounded-3xl border border-emerald-100 dark:border-emerald-800/50">
-                        <p class="text-[8px] sm:text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1 leading-none">Total Settlements</p>
-                        <p class="text-lg sm:text-xl font-black text-emerald-700 dark:text-emerald-300 tracking-tighter" [appCountUp]="totalSettlement" prefix="₹"></p>
-                     </div>
-                     <div class="bg-red-50 dark:bg-red-900/20 p-4 sm:p-5 rounded-3xl border border-red-100 dark:border-red-800/50">
-                        <p class="text-[8px] sm:text-[10px] font-black text-red-500 uppercase tracking-widest mb-1 leading-none">Pending Principal</p>
-                        <p class="text-lg sm:text-xl font-black text-red-700 dark:text-red-300 tracking-tighter" [appCountUp]="totalPendingPrincipal" prefix="₹"></p>
-                     </div>
-                     <div class="bg-purple-50 dark:bg-purple-900/20 p-4 sm:p-5 rounded-3xl border border-purple-100 dark:border-purple-800/50">
-                        <p class="text-[8px] sm:text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1 leading-none">Interest Collected</p>
-                        <p class="text-lg sm:text-xl font-black text-purple-700 dark:text-purple-300 tracking-tighter" [appCountUp]="totalCollectedInterest" prefix="₹"></p>
-                     </div>
-                     <div class="bg-orange-50 dark:bg-orange-900/20 p-4 sm:p-5 rounded-3xl border border-orange-100 dark:border-orange-800/50">
-                        <p class="text-[8px] sm:text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1 leading-none">Pending Interest</p>
-                        <p class="text-lg sm:text-xl font-black text-orange-700 dark:text-orange-300 tracking-tighter" [appCountUp]="totalPendingInterest" prefix="₹"></p>
-                     </div>
-                  </div>
-               } @else {
-                  <div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                     <!-- Filter Chips -->
-                     <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                        @for (f of overviewFilters; track f) {
-                           <button (click)="overviewFilter = f"
-                                   [class]="overviewFilter === f ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'bg-white dark:bg-gray-800 text-gray-500 border-gray-100 dark:border-gray-700'"
-                                   class="px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all whitespace-nowrap">
-                              {{ f }}
-                           </button>
-                        }
-                     </div>
+                    @if (overviewSubTab === 'finance') {
+                       <!-- Line Chart Card with high rounded corners -->
+                       <div class="bg-white dark:bg-gray-900 rounded-[2.5rem] p-6 shadow-sm border border-gray-150 dark:border-gray-800 animate-in zoom-in-95 duration-500 flex flex-col gap-4">
+                          <div class="flex justify-between items-center">
+                             <h3 class="text-sm font-black text-gray-500 uppercase tracking-widest">Financial Trends ({{ selectedOverviewYear }})</h3>
+                             <div class="flex items-center gap-2">
+                                <div class="flex items-center bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur rounded-xl border border-gray-200 dark:border-gray-700 p-1 shadow-sm">
+                                   <button (click)="panChart('overview', 100)" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Move Left">
+                                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                                   </button>
+                                   <button (click)="zoomChart('overview', 1.1)" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Zoom In">
+                                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
+                                   </button>
+                                   <button (click)="resetChartZoom('overview')" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Reset Zoom">
+                                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                   </button>
+                                   <button (click)="zoomChart('overview', 0.9)" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Zoom Out">
+                                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" /></svg>
+                                   </button>
+                                   <button (click)="panChart('overview', -100)" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Move Right">
+                                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                                   </button>
+                                </div>
+                                <p class="text-[10px] font-bold text-indigo-500/60 uppercase tracking-widest italic hidden sm:block">Scroll to Zoom</p>
+                             </div>
+                          </div>
+                          <div class="w-full h-[320px] chart-touch-wrapper" (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
+                             <canvas #overviewChart="base-chart" baseChart [data]="overviewChartData" [options]="overviewChartOptions" [type]="overviewChartType"></canvas>
+                          </div>
+                       </div>
 
-                     <!-- Transaction Cards (Mobile First Approach) -->
-                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        @for (tx of overviewTransactions; track $index) {
-                           <div class="bg-white dark:bg-gray-900 p-5 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
-                              <div class="flex items-center gap-4">
-                                 <div class="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm shadow-inner" [class]="tx.bg + ' ' + tx.color">
-                                    {{ tx.icon }}
-                                 </div>
-                                 <div>
-                                    <h4 class="text-sm font-black text-gray-900 dark:text-white leading-tight">{{ tx.whom }}</h4>
-                                    <div class="flex items-center gap-2 mt-1">
-                                       <span class="text-[9px] font-black uppercase tracking-widest" [class]="tx.color">{{ tx.type }}</span>
-                                       <span class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">• {{ tx.date | date:'MMM dd' }}</span>
-                                    </div>
-                                 </div>
-                              </div>
-                              <div class="text-right">
-                                 <p class="text-lg font-black text-gray-900 dark:text-white tracking-tighter" [appCountUp]="tx.amount" prefix="₹"></p>
-                                 <p class="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Verified</p>
-                              </div>
-                           </div>
-                        }
-                        @if (overviewTransactions.length === 0) {
-                           <div class="col-span-full py-20 text-center bg-gray-50/50 dark:bg-gray-900/50 rounded-[3rem] border-2 border-dashed border-gray-200 dark:border-gray-800">
-                              <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                              <p class="text-xs font-black text-gray-400 uppercase tracking-widest italic">No records found for this filter</p>
-                           </div>
-                        }
-                     </div>
-                  </div>
-               }
+                       <!-- Desktop KPI Cards Grid -->
+                       <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                          <!-- Card 1: Given Loans -->
+                          <div class="bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-150 dark:border-gray-800/80 shadow-sm flex flex-col justify-between relative group hover:shadow-md transition-all">
+                             <div>
+                                <div class="flex justify-between items-start mb-2">
+                                   <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">Total Given Loans</span>
+                                   <div class="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                   </div>
+                                </div>
+                                <h3 class="text-xl font-black text-gray-900 dark:text-white leading-none mt-1" [appCountUp]="totalGivenLoans" prefix="₹"></h3>
+                             </div>
+                             <div class="mt-4 flex items-center gap-1">
+                                <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 uppercase tracking-tighter">▲ 18.4%</span>
+                                <span class="text-[8px] font-bold text-gray-450 dark:text-gray-500 uppercase tracking-tighter">vs 2025</span>
+                             </div>
+                          </div>
+
+                          <!-- Card 2: Settlements -->
+                          <div class="bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-150 dark:border-gray-800/80 shadow-sm flex flex-col justify-between relative group hover:shadow-md transition-all">
+                             <div>
+                                <div class="flex justify-between items-start mb-2">
+                                   <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">Total Settlements</span>
+                                   <div class="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                   </div>
+                                </div>
+                                <h3 class="text-xl font-black text-gray-900 dark:text-white leading-none mt-1" [appCountUp]="totalSettlement" prefix="₹"></h3>
+                             </div>
+                             <div class="mt-4 flex items-center gap-1">
+                                <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 uppercase tracking-tighter">▲ 12.7%</span>
+                                <span class="text-[8px] font-bold text-gray-450 dark:text-gray-500 uppercase tracking-tighter">vs 2025</span>
+                             </div>
+                          </div>
+
+                          <!-- Card 3: Pending Principal -->
+                          <div class="bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-150 dark:border-gray-800/80 shadow-sm flex flex-col justify-between relative group hover:shadow-md transition-all">
+                             <div>
+                                <div class="flex justify-between items-start mb-2">
+                                   <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">Pending Principal</span>
+                                   <div class="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center text-rose-600 dark:text-rose-400">
+                                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                   </div>
+                                </div>
+                                <h3 class="text-xl font-black text-gray-900 dark:text-white leading-none mt-1" [appCountUp]="totalPendingPrincipal" prefix="₹"></h3>
+                             </div>
+                             <div class="mt-4 flex items-center gap-1">
+                                <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 uppercase tracking-tighter">▼ 8.2%</span>
+                                <span class="text-[8px] font-bold text-gray-455 dark:text-gray-500 uppercase tracking-tighter">vs 2025</span>
+                             </div>
+                          </div>
+
+                          <!-- Card 4: Interest Collected -->
+                          <div class="bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-150 dark:border-gray-800/80 shadow-sm flex flex-col justify-between relative group hover:shadow-md transition-all">
+                             <div>
+                                <div class="flex justify-between items-start mb-2">
+                                   <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">Interest Collected</span>
+                                   <div class="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                                   </div>
+                                </div>
+                                <h3 class="text-xl font-black text-gray-900 dark:text-white leading-none mt-1" [appCountUp]="totalCollectedInterest" prefix="₹"></h3>
+                             </div>
+                             <div class="mt-4 flex items-center gap-1">
+                                <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 uppercase tracking-tighter">▲ 15.6%</span>
+                                <span class="text-[8px] font-bold text-gray-450 dark:text-gray-500 uppercase tracking-tighter">vs 2025</span>
+                             </div>
+                          </div>
+
+                          <!-- Card 5: Pending Interest -->
+                          <div class="bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-150 dark:border-gray-800/80 shadow-sm flex flex-col justify-between relative group hover:shadow-md transition-all">
+                             <div>
+                                <div class="flex justify-between items-start mb-2">
+                                   <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">Pending Interest</span>
+                                   <div class="w-7 h-7 rounded-lg bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-orange-650 dark:text-orange-400">
+                                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                   </div>
+                                </div>
+                                <h3 class="text-xl font-black text-gray-900 dark:text-white leading-none mt-1" [appCountUp]="totalPendingInterest" prefix="₹"></h3>
+                             </div>
+                             <div class="mt-4 flex items-center gap-1">
+                                <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-405 uppercase tracking-tighter">▲ 9.3%</span>
+                                <span class="text-[8px] font-bold text-gray-450 dark:text-gray-500 uppercase tracking-tighter">vs 2025</span>
+                             </div>
+                          </div>
+                       </div>
+                    } @else if (overviewSubTab === 'rentals') {
+                       <!-- ═══════════ RENTAL PROPERTIES OVERVIEW ═══════════ -->
+                       <div class="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                          <div class="flex items-center gap-4 mb-8">
+                             <div class="w-12 h-12 rounded-2xl bg-indigo-650 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                             </div>
+                             <div>
+                                <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">Rental Properties Overview</h3>
+                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-2">Rent collected, occupancy status, and stats per individual room</p>
+                             </div>
+                          </div>
+
+                          <!-- Mini Stats Grid -->
+                          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                             <div class="bg-emerald-50/40 dark:bg-emerald-950/20 p-5 rounded-[2rem] border border-emerald-100/40 dark:border-emerald-900/30">
+                                <span class="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-none block mb-1">Total Rent Collected</span>
+                                <h4 class="text-2xl font-black text-gray-900 dark:text-white leading-none mt-1" [appCountUp]="rentalStats.totalCollectedRent" prefix="₹"></h4>
+                             </div>
+                             <div class="bg-amber-50/40 dark:bg-amber-950/20 p-5 rounded-[2rem] border border-amber-100/40 dark:border-amber-900/30">
+                                <span class="text-[9px] font-black text-amber-500 uppercase tracking-widest leading-none block mb-1">Total Rent Pending</span>
+                                <h4 class="text-2xl font-black text-gray-900 dark:text-white leading-none mt-1" [appCountUp]="rentalStats.totalPendingRent" prefix="₹"></h4>
+                             </div>
+                             <div class="bg-blue-50/40 dark:bg-blue-950/20 p-5 rounded-[2rem] border border-blue-100/40 dark:border-blue-900/30">
+                                <span class="text-[9px] font-black text-blue-500 uppercase tracking-widest leading-none block mb-1">Occupancy Rate</span>
+                                <h4 class="text-2xl font-black text-gray-900 dark:text-white leading-none mt-1">{{ rentalStats.occupancyRate }}%</h4>
+                             </div>
+                             <div class="bg-purple-50/40 dark:bg-purple-950/20 p-5 rounded-[2rem] border border-purple-100/40 dark:border-purple-900/30">
+                                <span class="text-[9px] font-black text-purple-500 uppercase tracking-widest leading-none block mb-1">Occupied Rooms</span>
+                                <h4 class="text-2xl font-black text-gray-900 dark:text-white leading-none mt-1">{{ rentalStats.occupiedHouses }} / {{ rentalStats.totalHouses }}</h4>
+                             </div>
+                          </div>
+
+                          <!-- Chart and Renter Information Grid -->
+                          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                             <!-- Chart: Overall Collected for Individual Room -->
+                             <div class="lg:col-span-2 bg-white dark:bg-gray-900 p-6 rounded-[2.5rem] border border-gray-150 dark:border-gray-800/80 shadow-sm flex flex-col justify-between h-[360px] relative overflow-hidden">
+                                <div class="flex justify-between items-center mb-6">
+                                   <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Overall Collected per Individual Room</h4>
+                                   <div class="flex gap-2">
+                                      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                      <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                                   </div>
+                                </div>
+                                <div class="w-full flex-1 relative chart-touch-wrapper" (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
+                                   <canvas #rentalOverviewChart="base-chart" baseChart [data]="rentalOverviewChartData" [options]="rentalOverviewChartOptions" [type]="rentalOverviewChartType"></canvas>
+                                </div>
+                             </div>
+
+                             <!-- Renters and Room Information -->
+                             <div class="bg-white dark:bg-gray-900 p-6 rounded-[2.5rem] border border-gray-150 dark:border-gray-800/80 shadow-sm flex flex-col justify-between h-[360px] overflow-hidden">
+                                <div class="mb-4">
+                                   <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Latest Rent Collections</h4>
+                                   <div class="space-y-3 overflow-y-auto no-scrollbar max-h-[260px]">
+                                      @for (pay of rentalStats.recentPayments; track $index) {
+                                         <div class="flex items-center justify-between p-3 rounded-2xl bg-gray-50/50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-800/60">
+                                            <div class="min-w-0">
+                                               <p class="text-xs font-black text-gray-900 dark:text-white uppercase truncate">{{ pay.houseName }}</p>
+                                               <p class="text-[9px] text-gray-450 font-bold uppercase tracking-wide truncate mt-0.5">{{ pay.renterName }} • {{ pay.date | date:'mediumDate' }}</p>
+                                            </div>
+                                            <div class="text-right shrink-0">
+                                               <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 tracking-tight block">+₹{{ pay.amount }}</span>
+                                               <span class="text-[8px] font-black text-emerald-500 uppercase tracking-widest block bg-emerald-50 dark:bg-emerald-950/20 px-1.5 py-0.5 rounded-lg mt-0.5">Paid</span>
+                                            </div>
+                                         </div>
+                                      }
+                                      @if (rentalStats.recentPayments.length === 0) {
+                                         <div class="py-12 text-center text-gray-455 dark:text-slate-500 italic text-xs">
+                                            No paid rent records found.
+                                         </div>
+                                      }
+                                   </div>
+                                </div>
+                             </div>
+                          </div>
+                       </div>
+                    }
+                 </div>
+              }
            </div>
         }
 
@@ -2438,6 +2903,8 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
             }
          </div>
       </div>
+      <!-- End of RIGHT CONTENT AREA -->
+      </div>
    </div>
 </div>
   `
@@ -2586,6 +3053,7 @@ export class AdminDashboardComponent implements OnInit {
   refetchingHouseIds: Record<string, boolean> = {};
   overviewFilter: 'All' | 'Loan Issue' | 'Interest' | 'Settlement' = 'All';
   readonly overviewFilters: ('All' | 'Loan Issue' | 'Interest' | 'Settlement')[] = ['All', 'Loan Issue', 'Interest', 'Settlement'];
+  overviewSubTab: 'finance' | 'rentals' = 'finance';
   showMonthlyBillForm = false;
   monthlyBillForm: FormGroup;
 
@@ -2933,6 +3401,7 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   @ViewChild('overviewChart') overviewChart?: BaseChartDirective;
+  @ViewChild('rentalOverviewChart') rentalOverviewChart?: BaseChartDirective;
   @ViewChild('loanChart') loanChart?: BaseChartDirective;
   @ViewChild('chittiChart') chittiChart?: BaseChartDirective;
   @ViewChild('rentalChart') rentalChart?: BaseChartDirective;
@@ -3414,6 +3883,29 @@ export class AdminDashboardComponent implements OnInit {
   public overviewChartType: ChartType = 'line';
   public overviewChartData: ChartData<'line'> = { labels: [], datasets: [] };
 
+  public rentalOverviewChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { grid: { display: false } },
+      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }
+    },
+    plugins: {
+      legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10, weight: 'bold' } } }
+    }
+  };
+  public rentalOverviewChartType: ChartType = 'bar';
+  public rentalOverviewChartData: ChartData<'bar'> = { labels: [], datasets: [] };
+
+  rentalStats = {
+    totalHouses: 0,
+    occupiedHouses: 0,
+    occupancyRate: 0,
+    totalCollectedRent: 0,
+    totalPendingRent: 0,
+    recentPayments: [] as { houseName: string, renterName: string, amount: number, date: string }[]
+  };
+
   availableOverviewYears: number[] = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
   selectedOverviewYear: number = new Date().getFullYear();
 
@@ -3486,6 +3978,117 @@ export class AdminDashboardComponent implements OnInit {
         { data: interestCollected, label: 'Interest Collected', borderColor: '#a855f7', backgroundColor: 'rgba(168,85,247,0.1)', fill: true, tension: 0.4 }
       ]
     };
+  }
+
+  generateRentalOverviewChart() {
+    let totalHouses = this.houses.length;
+    let occupiedHouses = this.houses.filter(h => h.status === 'Occupied').length;
+    let occupancyRate = totalHouses > 0 ? Math.round((occupiedHouses / totalHouses) * 1000) / 10 : 0;
+    
+    let totalCollectedRent = 0;
+    let totalPendingRent = 0;
+    const allRentPayments: { houseName: string, renterName: string, amount: number, date: string }[] = [];
+
+    this.houses.forEach(house => {
+      (house.bills || []).forEach(bill => {
+        if (bill.status === 'Paid') {
+          totalCollectedRent += (bill.rentAmount || 0);
+          allRentPayments.push({
+            houseName: house.houseName,
+            renterName: house.renterName,
+            amount: bill.rentAmount,
+            date: bill.paidDate || bill.billDate
+          });
+        } else {
+          totalPendingRent += (bill.rentAmount || 0);
+        }
+      });
+
+      (house.pastTenancies || []).forEach(tenancy => {
+        (tenancy.bills || []).forEach(bill => {
+          if (bill.status === 'Paid') {
+            totalCollectedRent += (bill.rentAmount || 0);
+            allRentPayments.push({
+              houseName: house.houseName,
+              renterName: tenancy.renterName,
+              amount: bill.rentAmount,
+              date: bill.paidDate || bill.billDate
+            });
+          } else {
+            totalPendingRent += (bill.rentAmount || 0);
+          }
+        });
+      });
+    });
+
+    // Sort recent payments by date descending
+    allRentPayments.sort((a, b) => b.date.localeCompare(a.date));
+    const recentPayments = allRentPayments.slice(0, 5);
+
+    this.rentalStats = {
+      totalHouses,
+      occupiedHouses,
+      occupancyRate,
+      totalCollectedRent,
+      totalPendingRent,
+      recentPayments
+    };
+
+    const labels: string[] = [];
+    const collectedData: number[] = [];
+    const pendingData: number[] = [];
+
+    this.houses.forEach(house => {
+      let paidRent = 0;
+      let pendingRent = 0;
+
+      // Current active bills
+      (house.bills || []).forEach(bill => {
+        if (bill.status === 'Paid') {
+          paidRent += (bill.rentAmount || 0);
+        } else {
+          pendingRent += (bill.rentAmount || 0);
+        }
+      });
+
+      // Past tenancies bills
+      (house.pastTenancies || []).forEach(tenancy => {
+        (tenancy.bills || []).forEach(bill => {
+          if (bill.status === 'Paid') {
+            paidRent += (bill.rentAmount || 0);
+          } else {
+            pendingRent += (bill.rentAmount || 0);
+          }
+        });
+      });
+
+      labels.push(house.houseName);
+      collectedData.push(paidRent);
+      pendingData.push(pendingRent);
+    });
+
+    this.rentalOverviewChartData = {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Collected Rent',
+          data: collectedData,
+          backgroundColor: '#10b981',
+          borderColor: '#059669',
+          borderWidth: 1,
+          borderRadius: 8
+        },
+        {
+          label: 'Pending Rent',
+          data: pendingData,
+          backgroundColor: '#f59e0b',
+          borderColor: '#d97706',
+          borderWidth: 1,
+          borderRadius: 8
+        }
+      ]
+    };
+    this.rentalOverviewChart?.update();
   }
 
   passwordMatchValidator(g: FormGroup) {
@@ -3663,6 +4266,7 @@ export class AdminDashboardComponent implements OnInit {
       this.rentalService.getHouses(filterUid).subscribe(data => {
         this.houses = data;
         this.updateRentalAnalytics();
+        this.generateRentalOverviewChart();
       });
       this.rentalService.rentalUtilityBills.subscribe(bills => {
         this.rentalUtilityBills = bills;

@@ -659,7 +659,15 @@ Chart.register(zoomPlugin);
                                          <button *ngIf="bill.status === 'Paid'" (click)="printRentReceipt(selectedHouse, bill)" class="p-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 rounded-lg transition-all" title="Download Rent Receipt">
                                             <svg class="w-4 h-4 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                          </button>
-                                         <span *ngIf="bill.status !== 'Paid'" class="text-[8px] text-gray-400 font-bold uppercase tracking-widest">---</span>
+                                         <ng-container *ngIf="bill.status !== 'Paid'">
+                                            <button *ngIf="selectedHouse.electricMeterNo"
+                                                    (click)="openElectricityPortal(selectedHouse.electricMeterNo)"
+                                                    class="px-2.5 py-1.5 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shadow-md shadow-green-500/20"
+                                                    title="Pay Electricity Bill">
+                                               Pay Now
+                                            </button>
+                                            <span *ngIf="!selectedHouse.electricMeterNo" class="text-[8px] text-gray-400 font-bold uppercase tracking-widest">---</span>
+                                         </ng-container>
                                       </td>
                                   </tr>
                                }
@@ -1287,12 +1295,55 @@ export class CustomerDashboardComponent implements OnInit {
   }
 
   openElectricityPortal(uscNo: string) {
-    const url = `https://www.tgsouthernpower.org/online-bill-payment?uscno=${uscNo}`;
-    if (Capacitor.isNativePlatform()) {
-      window.open(url, '_system');
-    } else {
-      window.open(url, '_blank');
-    }
+    const form = document.body.appendChild(document.createElement('form'));
+    form.method = 'POST';
+    form.action = 'https://www.billdesk.com/pgidsk/pgmerc/tsspdclpgi/TSSPDCLPGIConfirm.jsp';
+    form.target = '_blank';
+
+    const uscnoInput = document.createElement('input');
+    uscnoInput.type = 'hidden';
+    uscnoInput.name = 'uscno';
+    uscnoInput.value = uscNo;
+    form.appendChild(uscnoInput);
+
+    const choiceInput = document.createElement('input');
+    choiceInput.type = 'hidden';
+    choiceInput.name = 'choice';
+    choiceInput.value = 'Postpaid Service';
+    form.appendChild(choiceInput);
+
+    const preflagInput = document.createElement('input');
+    preflagInput.type = 'hidden';
+    preflagInput.name = 'preflag';
+    preflagInput.value = 'N';
+    form.appendChild(preflagInput);
+
+    const circleInput = document.createElement('input');
+    circleInput.type = 'hidden';
+    circleInput.name = 'circle';
+    circleInput.value = '';
+    form.appendChild(circleInput);
+
+    const eroInput = document.createElement('input');
+    eroInput.type = 'hidden';
+    eroInput.name = 'ero';
+    eroInput.value = '';
+    form.appendChild(eroInput);
+
+    const snoInput = document.createElement('input');
+    snoInput.type = 'hidden';
+    snoInput.name = 'sno';
+    snoInput.value = '';
+    form.appendChild(snoInput);
+
+    const emailInput = document.createElement('input');
+    emailInput.type = 'hidden';
+    emailInput.name = 'txtEmailID';
+    emailInput.value = 'NA';
+    form.appendChild(emailInput);
+
+    form.submit();
+    document.body.removeChild(form);
   }
 
   openBillPortal(uscNo: string) {
