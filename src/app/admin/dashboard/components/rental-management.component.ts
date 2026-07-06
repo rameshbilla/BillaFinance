@@ -702,13 +702,13 @@ import { Bill, TrackedService } from '../../services/bill.service';
             <!-- Vacant State -->
             <div class="ledger-card" *ngIf="house.status === 'Vacant'">
               <div class="flex items-center gap-4 py-4">
-                <div class="w-16 h-16 rounded-2xl bg-gray-800 flex items-center justify-center">
+                <div class="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                   <svg class="w-8 h-8 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
                   </svg>
                 </div>
                 <div>
-                  <h3 class="text-lg font-black text-white">No Active Tenant</h3>
+                  <h3 class="text-lg font-black text-gray-950 dark:text-white">No Active Tenant</h3>
                   <p class="text-sm text-gray-400 mt-1">This property is currently vacant and available for rent.</p>
                 </div>
               </div>
@@ -793,7 +793,7 @@ import { Bill, TrackedService } from '../../services/bill.service';
                       </span>
                     </div>
                     <div class="ledger-breakdown-total" *ngIf="!isMonthlyBillFullyPaid(house, bill)">
-                      <span class="ledger-breakdown-label font-black" style="color:#f9fafb">Total Due</span>
+                      <span class="ledger-breakdown-label font-black text-gray-950 dark:text-white">Total Due</span>
                       <span class="font-black" style="color:#fb7185" [appCountUp]="getMonthlyPendingTotal(house, bill)" prefix="₹"></span>
                       <button (click)="onAddMonthlyRecord.emit()" class="ledger-collect-btn">Collect Payment</button>
                     </div>
@@ -1146,11 +1146,34 @@ import { Bill, TrackedService } from '../../services/bill.service';
       --c-rent:     #818cf8; /* indigo-400  */
       --c-electric: #fbbf24; /* amber-400   */
       --c-water:    #38bdf8; /* sky-400     */
+      --c-paid:     #10b981; /* emerald-500 */
+      --c-due:      #f43f5e; /* rose-500    */
+      --c-primary:  #6366f1; /* indigo-500  */
+      --c-bg-card:  #ffffff;
+      --c-bg-screen:#f8fafc;
+      --c-bg-hero:  linear-gradient(135deg, #f1f5f9 0%, #f8fafc 50%, #e2e8f0 100%);
+      --c-border:   rgba(99,102,241,0.08);
+      --c-text-primary: #1e293b;
+      --c-text-secondary: #64748b;
+      --c-text-muted: #94a3b8;
+      --c-bg-row:   #f1f5f9;
+      --c-bg-dot-pending: #fee2e2;
+      --c-bg-dot-paid: #d1fae5;
+    }
+
+    :host-context(.dark) {
       --c-paid:     #34d399; /* emerald-400 */
       --c-due:      #fb7185; /* rose-400    */
-      --c-primary:  #6366f1; /* indigo-500  */
       --c-bg-card:  #161b27;
       --c-bg-screen:#0f1117;
+      --c-bg-hero:  linear-gradient(135deg, #1a1f2e 0%, #0d1117 50%, #1a1430 100%);
+      --c-border:   rgba(255,255,255,0.06);
+      --c-text-primary: #f8fafc;
+      --c-text-secondary: #cbd5e1;
+      --c-text-muted: rgba(255,255,255,0.4);
+      --c-bg-row:   rgba(255,255,255,0.03);
+      --c-bg-dot-pending: #ef4444;
+      --c-bg-dot-paid: #22c55e;
     }
 
     /* ─── existing animations ─── */
@@ -1173,7 +1196,8 @@ import { Bill, TrackedService } from '../../services/bill.service';
     /* ─── LEDGER SCREEN ─── */
     .ledger-screen {
       display: flex; flex-direction: column; gap: 1rem;
-      background: #0f1117; border-radius: 1.5rem;
+      background: var(--c-bg-screen); border-radius: 1.5rem;
+      color: var(--c-text-secondary);
       overflow: hidden; min-height: 100vh;
     }
     @media (min-width: 640px) { .ledger-screen { gap: 1.25rem; } }
@@ -1181,10 +1205,10 @@ import { Bill, TrackedService } from '../../services/bill.service';
     /* Hero */
     .ledger-hero {
       position: relative; min-height: 160px;
-      background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 50%, #1a1430 100%);
+      background: var(--c-bg-hero);
       padding: 1rem;
       display: flex; flex-direction: column; justify-content: space-between;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
+      border-bottom: 1px solid var(--c-border);
     }
     @media (min-width: 640px) { .ledger-hero { min-height: 180px; padding: 1.25rem 1.5rem; } }
     /* Property illustration backdrop */
@@ -1204,19 +1228,19 @@ import { Bill, TrackedService } from '../../services/bill.service';
     }
     .ledger-back-btn {
       flex-shrink: 0; width: 2rem; height: 2rem; border-radius: 50%;
-      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
-      color: #e2e8f0; display: flex; align-items: center; justify-content: center;
+      background: var(--c-bg-row); border: 1px solid var(--c-border);
+      color: var(--c-text-primary); display: flex; align-items: center; justify-content: center;
       cursor: pointer; transition: all 0.2s;
     }
     .ledger-back-btn:hover { background: rgba(99,102,241,0.3); border-color: rgba(99,102,241,0.5); }
     .ledger-topbar-center { flex: 1; min-width: 0; }
     .ledger-hero-title {
-      font-size: 1.2rem; font-weight: 900; color: #f8fafc;
+      font-size: 1.2rem; font-weight: 900; color: var(--c-text-primary);
       letter-spacing: -0.03em; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     @media (min-width: 640px) { .ledger-hero-title { font-size: 1.5rem; } }
     .ledger-hero-sub {
-      font-size: 0.65rem; color: rgba(255,255,255,0.45); margin-top: 0.25rem;
+      font-size: 0.65rem; color: var(--c-text-muted); margin-top: 0.25rem;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .ledger-topbar-actions { flex-shrink: 0; display: flex; align-items: center; gap: 0.5rem; }
@@ -1248,12 +1272,12 @@ import { Bill, TrackedService } from '../../services/bill.service';
     }
     .ledger-btn-primary:hover { box-shadow: 0 4px 12px rgba(99,102,241,0.5); }
     .ledger-btn-ghost {
-      padding: 0.45rem 0.65rem; background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1;
+      padding: 0.45rem 0.65rem; background: var(--c-bg-row);
+      border: 1px solid var(--c-border); color: var(--c-text-secondary);
       border-radius: 0.6rem; cursor: pointer; transition: all 0.2s;
       display: flex; align-items: center; justify-content: center;
     }
-    .ledger-btn-ghost:hover { background: rgba(255,255,255,0.12); }
+    .ledger-btn-ghost:hover { background: var(--c-bg-row); opacity: 0.8; }
 
     /* Stats grid */
     .ledger-stats-grid {
@@ -1262,7 +1286,7 @@ import { Bill, TrackedService } from '../../services/bill.service';
     }
     @media (min-width: 640px) { .ledger-stats-grid { grid-template-columns: repeat(4,1fr); gap: 0.75rem; padding: 0 1rem; } }
     .ledger-stat-card {
-      background: #161b27; border: 1px solid rgba(255,255,255,0.06);
+      background: var(--c-bg-card); border: 1px solid var(--c-border);
       border-radius: 1rem; padding: 0.85rem 0.75rem;
       display: flex; align-items: flex-start; gap: 0.65rem;
       transition: transform 0.2s;
@@ -1273,9 +1297,9 @@ import { Bill, TrackedService } from '../../services/bill.service';
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .ledger-stat-body { min-width: 0; flex: 1; }
-    .ledger-stat-label { font-size: 0.55rem; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em; }
+    .ledger-stat-label { font-size: 0.55rem; font-weight: 700; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
     .ledger-stat-value { font-size: 1.05rem; font-weight: 900; margin-top: 0.1rem; line-height: 1.1; }
-    .ledger-stat-sub { font-size: 0.55rem; font-weight: 600; color: rgba(255,255,255,0.35); margin-top: 0.15rem; }
+    .ledger-stat-sub { font-size: 0.55rem; font-weight: 600; color: var(--c-text-muted); margin-top: 0.15rem; }
     .ledger-months-badge {
       display: inline-block; font-size: 0.55rem; font-weight: 800;
       background: rgba(56,189,248,0.15); color: #38bdf8;
@@ -1284,7 +1308,7 @@ import { Bill, TrackedService } from '../../services/bill.service';
 
     /* Cards */
     .ledger-card {
-      background: #161b27; border: 1px solid rgba(255,255,255,0.06);
+      background: var(--c-bg-card); border: 1px solid var(--c-border);
       border-radius: 1.25rem; padding: 1rem;
       margin: 0 0.75rem;
     }
@@ -1293,7 +1317,7 @@ import { Bill, TrackedService } from '../../services/bill.service';
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 1rem;
     }
-    .ledger-card-title { font-size: 0.8rem; font-weight: 900; color: #f1f5f9; letter-spacing: -0.01em; }
+    .ledger-card-title { font-size: 0.8rem; font-weight: 900; color: var(--c-text-primary); letter-spacing: -0.01em; }
     .ledger-card-header {
       display: flex; align-items: flex-start; gap: 0.75rem; flex-wrap: wrap;
       margin-bottom: 1rem;
@@ -1312,13 +1336,13 @@ import { Bill, TrackedService } from '../../services/bill.service';
       line-height: 1; letter-spacing: -0.02em;
       text-shadow: 0 0 12px rgba(165,180,252,0.4);
     }
-    .ledger-tenant-name { font-size: 1rem; font-weight: 900; color: #f8fafc; letter-spacing: -0.02em; }
+    .ledger-tenant-name { font-size: 1rem; font-weight: 900; color: var(--c-text-primary); letter-spacing: -0.02em; }
     .ledger-primary-badge {
       font-size: 0.55rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
       background: rgba(99,102,241,0.2); color: #818cf8; border: 1px solid rgba(99,102,241,0.35);
       padding: 0.15rem 0.5rem; border-radius: 9999px;
     }
-    .ledger-tenant-phone { font-size: 0.75rem; font-weight: 700; color: rgba(255,255,255,0.45); margin-top: 0.15rem; }
+    .ledger-tenant-phone { font-size: 0.75rem; font-weight: 700; color: var(--c-text-muted); margin-top: 0.15rem; }
     .ledger-tenant-actions {
       display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
       width: 100%; margin-top: 0.5rem;
@@ -1334,14 +1358,14 @@ import { Bill, TrackedService } from '../../services/bill.service';
     .ledger-action-call:hover { background: #2563eb; }
     .ledger-action-whatsapp { background: #25D366; color: #fff; }
     .ledger-action-whatsapp:hover { background: #1ebe59; }
-    .ledger-action-agree   { background: rgba(255,255,255,0.08); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.12); }
-    .ledger-action-agree:hover { background: rgba(255,255,255,0.14); }
+    .ledger-action-agree   { background: var(--c-bg-row); color: var(--c-text-secondary); border: 1px solid var(--c-border); }
+    .ledger-action-agree:hover { background: var(--c-bg-row); opacity: 0.8; }
 
     /* Tenancy meta row */
     .ledger-tenancy-meta {
       display: grid; grid-template-columns: 1fr 1fr;
       gap: 0.5rem; margin-bottom: 1rem;
-      background: rgba(255,255,255,0.03); border-radius: 0.75rem; padding: 0.75rem;
+      background: var(--c-bg-row); border-radius: 0.75rem; padding: 0.75rem;
     }
     @media (min-width: 480px) { .ledger-tenancy-meta { grid-template-columns: repeat(3,1fr); } }
     .ledger-meta-item { display: flex; align-items: center; gap: 0.5rem; }
@@ -1350,22 +1374,22 @@ import { Bill, TrackedService } from '../../services/bill.service';
       background: rgba(99,102,241,0.15); color: #818cf8;
       display: flex; align-items: center; justify-content: center;
     }
-    .ledger-meta-label { font-size: 0.55rem; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.07em; }
-    .ledger-meta-value { font-size: 0.75rem; font-weight: 800; color: #e2e8f0; margin-top: 0.05rem; }
+    .ledger-meta-label { font-size: 0.55rem; font-weight: 700; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: 0.07em; }
+    .ledger-meta-value { font-size: 0.75rem; font-weight: 800; color: var(--c-text-primary); margin-top: 0.05rem; }
 
     /* Progress bar */
     .ledger-progress-wrap { margin-top: 0.5rem; }
     .ledger-progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
-    .ledger-progress-label { font-size: 0.65rem; font-weight: 700; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.07em; }
+    .ledger-progress-label { font-size: 0.65rem; font-weight: 700; color: var(--c-text-secondary); text-transform: uppercase; letter-spacing: 0.07em; }
     .ledger-progress-pct { font-size: 0.65rem; font-weight: 800; color: #818cf8; }
-    .ledger-progress-track { height: 0.45rem; background: rgba(255,255,255,0.08); border-radius: 9999px; overflow: hidden; }
+    .ledger-progress-track { height: 0.45rem; background: var(--c-bg-row); border-radius: 9999px; overflow: hidden; }
     .ledger-progress-fill {
       height: 100%; border-radius: 9999px;
       background: linear-gradient(90deg, #6366f1, #8b5cf6);
       transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
     }
     .ledger-progress-dates { display: flex; justify-content: space-between; margin-top: 0.3rem; }
-    .ledger-progress-dates span { font-size: 0.55rem; color: rgba(255,255,255,0.3); font-weight: 600; }
+    .ledger-progress-dates span { font-size: 0.55rem; color: var(--c-text-muted); font-weight: 600; }
 
     /* Chart section */
     .ledger-chart-wrap {
@@ -1392,7 +1416,7 @@ import { Bill, TrackedService } from '../../services/bill.service';
     .ledger-timeline-item:last-child { padding-bottom: 0; }
     .ledger-timeline-line {
       position: absolute; left: 0.6rem; top: 1.5rem; bottom: 0;
-      width: 2px; background: rgba(255,255,255,0.08);
+      width: 2px; background: var(--c-border);
     }
     .ledger-timeline-dot {
       width: 1.25rem; height: 1.25rem; border-radius: 50%;
@@ -1400,8 +1424,8 @@ import { Bill, TrackedService } from '../../services/bill.service';
       flex-shrink: 0; position: relative; z-index: 1;
       margin-top: 0.15rem; color: #fff;
     }
-    .ledger-dot-paid    { background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,0.5); }
-    .ledger-dot-pending { background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.5); }
+    .ledger-dot-paid    { background: var(--c-bg-dot-paid); box-shadow: 0 0 8px rgba(34,197,94,0.3); }
+    .ledger-dot-pending { background: var(--c-bg-dot-pending); box-shadow: 0 0 8px rgba(239,68,68,0.3); }
     .ledger-timeline-content {
       flex: 1; border-radius: 0.85rem; padding: 0.85rem;
       border: 1px solid; margin-bottom: 0;
@@ -1409,7 +1433,7 @@ import { Bill, TrackedService } from '../../services/bill.service';
     .ledger-bill-paid    { border-color: rgba(34,197,94,0.15); background: rgba(34,197,94,0.04); }
     .ledger-bill-pending { border-color: rgba(239,68,68,0.2); background: rgba(239,68,68,0.04); }
     .ledger-bill-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.65rem; }
-    .ledger-bill-month { font-size: 0.8rem; font-weight: 900; color: #f1f5f9; }
+    .ledger-bill-month { font-size: 0.8rem; font-weight: 900; color: var(--c-text-primary); }
     .ledger-bill-status-badge {
       font-size: 0.55rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
       padding: 0.15rem 0.5rem; border-radius: 0.3rem;
@@ -1419,9 +1443,9 @@ import { Bill, TrackedService } from '../../services/bill.service';
     .ledger-bill-breakdown { display: flex; flex-direction: column; gap: 0.35rem; }
     .ledger-breakdown-row {
       display: flex; align-items: center; gap: 0.5rem;
-      padding: 0.35rem 0.5rem; background: rgba(255,255,255,0.03); border-radius: 0.4rem;
+      padding: 0.35rem 0.5rem; background: var(--c-bg-row); border-radius: 0.4rem;
     }
-    .ledger-breakdown-label { flex: 1; font-size: 0.65rem; font-weight: 700; color: rgba(255,255,255,0.5); }
+    .ledger-breakdown-label { flex: 1; font-size: 0.65rem; font-weight: 700; color: var(--c-text-secondary); }
     .ledger-breakdown-amount { font-size: 0.75rem; font-weight: 800; }
     .ledger-breakdown-badge {
       font-size: 0.5rem; font-weight: 800; padding: 0.12rem 0.4rem; border-radius: 0.25rem;
@@ -1445,10 +1469,10 @@ import { Bill, TrackedService } from '../../services/bill.service';
     .ledger-icon-btn {
       width: 1.6rem; height: 1.6rem; border-radius: 0.4rem; border: none;
       display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: all 0.2s; color: rgba(255,255,255,0.4);
-      background: rgba(255,255,255,0.06);
+      cursor: pointer; transition: all 0.2s; color: var(--c-text-muted);
+      background: var(--c-bg-row);
     }
-    .ledger-icon-btn:hover { background: rgba(255,255,255,0.12); color: #e2e8f0; }
+    .ledger-icon-btn:hover { background: var(--c-bg-row); opacity: 0.8; color: var(--c-text-primary); }
     .ledger-icon-edit:hover  { background: rgba(251,191,36,0.15); color: #fbbf24; }
     .ledger-icon-delete:hover { background: rgba(239,68,68,0.15); color: #fb7185; }
 
@@ -1465,19 +1489,19 @@ import { Bill, TrackedService } from '../../services/bill.service';
       display: inline-flex; align-items: center; gap: 0.3rem;
       font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
       padding: 0.35rem 0.6rem; border-radius: 0.5rem; cursor: pointer;
-      background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5);
-      border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s;
+      background: var(--c-bg-row); color: var(--c-text-secondary);
+      border: 1px solid var(--c-border); transition: all 0.2s;
     }
-    .ledger-ghost-icon-btn:hover { background: rgba(255,255,255,0.1); color: #e2e8f0; }
+    .ledger-ghost-icon-btn:hover { background: var(--c-bg-row); opacity: 0.8; color: var(--c-text-primary); }
 
     /* Expense items */
     .ledger-expense-item {
       display: flex; align-items: center; gap: 0.75rem;
-      padding: 0.65rem 0.75rem; background: rgba(255,255,255,0.03);
-      border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.05);
+      padding: 0.65rem 0.75rem; background: var(--c-bg-row);
+      border-radius: 0.75rem; border: 1px solid var(--c-border);
       transition: all 0.2s;
     }
-    .ledger-expense-item:hover { background: rgba(255,255,255,0.05); }
+    .ledger-expense-item:hover { background: var(--c-bg-row); opacity: 0.8; }
     .ledger-expense-icon {
       width: 2rem; height: 2rem; border-radius: 0.6rem; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
@@ -1486,8 +1510,8 @@ import { Bill, TrackedService } from '../../services/bill.service';
     .ledger-expense-icon-painting  { background: rgba(168,85,247,0.15); color: #c084fc; }
     .ledger-expense-icon-electrical{ background: rgba(251,191,36,0.15); color: #fbbf24; }
     .ledger-expense-icon-default   { background: rgba(156,163,175,0.15); color: #9ca3af; }
-    .ledger-expense-title { font-size: 0.72rem; font-weight: 800; color: #e2e8f0; }
-    .ledger-expense-date  { font-size: 0.57rem; font-weight: 600; color: rgba(255,255,255,0.35); margin-top: 0.1rem; }
+    .ledger-expense-title { font-size: 0.72rem; font-weight: 800; color: var(--c-text-primary); }
+    .ledger-expense-date  { font-size: 0.57rem; font-weight: 600; color: var(--c-text-muted); margin-top: 0.1rem; }
     .ledger-expense-amount { font-size: 0.85rem; font-weight: 900; color: #fb7185; white-space: nowrap; }
     .ledger-expense-total {
       display: flex; justify-content: space-between; align-items: center;
@@ -1501,22 +1525,22 @@ import { Bill, TrackedService } from '../../services/bill.service';
       display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
     }
     .ledger-prop-item { display: flex; flex-direction: column; gap: 0.15rem; }
-    .ledger-prop-label { font-size: 0.55rem; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.07em; }
-    .ledger-prop-value { font-size: 0.75rem; font-weight: 800; color: #f1f5f9; line-height: 1.3; }
+    .ledger-prop-label { font-size: 0.55rem; font-weight: 700; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: 0.07em; }
+    .ledger-prop-value { font-size: 0.75rem; font-weight: 800; color: var(--c-text-primary); line-height: 1.3; }
     .col-span-2 { grid-column: span 2; }
 
     /* Past tenancies */
     .ledger-past-card {
-      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+      background: var(--c-bg-row); border: 1px solid var(--c-border);
       border-radius: 0.85rem; padding: 0.85rem; transition: all 0.2s;
     }
-    .ledger-past-card:hover { background: rgba(255,255,255,0.05); }
+    .ledger-past-card:hover { background: var(--c-bg-row); opacity: 0.8; }
     .ledger-past-header { display: flex; align-items: flex-start; gap: 0.65rem; margin-bottom: 0.65rem; }
     .ledger-past-avatar {
       width: 2rem; height: 2rem; border-radius: 50%; flex-shrink: 0;
-      background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center;
+      background: var(--c-border); display: flex; align-items: center; justify-content: center;
     }
-    .ledger-past-name { font-size: 0.78rem; font-weight: 800; color: #f1f5f9; }
+    .ledger-past-name { font-size: 0.78rem; font-weight: 800; color: var(--c-text-primary); }
     .ledger-past-duration-badge {
       font-size: 0.55rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
       background: rgba(99,102,241,0.15); color: #818cf8;
@@ -1524,14 +1548,14 @@ import { Bill, TrackedService } from '../../services/bill.service';
     }
     .ledger-past-stats {
       display: flex; gap: 1rem; padding-top: 0.5rem;
-      border-top: 1px solid rgba(255,255,255,0.06);
+      border-top: 1px solid var(--c-border);
     }
     .ledger-past-stats > div { display: flex; flex-direction: column; gap: 0.1rem; }
 
     /* Empty state */
     .ledger-empty-state {
       padding: 2rem 1rem; text-align: center;
-      border: 1px dashed rgba(255,255,255,0.08); border-radius: 0.75rem;
+      border: 1px dashed var(--c-border); border-radius: 0.75rem;
     }
 
     /* Bottom padding for mobile nav clearance */
@@ -1742,9 +1766,21 @@ export class RentalManagementComponent implements OnInit, OnChanges {
 
     const serviceNo = type === 'electricity' ? house.electricMeterNo : house.waterBillNo;
     if (!serviceNo) return 0;
-
-    // 2. Check global bills next
     const cleanServiceNo = this.normalizeServiceNumber(serviceNo);
+
+    // 2. Check tracked services next (live portal values)
+    const service = (this.trackedServices || []).find(s => 
+      s.serviceNumber && this.normalizeServiceNumber(s.serviceNumber) === cleanServiceNo && s.serviceType === type
+    );
+    if (service && service.lastAmount !== undefined && service.lastAmount !== null && service.lastAmount > 0) {
+      return service.lastAmount;
+    }
+
+    // 3. Check cached sync details
+    const cachedAmount = house.id ? this.rentalUtilityBills[house.id]?.[type] : undefined;
+    if (cachedAmount !== undefined && cachedAmount > 0) return cachedAmount;
+    
+    // 4. Check global bills next
     if (cleanServiceNo) {
       const matchingBills = (this.bills || []).filter(b => 
         b.serviceNumber &&
@@ -1758,15 +1794,7 @@ export class RentalManagementComponent implements OnInit, OnChanges {
       }
     }
 
-    // 3. Check cached sync details
-    const cachedAmount = house.id ? this.rentalUtilityBills[house.id]?.[type] : undefined;
-    if (cachedAmount !== undefined) return cachedAmount;
-    
-    // 4. Check tracked services
-    const service = (this.trackedServices || []).find(s => 
-      s.serviceNumber && this.normalizeServiceNumber(s.serviceNumber) === cleanServiceNo && s.serviceType === type
-    );
-    return service?.lastAmount || 0;
+    return 0;
   }
 
   isHouseUtilityPaid(house: RentalHouse, type: 'electricity' | 'water'): boolean {
@@ -1776,7 +1804,22 @@ export class RentalManagementComponent implements OnInit, OnChanges {
     const cleanServiceNo = this.normalizeServiceNumber(serviceNo);
     if (!cleanServiceNo) return false;
 
-    // 1. Check global bills first
+    // 1. Check local monthly bills first
+    const bills = house.bills || [];
+    if (bills.length > 0) {
+      const sorted = [...bills].sort((a, b) => new Date(b.billDate).getTime() - new Date(a.billDate).getTime());
+      const latestBill = sorted[0];
+      const statusStr = (latestBill.status || '').toLowerCase();
+      if (statusStr === 'paid') {
+        return true;
+      }
+      const amt = type === 'electricity' ? (latestBill.electricBill || 0) : (latestBill.waterBill || 0);
+      if (statusStr === 'pending' && amt > 0) {
+        return false;
+      }
+    }
+
+    // 2. Check global bills next
     const matchingBills = (this.bills || []).filter(b => 
       b.serviceNumber &&
       this.normalizeServiceNumber(b.serviceNumber) === cleanServiceNo &&
@@ -1790,22 +1833,8 @@ export class RentalManagementComponent implements OnInit, OnChanges {
       if (statusStr === 'completed' || statusStr === 'paid') {
         return true;
       }
-    }
-
-    // 2. Check local monthly bills next
-    const bills = house.bills || [];
-    if (bills.length > 0) {
-      const sorted = [...bills].sort((a, b) => new Date(b.billDate).getTime() - new Date(a.billDate).getTime());
-      const latestBill = sorted[0];
-      const statusStr = (latestBill.status || '').toLowerCase();
-      if (statusStr === 'paid') {
-        return true;
-      }
-      if (statusStr === 'pending') {
-        const amt = type === 'electricity' ? (latestBill.electricBill || 0) : (latestBill.waterBill || 0);
-        if (amt === 0) {
-          return true;
-        }
+      if (statusStr === 'pending' || statusStr === 'overdue') {
+        return false;
       }
     }
 
@@ -1822,11 +1851,12 @@ export class RentalManagementComponent implements OnInit, OnChanges {
     const service = (this.trackedServices || []).find(s => 
       s.serviceNumber && this.normalizeServiceNumber(s.serviceNumber) === cleanServiceNo && s.serviceType === type
     );
-    if (service && (service.lastBillStatus === 'paid' || String(service.lastAmountLabel || '').toLowerCase().includes('paid'))) {
-      return true;
+    if (service) {
+      const isStatusPaid = service.lastBillStatus === 'paid' || String(service.lastAmountLabel || '').toLowerCase().includes('paid');
+      return isStatusPaid;
     }
 
-    return false;
+    return true; // default to true if no service details found
   }
 
   getHouseUtilityPaidDate(house: RentalHouse, type: 'electricity' | 'water'): string {

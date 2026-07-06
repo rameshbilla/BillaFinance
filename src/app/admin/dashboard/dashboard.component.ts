@@ -117,7 +117,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
     <div class="min-h-screen bg-[#f0f4f9] dark:bg-gray-950 font-sans transition-colors duration-500 overflow-x-hidden w-full flex flex-col lg:flex-row relative">
       <!-- DESKTOP SIDEBAR -->
-      <aside class="hidden lg:flex flex-col w-72 bg-[#09152b] dark:bg-gray-900 shrink-0 h-screen sticky top-0 justify-between p-6 z-30 shadow-xl border-r border-gray-800/10">
+      <aside class="hidden lg:flex flex-col w-72 bg-[#09152b] dark:bg-gray-900 fixed left-0 top-0 h-screen justify-between p-6 z-30 shadow-xl border-r border-gray-800/10">
          <div class="space-y-8">
             <!-- Logo area -->
             <div class="flex items-center gap-3 px-2">
@@ -208,7 +208,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
       </aside>
 
       <!-- RIGHT CONTENT AREA -->
-      <div class="flex-1 flex flex-col min-h-screen min-w-0">
+      <div class="flex-1 flex flex-col min-h-screen min-w-0 lg:pl-72">
       <!-- Decorative Background Glows (Subtle) -->
       <div class="absolute top-0 left-0 w-96 h-96 bg-purple-500/5 rounded-full filter blur-[100px] pointer-events-none"></div>
       <div class="absolute bottom-0 right-0 w-96 h-96 bg-pink-500/5 rounded-full filter blur-[100px] pointer-events-none"></div>
@@ -342,7 +342,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
               <!-- Year select dropdown -->
               <div *ngIf="activeTab === 'overview'" class="bg-white dark:bg-gray-800 rounded-2xl p-2.5 shadow-sm border border-gray-150 dark:border-gray-700 flex items-center pr-1.5 relative">
                  <svg class="w-3.5 h-3.5 text-gray-400 absolute left-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                 <select [(ngModel)]="selectedOverviewYear" (ngModelChange)="generateOverviewChart($event)"
+                 <select [(ngModel)]="selectedOverviewYear" (ngModelChange)="onOverviewYearChange($event)"
                          class="bg-transparent border-none outline-none text-xs font-black text-gray-700 dark:text-gray-300 pl-8 pr-8 py-1 cursor-pointer appearance-none">
                     <option [ngValue]="-1">All Years</option>
                     <option *ngFor="let y of availableOverviewYears" [ngValue]="y">{{y}}</option>
@@ -431,7 +431,6 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
         <!-- ═══════════ ADMIN OVERVIEW VIEW ═══════════ -->
         @if (!isSuperAdmin && activeTab === 'overview') {
            <div class="space-y-8 card-animate">
-              @if (!showOverviewData) {
                  <!-- ═══════════ MOBILE VIEW ONLY LAYOUT (lg:hidden) ═══════════ -->
                  <div class="lg:hidden animate-fade-in duration-300">
                     <!-- Blue Gradient Top Background Section -->
@@ -452,36 +451,116 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                           </div>
                        </div>
 
+                       <!-- Mobile Year & Data Controls -->
+                       <div class="flex justify-center items-center gap-3 mb-6">
+                          <!-- Year Selector -->
+                          <div class="inline-flex items-center gap-2 bg-white/10 dark:bg-black/25 backdrop-blur rounded-2xl p-1.5 border border-white/10 shadow-inner relative pl-3 pr-2.5">
+                             <span class="text-[9px] font-black text-white/70 uppercase tracking-widest">Year:</span>
+                             <select [ngModel]="selectedOverviewYear" (ngModelChange)="onOverviewYearChange($event)"
+                                     class="bg-transparent border-none outline-none text-xs font-black text-white pr-6 cursor-pointer appearance-none">
+                                <option class="text-gray-900" [ngValue]="-1">All Years</option>
+                                <option class="text-gray-900" *ngFor="let y of availableOverviewYears" [ngValue]="y">{{y}}</option>
+                             </select>
+                             <svg class="w-3.5 h-3.5 text-white/70 absolute right-2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                          </div>
+
+                          <!-- DATA Toggle -->
+                          <div class="inline-flex items-center gap-2 bg-white/10 dark:bg-black/25 backdrop-blur rounded-2xl p-2 border border-white/10 shadow-inner">
+                             <span class="text-[9px] font-black text-white/70 uppercase tracking-widest pl-1.5">DATA</span>
+                             <label class="relative inline-flex items-center cursor-pointer scale-75">
+                                <input type="checkbox" [(ngModel)]="showOverviewData" class="sr-only peer">
+                                <div class="w-9 h-5 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-500"></div>
+                             </label>
+                          </div>
+                       </div>
+
                        <!-- Mobile Chart Cards sitting on the blue background (inset with margins) -->
                        @if (overviewSubTab === 'finance') {
-                          <div class="bg-white dark:bg-gray-900 rounded-[2rem] p-4 shadow-xl border border-gray-100/10 dark:border-gray-800 animate-in zoom-in-95 duration-500 mx-2">
-                             <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-xs font-black text-gray-500 uppercase tracking-widest">Financial Trends ({{ selectedOverviewYear }})</h3>
-                                <div class="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800 p-0.5 rounded-xl border border-gray-100 dark:border-gray-700">
-                                   <button (click)="panChart('overview', 100)" class="p-1 hover:bg-white dark:hover:bg-gray-700 rounded-md text-gray-500 hover:text-indigo-600 transition-all"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
-                                   <button (click)="zoomChart('overview', 1.1)" class="p-1 hover:bg-white dark:hover:bg-gray-700 rounded-md text-gray-500 hover:text-indigo-600 transition-all"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg></button>
-                                   <button (click)="resetChartZoom('overview')" class="p-1 hover:bg-white dark:hover:bg-gray-700 rounded-md text-gray-500 hover:text-indigo-600 transition-all"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
-                                   <button (click)="zoomChart('overview', 0.9)" class="p-1 hover:bg-white dark:hover:bg-gray-700 rounded-md text-gray-500 hover:text-indigo-600 transition-all"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" /></svg></button>
-                                   <button (click)="panChart('overview', -100)" class="p-1 hover:bg-white dark:hover:bg-gray-700 rounded-md text-gray-500 hover:text-indigo-600 transition-all"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg></button>
+                          @if (!showOverviewData) {
+                             <div class="bg-white dark:bg-gray-900 rounded-[2rem] p-4 shadow-xl border border-gray-100/10 dark:border-gray-800 animate-in zoom-in-95 duration-500 mx-2">
+                                <div class="flex justify-between items-center mb-4">
+                                   <h3 class="text-xs font-black text-gray-500 uppercase tracking-widest">Financial Trends ({{ selectedOverviewYear === -1 ? 'All Years' : selectedOverviewYear }})</h3>
+                                   <div class="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800 p-0.5 rounded-xl border border-gray-100 dark:border-gray-700">
+                                      <button (click)="panChart('overview', 100)" class="p-1 hover:bg-white dark:hover:bg-gray-700 rounded-md text-gray-500 hover:text-indigo-600 transition-all"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg></button>
+                                      <button (click)="zoomChart('overview', 1.1)" class="p-1 hover:bg-white dark:hover:bg-gray-700 rounded-md text-gray-500 hover:text-indigo-600 transition-all"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg></button>
+                                      <button (click)="resetChartZoom('overview')" class="p-1 hover:bg-white dark:hover:bg-gray-700 rounded-md text-gray-500 hover:text-indigo-600 transition-all"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
+                                      <button (click)="zoomChart('overview', 0.9)" class="p-1 hover:bg-white dark:hover:bg-gray-700 rounded-md text-gray-500 hover:text-indigo-600 transition-all"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" /></svg></button>
+                                      <button (click)="panChart('overview', -100)" class="p-1 hover:bg-white dark:hover:bg-gray-700 rounded-md text-gray-500 hover:text-indigo-600 transition-all"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg></button>
+                                   </div>
+                                </div>
+                                <div class="w-full h-[240px] chart-touch-wrapper" (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
+                                   <canvas #overviewChart="base-chart" baseChart [data]="overviewChartData" [options]="overviewChartOptions" [type]="overviewChartType"></canvas>
                                 </div>
                              </div>
-                             <div class="w-full h-[240px] chart-touch-wrapper" (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
-                                <canvas #overviewChart="base-chart" baseChart [data]="overviewChartData" [options]="overviewChartOptions" [type]="overviewChartType"></canvas>
+                          } @else {
+                             <div class="bg-white dark:bg-gray-900 rounded-[2rem] p-4 shadow-xl border border-gray-100/10 dark:border-gray-800 animate-in zoom-in-95 duration-500 mx-2">
+                                <div class="flex justify-between items-center mb-4">
+                                   <h3 class="text-xs font-black text-gray-500 uppercase tracking-widest">Transactions</h3>
+                                   <span class="text-[10px] text-gray-400 font-bold uppercase">{{ overviewTransactions.length }} Items</span>
+                                </div>
+                                <div class="space-y-3 max-h-[240px] overflow-y-auto no-scrollbar">
+                                   @for (tx of overviewTransactions; track $index) {
+                                      <div class="flex items-center justify-between p-3 rounded-2xl bg-gray-50/50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-800/60">
+                                         <div class="flex items-center gap-3 min-w-0">
+                                            <div [class]="tx.bg + ' w-8 h-8 rounded-xl flex items-center justify-center ' + tx.color + ' font-black text-xs shrink-0'">{{ tx.icon }}</div>
+                                            <div class="min-w-0">
+                                               <p class="text-xs font-black text-gray-900 dark:text-white uppercase truncate">{{ tx.whom }}</p>
+                                               <p class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{{ tx.type }} • {{ tx.date | date:'dd MMM yyyy' }}</p>
+                                            </div>
+                                         </div>
+                                         <div class="text-right shrink-0">
+                                            <span [class]="tx.color + ' text-xs font-black'">₹{{ tx.amount | number }}</span>
+                                         </div>
+                                      </div>
+                                   }
+                                   @if (overviewTransactions.length === 0) {
+                                      <div class="py-8 text-center text-gray-400 italic text-xs">No transactions found.</div>
+                                   }
+                                </div>
                              </div>
-                          </div>
+                          }
                        } @else if (overviewSubTab === 'rentals') {
-                          <div class="bg-white dark:bg-gray-900 rounded-[2rem] p-4 shadow-xl border border-gray-100/10 dark:border-gray-800 animate-in zoom-in-95 duration-500 mx-2">
-                             <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-xs font-black text-gray-500 uppercase tracking-widest">Rent Collected per Room</h3>
-                                <div class="flex gap-2">
-                                   <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                                   <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                          @if (!showOverviewData) {
+                             <div class="bg-white dark:bg-gray-900 rounded-[2rem] p-4 shadow-xl border border-gray-100/10 dark:border-gray-800 animate-in zoom-in-95 duration-500 mx-2">
+                                <div class="flex justify-between items-center mb-4">
+                                   <h3 class="text-xs font-black text-gray-500 uppercase tracking-widest">Rent Collected per Room ({{ selectedOverviewYear === -1 ? 'All Years' : selectedOverviewYear }})</h3>
+                                   <div class="flex gap-2">
+                                      <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                      <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                   </div>
+                                </div>
+                                <div class="w-full h-[240px] chart-touch-wrapper" (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
+                                   <canvas #rentalOverviewChart="base-chart" baseChart [data]="rentalOverviewChartData" [options]="rentalOverviewChartOptions" [type]="rentalOverviewChartType"></canvas>
                                 </div>
                              </div>
-                             <div class="w-full h-[240px] chart-touch-wrapper" (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
-                                <canvas #rentalOverviewChart="base-chart" baseChart [data]="rentalOverviewChartData" [options]="rentalOverviewChartOptions" [type]="rentalOverviewChartType"></canvas>
+                          } @else {
+                             <div class="bg-white dark:bg-gray-900 rounded-[2rem] p-4 shadow-xl border border-gray-100/10 dark:border-gray-800 animate-in zoom-in-95 duration-500 mx-2">
+                                <div class="flex justify-between items-center mb-4">
+                                   <h3 class="text-xs font-black text-gray-500 uppercase tracking-widest">Properties ({{ selectedOverviewYear === -1 ? 'All Years' : selectedOverviewYear }})</h3>
+                                   <span class="text-[10px] text-gray-400 font-bold uppercase">{{ houses.length }} Rooms</span>
+                                </div>
+                                <div class="space-y-3 max-h-[240px] overflow-y-auto no-scrollbar">
+                                   @for (house of houses; track house.id) {
+                                      @let rData = getHouseRentalData(house);
+                                      <div class="flex items-center justify-between p-3 rounded-2xl bg-gray-50/50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-800/60">
+                                         <div class="min-w-0">
+                                            <p class="text-xs font-black text-gray-900 dark:text-white uppercase truncate">{{ house.houseName }}</p>
+                                            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">
+                                               {{ house.status === 'Occupied' ? house.renterName : 'Vacant' }}
+                                            </p>
+                                         </div>
+                                         <div class="text-right shrink-0">
+                                            <span class="text-[10px] font-black text-emerald-600 block">C: ₹{{ rData.paidRent | number }}</span>
+                                            <span class="text-[10px] font-black text-amber-600 block mt-0.5">P: ₹{{ rData.pendingRent | number }}</span>
+                                         </div>
+                                      </div>
+                                   }
+                                   @if (houses.length === 0) {
+                                      <div class="py-8 text-center text-gray-400 italic text-xs">No properties registered.</div>
+                                   }
+                                </div>
                              </div>
-                          </div>
+                          }
                        }
                     </div>
 
@@ -491,7 +570,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                           <!-- Premium Colored KPI stack rows matching the Mockup -->
                           <div class="flex flex-col gap-3">
                              <!-- Row 1: Given Loans -->
-                             <div class="bg-blue-50/70 dark:bg-blue-950/20 p-4.5 rounded-[1.5rem] border border-blue-100/40 dark:border-blue-900/30 flex items-center justify-between shadow-sm active:scale-98 transition-all">
+                             <div class="bg-blue-50/70 dark:bg-blue-950/20 p-5 rounded-[1.5rem] border border-blue-100/40 dark:border-blue-900/30 flex items-center justify-between shadow-sm active:scale-98 transition-all">
                                 <div class="flex items-center gap-3">
                                    <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 shadow-sm">
                                       <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
@@ -508,7 +587,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                              </div>
 
                              <!-- Row 2: Settlements -->
-                             <div class="bg-emerald-50/70 dark:bg-emerald-950/20 p-4.5 rounded-[1.5rem] border border-emerald-100/40 dark:border-emerald-900/30 flex items-center justify-between shadow-sm active:scale-98 transition-all">
+                             <div class="bg-emerald-50/70 dark:bg-emerald-950/20 p-5 rounded-[1.5rem] border border-emerald-100/40 dark:border-emerald-900/30 flex items-center justify-between shadow-sm active:scale-98 transition-all">
                                 <div class="flex items-center gap-3">
                                    <div class="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 shadow-sm">
                                       <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
@@ -525,7 +604,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                              </div>
 
                              <!-- Row 3: Pending Principal -->
-                             <div class="bg-rose-50/70 dark:bg-rose-950/20 p-4.5 rounded-[1.5rem] border border-rose-100/40 dark:border-rose-900/30 flex items-center justify-between shadow-sm active:scale-98 transition-all">
+                             <div class="bg-rose-50/70 dark:bg-rose-950/20 p-5 rounded-[1.5rem] border border-rose-100/40 dark:border-rose-900/30 flex items-center justify-between shadow-sm active:scale-98 transition-all">
                                 <div class="flex items-center gap-3">
                                    <div class="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0 shadow-sm">
                                       <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
@@ -542,7 +621,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                              </div>
 
                              <!-- Row 4: Interest Collected -->
-                             <div class="bg-purple-50/70 dark:bg-purple-950/20 p-4.5 rounded-[1.5rem] border border-purple-100/40 dark:border-purple-900/30 flex items-center justify-between shadow-sm active:scale-98 transition-all">
+                             <div class="bg-purple-50/70 dark:bg-purple-950/20 p-5 rounded-[1.5rem] border border-purple-100/40 dark:border-purple-900/30 flex items-center justify-between shadow-sm active:scale-98 transition-all">
                                 <div class="flex items-center gap-3">
                                    <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0 shadow-sm">
                                       <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
@@ -559,7 +638,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                              </div>
 
                              <!-- Row 5: Pending Interest -->
-                             <div class="bg-orange-50/70 dark:bg-orange-950/20 p-4.5 rounded-[1.5rem] border border-orange-100/40 dark:border-orange-900/30 flex items-center justify-between shadow-sm active:scale-98 transition-all">
+                             <div class="bg-orange-50/70 dark:bg-orange-950/20 p-5 rounded-[1.5rem] border border-orange-100/40 dark:border-orange-900/30 flex items-center justify-between shadow-sm active:scale-98 transition-all">
                                 <div class="flex items-center gap-3">
                                    <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center text-orange-650 dark:text-orange-400 shrink-0 shadow-sm">
                                       <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -579,19 +658,19 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                           <!-- Mobile Rental stats & list -->
                           <div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                              <div class="grid grid-cols-2 gap-4">
-                                <div class="bg-white dark:bg-gray-900 p-4.5 rounded-[1.5rem] border border-gray-150/40 dark:border-gray-800 shadow-sm">
+                                <div class="bg-white dark:bg-gray-900 p-5 rounded-[1.5rem] border border-gray-150/40 dark:border-gray-800 shadow-sm">
                                    <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Total Rent</span>
                                    <h4 class="text-base font-black text-emerald-600 dark:text-emerald-400 leading-none" [appCountUp]="rentalStats.totalCollectedRent" prefix="₹"></h4>
                                 </div>
-                                <div class="bg-white dark:bg-gray-900 p-4.5 rounded-[1.5rem] border border-gray-150/40 dark:border-gray-800 shadow-sm">
+                                <div class="bg-white dark:bg-gray-900 p-5 rounded-[1.5rem] border border-gray-150/40 dark:border-gray-800 shadow-sm">
                                    <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Pending</span>
                                    <h4 class="text-base font-black text-amber-600 dark:text-amber-400 leading-none" [appCountUp]="rentalStats.totalPendingRent" prefix="₹"></h4>
                                 </div>
-                                <div class="bg-white dark:bg-gray-900 p-4.5 rounded-[1.5rem] border border-gray-150/40 dark:border-gray-800 shadow-sm">
+                                <div class="bg-white dark:bg-gray-900 p-5 rounded-[1.5rem] border border-gray-150/40 dark:border-gray-800 shadow-sm">
                                    <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Occupancy</span>
                                    <h4 class="text-base font-black text-blue-650 dark:text-blue-400 leading-none">{{ rentalStats.occupancyRate }}%</h4>
                                 </div>
-                                <div class="bg-white dark:bg-gray-900 p-4.5 rounded-[1.5rem] border border-gray-150/40 dark:border-gray-800 shadow-sm">
+                                <div class="bg-white dark:bg-gray-900 p-5 rounded-[1.5rem] border border-gray-150/40 dark:border-gray-800 shadow-sm">
                                    <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Rooms</span>
                                    <h4 class="text-base font-black text-purple-650 dark:text-purple-400 leading-none">{{ rentalStats.occupiedHouses }} / {{ rentalStats.totalHouses }}</h4>
                                 </div>
@@ -624,7 +703,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                  </div>
 
                  <!-- ═══════════ DESKTOP ONLY VIEW LAYOUT (hidden lg:block) ═══════════ -->
-                 <div class="hidden lg:block space-y-8 animate-fade-in duration-300">
+                 <div class="hidden lg:block space-y-8 animate-fade-in duration-300" style="margin-top:0;">
                     <!-- Sub-Tabs Selector inside Desktop View -->
                     <div class="flex justify-center mb-6">
                        <div class="inline-flex p-1 bg-white dark:bg-gray-800 backdrop-blur rounded-2xl border border-gray-150 dark:border-gray-800/60 shadow-inner">
@@ -642,38 +721,8 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                     </div>
 
                     @if (overviewSubTab === 'finance') {
-                       <!-- Line Chart Card with high rounded corners -->
-                       <div class="bg-white dark:bg-gray-900 rounded-[2.5rem] p-6 shadow-sm border border-gray-150 dark:border-gray-800 animate-in zoom-in-95 duration-500 flex flex-col gap-4">
-                          <div class="flex justify-between items-center">
-                             <h3 class="text-sm font-black text-gray-500 uppercase tracking-widest">Financial Trends ({{ selectedOverviewYear }})</h3>
-                             <div class="flex items-center gap-2">
-                                <div class="flex items-center bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur rounded-xl border border-gray-200 dark:border-gray-700 p-1 shadow-sm">
-                                   <button (click)="panChart('overview', 100)" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Move Left">
-                                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                                   </button>
-                                   <button (click)="zoomChart('overview', 1.1)" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Zoom In">
-                                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
-                                   </button>
-                                   <button (click)="resetChartZoom('overview')" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Reset Zoom">
-                                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                                   </button>
-                                   <button (click)="zoomChart('overview', 0.9)" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Zoom Out">
-                                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" /></svg>
-                                   </button>
-                                   <button (click)="panChart('overview', -100)" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Move Right">
-                                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-                                   </button>
-                                </div>
-                                <p class="text-[10px] font-bold text-indigo-500/60 uppercase tracking-widest italic hidden sm:block">Scroll to Zoom</p>
-                             </div>
-                          </div>
-                          <div class="w-full h-[320px] chart-touch-wrapper" (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
-                             <canvas #overviewChart="base-chart" baseChart [data]="overviewChartData" [options]="overviewChartOptions" [type]="overviewChartType"></canvas>
-                          </div>
-                       </div>
-
                        <!-- Desktop KPI Cards Grid -->
-                       <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                       <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                           <!-- Card 1: Given Loans -->
                           <div class="bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-150 dark:border-gray-800/80 shadow-sm flex flex-col justify-between relative group hover:shadow-md transition-all">
                              <div>
@@ -687,7 +736,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                              </div>
                              <div class="mt-4 flex items-center gap-1">
                                 <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 uppercase tracking-tighter">▲ 18.4%</span>
-                                <span class="text-[8px] font-bold text-gray-450 dark:text-gray-500 uppercase tracking-tighter">vs 2025</span>
+                                <span class="text-[8px] font-bold text-gray-455 dark:text-gray-500 uppercase tracking-tighter">vs 2025</span>
                              </div>
                           </div>
 
@@ -704,7 +753,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                              </div>
                              <div class="mt-4 flex items-center gap-1">
                                 <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 uppercase tracking-tighter">▲ 12.7%</span>
-                                <span class="text-[8px] font-bold text-gray-450 dark:text-gray-500 uppercase tracking-tighter">vs 2025</span>
+                                <span class="text-[8px] font-bold text-gray-455 dark:text-gray-500 uppercase tracking-tighter">vs 2025</span>
                              </div>
                           </div>
 
@@ -738,7 +787,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                              </div>
                              <div class="mt-4 flex items-center gap-1">
                                 <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 uppercase tracking-tighter">▲ 15.6%</span>
-                                <span class="text-[8px] font-bold text-gray-450 dark:text-gray-500 uppercase tracking-tighter">vs 2025</span>
+                                <span class="text-[8px] font-bold text-gray-455 dark:text-gray-500 uppercase tracking-tighter">vs 2025</span>
                              </div>
                           </div>
 
@@ -747,7 +796,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                              <div>
                                 <div class="flex justify-between items-start mb-2">
                                    <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">Pending Interest</span>
-                                   <div class="w-7 h-7 rounded-lg bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-orange-650 dark:text-orange-400">
+                                   <div class="w-7 h-7 rounded-lg bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-orange-655 dark:text-orange-400">
                                       <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                    </div>
                                 </div>
@@ -759,6 +808,90 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                              </div>
                           </div>
                        </div>
+
+                       @if (!showOverviewData) {
+                          <!-- Line Chart Card with high rounded corners -->
+                          <div class="bg-white dark:bg-gray-900 rounded-[2.5rem] p-6 shadow-sm border border-gray-150 dark:border-gray-800 animate-in zoom-in-95 duration-500 flex flex-col gap-4">
+                             <div class="flex justify-between items-center">
+                                <h3 class="text-sm font-black text-gray-500 uppercase tracking-widest">Financial Trends ({{ selectedOverviewYear === -1 ? 'All Years' : selectedOverviewYear }})</h3>
+                                <div class="flex items-center gap-2">
+                                   <div class="flex items-center bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur rounded-xl border border-gray-200 dark:border-gray-700 p-1 shadow-sm">
+                                      <button (click)="panChart('overview', 100)" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Move Left">
+                                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                                      </button>
+                                      <button (click)="zoomChart('overview', 1.1)" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Zoom In">
+                                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
+                                      </button>
+                                      <button (click)="resetChartZoom('overview')" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Reset Zoom">
+                                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                      </button>
+                                      <button (click)="zoomChart('overview', 0.9)" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Zoom Out">
+                                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" /></svg>
+                                      </button>
+                                      <button (click)="panChart('overview', -100)" class="p-1.5 hover:bg-white dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-indigo-600 transition-all" title="Move Right">
+                                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                                      </button>
+                                   </div>
+                                   <p class="text-[10px] font-bold text-indigo-500/60 uppercase tracking-widest italic hidden sm:block">Scroll to Zoom</p>
+                                </div>
+                             </div>
+                             <div class="w-full h-[320px] chart-touch-wrapper" (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
+                                <canvas #overviewChart="base-chart" baseChart [data]="overviewChartData" [options]="overviewChartOptions" [type]="overviewChartType"></canvas>
+                             </div>
+                          </div>
+                       } @else {
+                          <!-- Transaction History Table Card -->
+                          <div class="bg-white dark:bg-gray-900 rounded-[2.5rem] p-6 shadow-sm border border-gray-150 dark:border-gray-800 animate-in zoom-in-95 duration-500 flex flex-col gap-4">
+                             <div class="flex justify-between items-center px-2">
+                                <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest">Transaction History</h4>
+                                <div class="flex gap-2 p-1 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-inner">
+                                   @for (f of overviewFilters; track f) {
+                                      <button (click)="overviewFilter = f; generateOverviewChart()"
+                                              [class.bg-blue-600]="overviewFilter === f"
+                                              [class.text-white]="overviewFilter === f"
+                                              class="px-3 py-1.5 text-[8px] font-black rounded-lg transition-all uppercase tracking-widest cursor-pointer"
+                                              [class.text-gray-400]="overviewFilter !== f">
+                                         {{ f }}
+                                      </button>
+                                   }
+                                </div>
+                             </div>
+                             <div class="overflow-x-auto">
+                                <table class="w-full">
+                                   <thead class="bg-gray-50 dark:bg-gray-800/50">
+                                      <tr>
+                                         <th class="px-6 py-4 text-left text-[9px] font-black text-gray-400 uppercase tracking-widest">Type</th>
+                                         <th class="px-6 py-4 text-left text-[9px] font-black text-gray-400 uppercase tracking-widest">Customer</th>
+                                         <th class="px-6 py-4 text-left text-[9px] font-black text-gray-400 uppercase tracking-widest">Date</th>
+                                         <th class="px-6 py-4 text-right text-[9px] font-black text-gray-400 uppercase tracking-widest">Amount</th>
+                                      </tr>
+                                   </thead>
+                                   <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
+                                      @for (tx of overviewTransactions; track $index) {
+                                         <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-850/50 transition-colors">
+                                            <td class="px-6 py-4">
+                                               <div class="flex items-center gap-3">
+                                                  <div [class]="tx.bg + ' w-8 h-8 rounded-xl flex items-center justify-center ' + tx.color + ' font-black text-xs border border-white dark:border-gray-700'">{{ tx.icon }}</div>
+                                                  <span class="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-tighter">{{ tx.type }}</span>
+                                               </div>
+                                            </td>
+                                            <td class="px-6 py-4 text-[11px] font-bold text-gray-600 dark:text-gray-300">{{ tx.whom }}</td>
+                                            <td class="px-6 py-4 text-[11px] font-bold text-gray-500 dark:text-gray-400">{{ tx.date | date:'dd MMM yyyy' }}</td>
+                                            <td class="px-6 py-4 text-right">
+                                               <span [class]="tx.color + ' text-sm font-black'" [appCountUp]="tx.amount" prefix="₹"></span>
+                                            </td>
+                                         </tr>
+                                      }
+                                      @if (overviewTransactions.length === 0) {
+                                         <tr>
+                                            <td colspan="4" class="px-6 py-12 text-center text-gray-400 italic text-[11px] uppercase tracking-widest opacity-60">No transactions found for this period.</td>
+                                         </tr>
+                                      }
+                                   </tbody>
+                                </table>
+                             </div>
+                          </div>
+                       }
                     } @else if (overviewSubTab === 'rentals') {
                        <!-- ═══════════ RENTAL PROPERTIES OVERVIEW ═══════════ -->
                        <div class="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -794,19 +927,67 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
                           <!-- Chart and Renter Information Grid -->
                           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                             <!-- Chart: Overall Collected for Individual Room -->
-                             <div class="lg:col-span-2 bg-white dark:bg-gray-900 p-6 rounded-[2.5rem] border border-gray-150 dark:border-gray-800/80 shadow-sm flex flex-col justify-between h-[360px] relative overflow-hidden">
-                                <div class="flex justify-between items-center mb-6">
-                                   <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Overall Collected per Individual Room</h4>
-                                   <div class="flex gap-2">
-                                      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                      <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                             @if (!showOverviewData) {
+                                <!-- Chart: Overall Collected for Individual Room -->
+                                <div class="lg:col-span-2 bg-white dark:bg-gray-900 p-6 rounded-[2.5rem] border border-gray-150 dark:border-gray-800/80 shadow-sm flex flex-col justify-between h-[360px] relative overflow-hidden">
+                                   <div class="flex justify-between items-center mb-6">
+                                      <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Overall Collected per Individual Room ({{ selectedOverviewYear === -1 ? 'All Years' : selectedOverviewYear }})</h4>
+                                      <div class="flex gap-2">
+                                         <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                         <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                                      </div>
+                                   </div>
+                                   <div class="w-full flex-1 relative chart-touch-wrapper" (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
+                                      <canvas #rentalOverviewChart="base-chart" baseChart [data]="rentalOverviewChartData" [options]="rentalOverviewChartOptions" [type]="rentalOverviewChartType"></canvas>
                                    </div>
                                 </div>
-                                <div class="w-full flex-1 relative chart-touch-wrapper" (touchstart)="lockScroll()" (touchend)="unlockScroll()" (touchcancel)="unlockScroll()">
-                                   <canvas #rentalOverviewChart="base-chart" baseChart [data]="rentalOverviewChartData" [options]="rentalOverviewChartOptions" [type]="rentalOverviewChartType"></canvas>
+                             } @else {
+                                <!-- Rental Rooms Ledger Table -->
+                                <div class="lg:col-span-2 bg-white dark:bg-gray-900 p-6 rounded-[2.5rem] border border-gray-150 dark:border-gray-800 shadow-sm flex flex-col justify-between h-[360px] relative overflow-hidden">
+                                   <div class="flex justify-between items-center mb-4">
+                                      <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Rental Rooms Ledger ({{ selectedOverviewYear === -1 ? 'All Years' : selectedOverviewYear }})</h4>
+                                   </div>
+                                   <div class="overflow-y-auto no-scrollbar flex-1">
+                                      <table class="w-full">
+                                         <thead class="bg-gray-50 dark:bg-gray-800/50 sticky top-0 z-10">
+                                            <tr>
+                                               <th class="px-4 py-3 text-left text-[9px] font-black text-gray-400 uppercase tracking-widest">Room / House</th>
+                                               <th class="px-4 py-3 text-left text-[9px] font-black text-gray-400 uppercase tracking-widest">Renter</th>
+                                               <th class="px-4 py-3 text-left text-[9px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                                               <th class="px-4 py-3 text-right text-[9px] font-black text-gray-400 uppercase tracking-widest">Collected</th>
+                                               <th class="px-4 py-3 text-right text-[9px] font-black text-gray-400 uppercase tracking-widest">Pending</th>
+                                            </tr>
+                                         </thead>
+                                         <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
+                                            @for (house of houses; track house.id) {
+                                               @let rData = getHouseRentalData(house);
+                                               <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-850/50 transition-colors">
+                                                  <td class="px-4 py-3.5">
+                                                     <span class="text-xs font-black text-gray-900 dark:text-white uppercase">{{ house.houseName }}</span>
+                                                  </td>
+                                                  <td class="px-4 py-3.5 text-xs font-bold text-gray-600 dark:text-gray-300">
+                                                     {{ house.status === 'Occupied' ? house.renterName : 'Vacant' }}
+                                                  </td>
+                                                  <td class="px-4 py-3.5 text-xs">
+                                                     <span [class]="house.status === 'Occupied' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400' : 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-400'"
+                                                           class="px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider">
+                                                        {{ house.status }}
+                                                     </span>
+                                                  </td>
+                                                  <td class="px-4 py-3.5 text-right text-xs font-black text-emerald-600" [appCountUp]="rData.paidRent" prefix="₹"></td>
+                                                  <td class="px-4 py-3.5 text-right text-xs font-black text-amber-600" [appCountUp]="rData.pendingRent" prefix="₹"></td>
+                                               </tr>
+                                            }
+                                            @if (houses.length === 0) {
+                                               <tr>
+                                                  <td colspan="5" class="px-4 py-12 text-center text-gray-400 italic text-[11px] uppercase tracking-widest opacity-60">No properties registered.</td>
+                                               </tr>
+                                            }
+                                         </tbody>
+                                      </table>
+                                   </div>
                                 </div>
-                             </div>
+                             }
 
                              <!-- Renters and Room Information -->
                              <div class="bg-white dark:bg-gray-900 p-6 rounded-[2.5rem] border border-gray-150 dark:border-gray-800/80 shadow-sm flex flex-col justify-between h-[360px] overflow-hidden">
@@ -837,9 +1018,8 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                        </div>
                     }
                  </div>
-              }
-           </div>
-        }
+              </div>
+           }
 
         <!-- ═══════════ SUPER ADMIN VIEW ═══════════ -->
         @if (isSuperAdmin && activeTab !== 'security') {
@@ -1066,7 +1246,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                     }
                     
                 @if (!isBillListView) {
-                  <div class="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     @for (service of filteredTrackedServices; track service.id) {
                       <div class="group relative overflow-hidden rounded-[2rem] bg-white/40 dark:bg-gray-800/40 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 p-6 flex flex-col justify-between h-full">
                          <!-- Individual Sync Loader Overlay -->
@@ -1189,7 +1369,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                   </div>
                 } @else {
                   <!-- List View Template -->
-                  <div class="grid gap-6 grid-cols-1 sm:grid-cols-3 xl:grid-cols-4 space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     @for (service of filteredTrackedServices; track service.id) {
                       <div (click)="openServiceDetails(service)" 
                            class="bg-white/60 dark:bg-gray-800/60 backdrop-blur p-5 rounded-2xl border border-gray-100 dark:border-gray-700/50 flex justify-between items-center group hover:border-indigo-500/50 transition-all cursor-pointer shadow-sm">
@@ -1727,7 +1907,7 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
                         <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 font-black text-lg shadow-inner">
                            {{ cust.name?.charAt(0) || '?' }}
                         </div>
-                        <div class="min-w-0 pr-16">
+                        <div class="min-w-0 pr-28">
                            <h4 class="font-black text-gray-900 dark:text-white truncate">{{ cust.name }}</h4>
                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ cust.username ? '@' + cust.username : 'Temporary' }}</p>
                         </div>
@@ -2966,9 +3146,9 @@ export class AdminDashboardComponent implements OnInit {
   @HostListener('window:focus')
   onWindowFocus() {
     const isModalOpen = this.showProfileModal || this.showReceiptModal || this.showAdminForm || this.isAdminEditMode ||
-                        this.showServiceModal || this.showServiceDetailsModal || this.showLiveBillModal || this.showCustomerModal ||
-                        this.showBillForm || this.showRentalHouseForm || this.showMonthlyBillForm || this.showAccountsModal ||
-                        this.showBillsFilterModal;
+      this.showServiceModal || this.showServiceDetailsModal || this.showLiveBillModal || this.showCustomerModal ||
+      this.showBillForm || this.showRentalHouseForm || this.showMonthlyBillForm || this.showAccountsModal ||
+      this.showBillsFilterModal;
     if (!isModalOpen) {
       document.body.style.overflow = '';
       document.body.classList.remove('modal-open');
@@ -3149,33 +3329,33 @@ export class AdminDashboardComponent implements OnInit {
     if (house.status === 'Occupied' && house.arrivedDate) {
       const now = new Date();
       const arrived = new Date(house.arrivedDate);
-      
+
       // Starting from the arrival date, check every month until today
       let tempDate = new Date(arrived.getFullYear(), arrived.getMonth(), arrived.getDate());
-      
+
       while (tempDate <= now) {
-         const monthNameLong = tempDate.toLocaleString('default', { month: 'long' }).toLowerCase();
-         const monthNameShort = tempDate.toLocaleString('default', { month: 'short' }).toLowerCase();
-         const year = tempDate.getFullYear();
-         
-         const monthlyBill = bills.find(b => {
-           if (b.billDate) {
-             const d = new Date(b.billDate);
-             if (!isNaN(d.getTime())) {
-               return d.getMonth() === tempDate.getMonth() && d.getFullYear() === tempDate.getFullYear();
-             }
-           }
-           const bMonth = (b.month || '').toLowerCase();
-           return (bMonth === monthNameLong || bMonth === monthNameShort) && b.year === year;
-         });
-         if (!monthlyBill) {
-           pending += (house.monthlyRent || 0);
-         } else if (!(monthlyBill.rentAmount > 0)) {
-           pending += (house.monthlyRent || 0);
-         }
-         
-         // Move to next month safely
-         tempDate.setMonth(tempDate.getMonth() + 1);
+        const monthNameLong = tempDate.toLocaleString('default', { month: 'long' }).toLowerCase();
+        const monthNameShort = tempDate.toLocaleString('default', { month: 'short' }).toLowerCase();
+        const year = tempDate.getFullYear();
+
+        const monthlyBill = bills.find(b => {
+          if (b.billDate) {
+            const d = new Date(b.billDate);
+            if (!isNaN(d.getTime())) {
+              return d.getMonth() === tempDate.getMonth() && d.getFullYear() === tempDate.getFullYear();
+            }
+          }
+          const bMonth = (b.month || '').toLowerCase();
+          return (bMonth === monthNameLong || bMonth === monthNameShort) && b.year === year;
+        });
+        if (!monthlyBill) {
+          pending += (house.monthlyRent || 0);
+        } else if (!(monthlyBill.rentAmount > 0)) {
+          pending += (house.monthlyRent || 0);
+        }
+
+        // Move to next month safely
+        tempDate.setMonth(tempDate.getMonth() + 1);
       }
     }
 
@@ -3202,11 +3382,23 @@ export class AdminDashboardComponent implements OnInit {
 
     const serviceNo = type === 'electricity' ? house.electricMeterNo : house.waterBillNo;
     if (!serviceNo) return 0;
-
-    // 2. Check global bills next
     const cleanServiceNo = this.normalizeServiceNumber(serviceNo);
+
+    // 2. Check tracked services next (live portal values)
+    const service = (this.trackedServices || []).find(s =>
+      s.serviceNumber && this.normalizeServiceNumber(s.serviceNumber) === cleanServiceNo && s.serviceType === type
+    );
+    if (service && service.lastAmount !== undefined && service.lastAmount !== null && service.lastAmount > 0) {
+      return service.lastAmount;
+    }
+
+    // 3. Check cached sync details
+    const cachedAmount = house.id ? this.rentalUtilityBills[house.id]?.[type] : undefined;
+    if (cachedAmount !== undefined && cachedAmount > 0) return cachedAmount;
+
+    // 4. Check global bills next
     if (cleanServiceNo) {
-      const matchingBills = (this.bills || []).filter(b => 
+      const matchingBills = (this.bills || []).filter(b =>
         b.serviceNumber &&
         this.normalizeServiceNumber(b.serviceNumber) === cleanServiceNo &&
         b.serviceType?.toLowerCase() === type.toLowerCase() &&
@@ -3218,15 +3410,7 @@ export class AdminDashboardComponent implements OnInit {
       }
     }
 
-    // 3. Check cached sync details
-    const cachedAmount = house.id ? this.rentalUtilityBills[house.id]?.[type] : undefined;
-    if (cachedAmount !== undefined) return cachedAmount;
-    
-    // 4. Check tracked services
-    const service = this.trackedServices.find(s => 
-      s.serviceNumber && this.normalizeServiceNumber(s.serviceNumber) === cleanServiceNo && s.serviceType === type
-    );
-    return service?.lastAmount || 0;
+    return 0;
   }
 
   isHouseUtilityPaid(house: RentalHouse, type: 'electricity' | 'water'): boolean {
@@ -3237,7 +3421,7 @@ export class AdminDashboardComponent implements OnInit {
     if (!cleanServiceNo) return false;
 
     // 1. Check global bills first
-    const matchingBills = (this.bills || []).filter(b => 
+    const matchingBills = (this.bills || []).filter(b =>
       b.serviceNumber &&
       this.normalizeServiceNumber(b.serviceNumber) === cleanServiceNo &&
       b.serviceType?.toLowerCase() === type.toLowerCase() &&
@@ -3297,7 +3481,7 @@ export class AdminDashboardComponent implements OnInit {
     if (!cleanServiceNo) return '';
 
     // 1. Check global bills first
-    const matchingBills = (this.bills || []).filter(b => 
+    const matchingBills = (this.bills || []).filter(b =>
       b.serviceNumber &&
       this.normalizeServiceNumber(b.serviceNumber) === cleanServiceNo &&
       b.serviceType?.toLowerCase() === type.toLowerCase() &&
@@ -3372,9 +3556,9 @@ export class AdminDashboardComponent implements OnInit {
     if (!house.arrivedDate || house.status !== 'Occupied') return 0;
     const arrived = new Date(house.arrivedDate);
     const today = new Date();
-    
+
     let months = (today.getFullYear() - arrived.getFullYear()) * 12 + (today.getMonth() - arrived.getMonth());
-    
+
     if (today.getDate() < arrived.getDate()) {
       months--;
     }
@@ -3906,6 +4090,48 @@ export class AdminDashboardComponent implements OnInit {
     recentPayments: [] as { houseName: string, renterName: string, amount: number, date: string }[]
   };
 
+  onOverviewYearChange(year: number) {
+    this.selectedOverviewYear = year;
+    this.generateOverviewChart(year);
+    this.generateRentalOverviewChart();
+  }
+
+  getHouseRentalData(house: RentalHouse) {
+    const year = this.selectedOverviewYear;
+    let paidRent = 0;
+    let pendingRent = 0;
+
+    // Current active bills
+    (house.bills || []).forEach(bill => {
+      const billDateStr = bill.paidDate || bill.billDate;
+      const billYear = billDateStr ? new Date(billDateStr).getFullYear() : null;
+      if (year === -1 || billYear === year) {
+        if (bill.status === 'Paid') {
+          paidRent += (bill.rentAmount || 0);
+        } else {
+          pendingRent += (bill.rentAmount || 0);
+        }
+      }
+    });
+
+    // Past tenancies bills
+    (house.pastTenancies || []).forEach(tenancy => {
+      (tenancy.bills || []).forEach(bill => {
+        const billDateStr = bill.paidDate || bill.billDate;
+        const billYear = billDateStr ? new Date(billDateStr).getFullYear() : null;
+        if (year === -1 || billYear === year) {
+          if (bill.status === 'Paid') {
+            paidRent += (bill.rentAmount || 0);
+          } else {
+            pendingRent += (bill.rentAmount || 0);
+          }
+        }
+      });
+    });
+
+    return { paidRent, pendingRent };
+  }
+
   availableOverviewYears: number[] = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
   selectedOverviewYear: number = new Date().getFullYear();
 
@@ -3984,38 +4210,47 @@ export class AdminDashboardComponent implements OnInit {
     let totalHouses = this.houses.length;
     let occupiedHouses = this.houses.filter(h => h.status === 'Occupied').length;
     let occupancyRate = totalHouses > 0 ? Math.round((occupiedHouses / totalHouses) * 1000) / 10 : 0;
-    
+
     let totalCollectedRent = 0;
     let totalPendingRent = 0;
     const allRentPayments: { houseName: string, renterName: string, amount: number, date: string }[] = [];
+    const year = this.selectedOverviewYear;
 
     this.houses.forEach(house => {
       (house.bills || []).forEach(bill => {
-        if (bill.status === 'Paid') {
-          totalCollectedRent += (bill.rentAmount || 0);
-          allRentPayments.push({
-            houseName: house.houseName,
-            renterName: house.renterName,
-            amount: bill.rentAmount,
-            date: bill.paidDate || bill.billDate
-          });
-        } else {
-          totalPendingRent += (bill.rentAmount || 0);
-        }
-      });
-
-      (house.pastTenancies || []).forEach(tenancy => {
-        (tenancy.bills || []).forEach(bill => {
+        const billDateStr = bill.paidDate || bill.billDate;
+        const billYear = billDateStr ? new Date(billDateStr).getFullYear() : null;
+        if (year === -1 || billYear === year) {
           if (bill.status === 'Paid') {
             totalCollectedRent += (bill.rentAmount || 0);
             allRentPayments.push({
               houseName: house.houseName,
-              renterName: tenancy.renterName,
+              renterName: house.renterName,
               amount: bill.rentAmount,
               date: bill.paidDate || bill.billDate
             });
           } else {
             totalPendingRent += (bill.rentAmount || 0);
+          }
+        }
+      });
+
+      (house.pastTenancies || []).forEach(tenancy => {
+        (tenancy.bills || []).forEach(bill => {
+          const billDateStr = bill.paidDate || bill.billDate;
+          const billYear = billDateStr ? new Date(billDateStr).getFullYear() : null;
+          if (year === -1 || billYear === year) {
+            if (bill.status === 'Paid') {
+              totalCollectedRent += (bill.rentAmount || 0);
+              allRentPayments.push({
+                houseName: house.houseName,
+                renterName: tenancy.renterName,
+                amount: bill.rentAmount,
+                date: bill.paidDate || bill.billDate
+              });
+            } else {
+              totalPendingRent += (bill.rentAmount || 0);
+            }
           }
         });
       });
@@ -4044,20 +4279,28 @@ export class AdminDashboardComponent implements OnInit {
 
       // Current active bills
       (house.bills || []).forEach(bill => {
-        if (bill.status === 'Paid') {
-          paidRent += (bill.rentAmount || 0);
-        } else {
-          pendingRent += (bill.rentAmount || 0);
+        const billDateStr = bill.paidDate || bill.billDate;
+        const billYear = billDateStr ? new Date(billDateStr).getFullYear() : null;
+        if (year === -1 || billYear === year) {
+          if (bill.status === 'Paid') {
+            paidRent += (bill.rentAmount || 0);
+          } else {
+            pendingRent += (bill.rentAmount || 0);
+          }
         }
       });
 
       // Past tenancies bills
       (house.pastTenancies || []).forEach(tenancy => {
         (tenancy.bills || []).forEach(bill => {
-          if (bill.status === 'Paid') {
-            paidRent += (bill.rentAmount || 0);
-          } else {
-            pendingRent += (bill.rentAmount || 0);
+          const billDateStr = bill.paidDate || bill.billDate;
+          const billYear = billDateStr ? new Date(billDateStr).getFullYear() : null;
+          if (year === -1 || billYear === year) {
+            if (bill.status === 'Paid') {
+              paidRent += (bill.rentAmount || 0);
+            } else {
+              pendingRent += (bill.rentAmount || 0);
+            }
           }
         });
       });
@@ -4107,7 +4350,7 @@ export class AdminDashboardComponent implements OnInit {
     this.loadData();
   }
 
-    async loadAdmins() {
+  async loadAdmins() {
 
     const adminQuery = query(collection(this.firestore, 'users'), where('role', '==', 'admin'));
     collectionData(adminQuery).subscribe(data => {
@@ -4299,7 +4542,7 @@ export class AdminDashboardComponent implements OnInit {
 
       if (amount && !isPaid) {
         this.billStats.pendingAmount += amount;
-        
+
         if (service.serviceType === 'electricity') {
           this.billStats.electricityTotal += amount;
         } else if (service.serviceType === 'water') {
@@ -4844,15 +5087,15 @@ export class AdminDashboardComponent implements OnInit {
           return false;
         }
       }
-      
+
       // 2. Search query filter
       if (this.customerSearchQuery && this.customerSearchQuery.trim()) {
         const q = this.customerSearchQuery.toLowerCase().trim();
         return (c.name?.toLowerCase().includes(q)) ||
-               (c.phone?.includes(q)) ||
-               (c.username?.toLowerCase().includes(q));
+          (c.phone?.includes(q)) ||
+          (c.username?.toLowerCase().includes(q));
       }
-      
+
       return true;
     });
   }
@@ -5368,7 +5611,7 @@ export class AdminDashboardComponent implements OnInit {
     } else {
       const electricAmount = this.getHouseUtilityBill(house, 'electricity');
       const waterAmount = this.getHouseUtilityBill(house, 'water');
-      
+
       this.monthlyBillForm.reset({
         billDate: new Date().toISOString().split('T')[0],
         rentAmount: house.monthlyRent || 0,
@@ -5473,7 +5716,7 @@ export class AdminDashboardComponent implements OnInit {
     const cleanPhone = house.renterPhone.replace(/\D/g, '');
     const phoneWithCountry = cleanPhone.startsWith('91') && cleanPhone.length === 12 ? cleanPhone : `91${cleanPhone}`;
     const stats = this.getHouseStats(house);
-    
+
     let message = '';
     if (stats.pending > 0) {
       const now = new Date();
@@ -5485,7 +5728,7 @@ export class AdminDashboardComponent implements OnInit {
         `• Pending Amount: ₹${stats.pending.toLocaleString('en-IN')}\n\n` +
         `Please clear the dues at your earliest convenience. Thank you!`;
     }
-    
+
     const whatsappUrl = `https://wa.me/${phoneWithCountry}${message ? '?text=' + encodeURIComponent(message) : ''}`;
     window.open(whatsappUrl, '_blank');
   }
@@ -5795,7 +6038,7 @@ export class AdminDashboardComponent implements OnInit {
       const amountDue = this.getPendingInterestForLoan(loan);
       const formattedAmount = amountDue.toLocaleString('en-IN');
       const formattedDate = nextDue ? nextDue.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
-      
+
       message = `Hello ${loan.borrowerName},\n\n` +
         `This is an interest payment reminder from FinServe for your loan *${loan.name}*.\n\n` +
         `• Principal Amount: ₹${loan.amount.toLocaleString('en-IN')}\n` +
@@ -5807,13 +6050,13 @@ export class AdminDashboardComponent implements OnInit {
       message = `Hello ${loan.borrowerName},\n\n` +
         `This is a consolidated interest payment reminder from FinServe for your active loans:\n\n`;
       let grandTotalPending = 0;
-      
+
       borrowerLoans.forEach((l, idx) => {
         const nextDue = this.nextLoanDueDate(l);
         const amountDue = this.getPendingInterestForLoan(l);
         const formattedDate = nextDue ? nextDue.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
         grandTotalPending += amountDue;
-        
+
         message += `*${idx + 1}. ${l.name}*\n`;
         message += `   - Principal: ₹${l.amount.toLocaleString('en-IN')}\n`;
         message += `   - Interest Rate: ${l.interestRate}% p.m.\n`;
@@ -5823,7 +6066,7 @@ export class AdminDashboardComponent implements OnInit {
         }
         message += `\n`;
       });
-      
+
       message += `*Total Consolidated Amount Due: ₹${grandTotalPending.toLocaleString('en-IN')}*\n\n`;
       message += `Please clear your dues at your earliest convenience to avoid penalties. Thank you!`;
     }
@@ -5964,7 +6207,7 @@ export class AdminDashboardComponent implements OnInit {
     if (service.serviceNumber) {
       const cleanServiceNo = this.normalizeServiceNumber(service.serviceNumber);
       if (cleanServiceNo) {
-        const matchingBills = (this.bills || []).filter(b => 
+        const matchingBills = (this.bills || []).filter(b =>
           b.serviceNumber &&
           this.normalizeServiceNumber(b.serviceNumber) === cleanServiceNo &&
           b.serviceType?.toLowerCase() === service.serviceType?.toLowerCase() &&
@@ -6051,10 +6294,57 @@ export class AdminDashboardComponent implements OnInit {
     }
   }
 
-  openElectricityBill(uscno: string) {
-    // For TG Southern Power, online-bill-payment with uscno pre-fills the payment portal
-    const url = `https://www.tgsouthernpower.org/online-bill-payment?uscno=${uscno}`;
-    window.open(url, '_blank');
+  openElectricityBill(uscNo: string) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'https://www.billdesk.com/pgidsk/pgmerc/tsspdclpgi/TSSPDCLPGIConfirm.jsp';
+    form.target = '_blank';
+
+    const uscnoInput = document.createElement('input');
+    uscnoInput.type = 'hidden';
+    uscnoInput.name = 'uscno';
+    uscnoInput.value = uscNo;
+    form.appendChild(uscnoInput);
+
+    const choiceInput = document.createElement('input');
+    choiceInput.type = 'hidden';
+    choiceInput.name = 'choice';
+    choiceInput.value = 'Postpaid Service';
+    form.appendChild(choiceInput);
+
+    const preflagInput = document.createElement('input');
+    preflagInput.type = 'hidden';
+    preflagInput.name = 'preflag';
+    preflagInput.value = 'N';
+    form.appendChild(preflagInput);
+
+    const circleInput = document.createElement('input');
+    circleInput.type = 'hidden';
+    circleInput.name = 'circle';
+    circleInput.value = '';
+    form.appendChild(circleInput);
+
+    const eroInput = document.createElement('input');
+    eroInput.type = 'hidden';
+    eroInput.name = 'ero';
+    eroInput.value = '';
+    form.appendChild(eroInput);
+
+    const snoInput = document.createElement('input');
+    snoInput.type = 'hidden';
+    snoInput.name = 'sno';
+    snoInput.value = '';
+    form.appendChild(snoInput);
+
+    const emailInput = document.createElement('input');
+    emailInput.type = 'hidden';
+    emailInput.name = 'txtEmailID';
+    emailInput.value = 'NA';
+    form.appendChild(emailInput);
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
   }
 
   openWaterBill(can: string) {

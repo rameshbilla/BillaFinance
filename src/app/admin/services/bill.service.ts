@@ -513,23 +513,38 @@ export class BillService {
 
         // Fallback or other service types
         if (!billData) {
-          let mockAmount = Math.floor(Math.random() * (2500 - 500 + 1)) + 500;
-          let mockDueDate = new Date(now.getFullYear(), now.getMonth(), 28).toISOString().split('T')[0];
+          if (service.serviceType === 'electricity' || service.serviceType === 'water') {
+            billData = {
+              serviceType: service.serviceType as any,
+              provider: service.provider,
+              serviceNumber: service.serviceNumber,
+              amount: service.lastAmount || 0,
+              dueDate: service.lastDueDate || new Date(now.getFullYear(), now.getMonth(), 28).toISOString().split('T')[0],
+              status: service.lastBillStatus === 'paid' ? 'completed' : (service.lastBillStatus || 'pending'),
+              notes: `Auto-synced from last cached tracked service data.`,
+              adminUid: adminUid
+            };
+          } else {
+            let mockAmount = Math.floor(Math.random() * (2500 - 500 + 1)) + 500;
+            let mockDueDate = new Date(now.getFullYear(), now.getMonth(), 28).toISOString().split('T')[0];
 
-          billData = {
-            serviceType: service.serviceType as any,
-            provider: service.provider,
-            serviceNumber: service.serviceNumber,
-            amount: mockAmount,
-            dueDate: mockDueDate,
-            status: 'pending',
-            notes: `Auto-generated for Service No: ${service.serviceNumber}`,
-            adminUid: adminUid
-          };
+            billData = {
+              serviceType: service.serviceType as any,
+              provider: service.provider,
+              serviceNumber: service.serviceNumber,
+              amount: mockAmount,
+              dueDate: mockDueDate,
+              status: 'pending',
+              notes: `Auto-generated for Service No: ${service.serviceNumber}`,
+              adminUid: adminUid
+            };
+          }
         }
 
-        await this.addBill(billData);
-        addedCount++;
+        if (billData) {
+          await this.addBill(billData);
+          addedCount++;
+        }
       }
     }
     return { success: true, count: addedCount };
